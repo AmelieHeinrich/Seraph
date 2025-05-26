@@ -1,0 +1,11 @@
+# IDE
+.vscode
+vsxmake2022
+
+# Build cache
+build
+.xmake
+
+# Log stuff
+seraph.log
+imgui.ini
