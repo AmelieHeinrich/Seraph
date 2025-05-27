@@ -3,10 +3,12 @@
 // > Create Time: 2025-05-26 19:21:37
 //
 
-#include <iostream>
+#include "Core/Context.h"
 
 int main(void)
 {
-    std::cout << "Hello!" << std::endl;
+    Context::Initialize();
+
+    Context::Shutdown();
     return 0;
 }
