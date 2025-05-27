@@ -1,0 +1,15 @@
+# Stuff todo yuuuppp
+
+## Core
+
+- [ ] Window
+- [ ] Input management
+- [ ] File system
+- [ ] File stream
+- [ ] Memory allocators
+- [ ] JSON loading/writing
+
+## D3D12
+
+- [ ] Device
+- [ ] Descriptor Heaps

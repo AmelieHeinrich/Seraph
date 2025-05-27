@@ -8,5 +8,5 @@ target("Seraph")
     set_kind("binary")
     set_languages("c++17")
 
-    add_files("Seraph/*.cpp",
-              "Seraph/Core/*.cpp")
+    add_files("Seraph/**.cpp")
+    add_headerfiles("Seraph/**.h")
