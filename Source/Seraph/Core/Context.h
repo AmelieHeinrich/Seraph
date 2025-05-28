@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Log.h"
+#include "Assert.h"
 
 struct Context
 {

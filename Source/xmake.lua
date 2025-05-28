@@ -10,3 +10,9 @@ target("Seraph")
 
     add_files("Seraph/**.cpp")
     add_headerfiles("Seraph/**.h")
+    add_deps("SDL3")
+    add_syslinks("user32")
+
+    before_link(function (target)
+        os.cp("Binaries/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
+    end)

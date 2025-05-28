@@ -6,4 +6,5 @@
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
 
+includes("ThirdParty")
 includes("Source")

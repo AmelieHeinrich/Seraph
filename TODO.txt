@@ -2,7 +2,7 @@
 
 ## Core
 
-- [ ] Window
+- [x] Window
 - [ ] Input management
 - [ ] File system
 - [ ] File stream
