@@ -10,6 +10,7 @@ target("Seraph")
 
     add_files("Seraph/**.cpp")
     add_headerfiles("Seraph/**.h")
+    add_includedirs("Seraph")
     add_deps("SDL3")
     add_syslinks("user32")
 

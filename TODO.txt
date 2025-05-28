@@ -3,13 +3,14 @@
 ## Core
 
 - [x] Window
+- [x] Application
 - [ ] Input management
 - [ ] File system
 - [ ] File stream
-- [ ] Memory allocators
+- [ ] Memory allocators (bump, TLSF)
 - [ ] JSON loading/writing
 
-## D3D12
+## Vulkan
 
-- [ ] Device
-- [ ] Descriptor Heaps
+- [ ] Instance
+- [ ] Physical Device

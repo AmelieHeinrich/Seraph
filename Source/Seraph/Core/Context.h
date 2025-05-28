@@ -13,9 +13,9 @@ struct Context
     static void Initialize();
     static void Shutdown();
 
-    ILogger* logger;
-
     static Context sContext;
+
+    ILogger* logger;
 };
 
 #define SERAPH_INFO(fmt, ...)         Context::sContext.logger->Info(__FILE__, __LINE__, fmt, __VA_ARGS__)
