@@ -4,9 +4,10 @@
 --
 
 target("Vulkan")
-    set_kind("headeronly")
+    set_kind("static")
     set_group("Dependencies")
 
+    add_files("Source/Vulkan.cpp")
     add_includedirs(os.getenv("VULKAN_SDK") .. "/Include", { public = true })
     add_linkdirs(os.getenv("VULKAN_SDK") .. "/Lib", { public = true })
     add_syslinks("volk", { public = true })

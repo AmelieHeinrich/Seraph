@@ -12,5 +12,15 @@
 
 ## Vulkan
 
-- [ ] Instance
-- [ ] Physical Device
+- [x] Instance
+- [x] Physical Device
+- [x] Device
+- [x] Surface
+- [ ] Memory allocator
+- [ ] Textures
+- [ ] Texture views
+- [ ] Swapchain
+- [ ] Command queues
+- [ ] Command buffers
+- [ ] Synchronization
+- [ ] Clear screen
