@@ -9,6 +9,8 @@
 VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
     : mParentDevice(static_cast<VulkanDevice*>(device))
 {
+    mDesc = desc;
+
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -24,10 +26,10 @@ VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
     imageInfo.flags = 0;
     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    if (desc.Usage & RHITextureUsage::kRenderTarget) imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    if (desc.Usage & RHITextureUsage::kDepthTarget) imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    if (desc.Usage & RHITextureUsage::kShaderResource) imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-    if (desc.Usage & RHITextureUsage::kStorage) imageInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    if (Any(desc.Usage & RHITextureUsage::kRenderTarget)) imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (Any(desc.Usage & RHITextureUsage::kDepthTarget)) imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    if (Any(desc.Usage & RHITextureUsage::kShaderResource)) imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (Any(desc.Usage & RHITextureUsage::kStorage)) imageInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;

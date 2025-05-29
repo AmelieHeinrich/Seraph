@@ -14,13 +14,14 @@ enum class RHITextureFormat
     kB8G8R8A8_UNORM
 };
 
-enum class RHITextureUsage
+enum class RHITextureUsage : uint
 {
     kRenderTarget = BIT(1),
     kDepthTarget = BIT(2),
     kStorage = BIT(3),
     kShaderResource = BIT(4)
 };
+ENUM_CLASS_FLAGS(RHITextureUsage)
 
 struct RHITextureDesc
 {
@@ -47,37 +48,3 @@ public:
 protected:
     RHITextureDesc mDesc;
 };
-
-// Operator shit
-
-inline constexpr bool operator&(RHITextureUsage x, RHITextureUsage y)
-{
-    return static_cast<uint>(x) & static_cast<uint>(y);
-}
-
-inline constexpr RHITextureUsage operator|(RHITextureUsage x, RHITextureUsage y)
-{
-    return static_cast<RHITextureUsage>(static_cast<uint>(x) | static_cast<uint>(y));
-}
-
-inline constexpr RHITextureUsage operator^(RHITextureUsage x, RHITextureUsage y)
-{
-    return static_cast<RHITextureUsage>(static_cast<uint>(x) ^ static_cast<uint>(y));
-}
-
-inline constexpr RHITextureUsage operator~(RHITextureUsage x)
-{
-    return static_cast<RHITextureUsage>(~static_cast<uint>(x));
-}
-
-inline RHITextureUsage& operator|=(RHITextureUsage & x, RHITextureUsage y)
-{
-    x = x | y;
-    return x;
-}
-
-inline RHITextureUsage& operator^=(RHITextureUsage & x, RHITextureUsage y)
-{
-    x = x ^ y;
-    return x;
-}

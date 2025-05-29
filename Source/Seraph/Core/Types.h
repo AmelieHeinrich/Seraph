@@ -49,3 +49,25 @@ template<typename T>
 using SharedPtr = std::shared_ptr<T>;
 
 #define BIT(x) (1 << x)
+
+#define ENUM_CLASS_FLAGS(EnumType)                                                \
+inline constexpr EnumType operator|(EnumType lhs, EnumType rhs) {                \
+    using T = std::underlying_type_t<EnumType>;                                   \
+    return static_cast<EnumType>(static_cast<T>(lhs) | static_cast<T>(rhs));     \
+}                                                                                 \
+inline constexpr EnumType& operator|=(EnumType& lhs, EnumType rhs) {             \
+    lhs = lhs | rhs;                                                              \
+    return lhs;                                                                   \
+}                                                                                 \
+inline constexpr EnumType operator&(EnumType lhs, EnumType rhs) {                \
+    using T = std::underlying_type_t<EnumType>;                                   \
+    return static_cast<EnumType>(static_cast<T>(lhs) & static_cast<T>(rhs));     \
+}                                                                                 \
+inline constexpr EnumType& operator&=(EnumType& lhs, EnumType rhs) {             \
+    lhs = lhs & rhs;                                                              \
+    return lhs;                                                                   \
+}                                                                                 \
+inline constexpr bool Any(EnumType value) {                                       \
+    using T = std::underlying_type_t<EnumType>;                                   \
+    return static_cast<T>(value) != 0;                                            \
+}

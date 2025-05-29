@@ -31,18 +31,54 @@ Application::~Application()
 
 void Application::Run()
 {
+    int firstFrame = 0;
+
     while (mWindow->IsOpen()) {
         mWindow->PollEvents();
 
         uint frameIndex = mF2FSync->BeginSynchronize();
         IRHICommandBuffer* commandBuffer = mCommandBuffers[frameIndex];
+        IRHITexture* swapchainTexture = mSurface->GetTexture(frameIndex);
+        IRHITextureView* swapchainTextureView = mSurface->GetTextureView(frameIndex);
         
         commandBuffer->Reset();
         commandBuffer->Begin();
-        // Transition, clear that shyte
+        
+        RHITextureBarrier beginRenderBarrier = {
+            .SourceStage        = RHIPipelineStage::kBottomOfPipe,
+            .DestStage          = RHIPipelineStage::kCopy,
+            .SourceAccess       = RHIResourceAccess::kNone,
+            .DestAccess         = RHIResourceAccess::kTransferWrite,
+            .OldLayout          = firstFrame < 3 ? RHIResourceLayout::kUndefined : RHIResourceLayout::kPresent,
+            .NewLayout          = RHIResourceLayout::kTransferDst,
+            .Texture            = swapchainTexture,
+            .BaseMipLevel = 0,
+            .LevelCount = 1,
+            .ArrayLayer = 0,
+            .LayerCount = 1,
+        };
+        RHITextureBarrier endRenderBarrier = {
+            .SourceStage        = RHIPipelineStage::kCopy,
+            .DestStage          = RHIPipelineStage::kBottomOfPipe,
+            .SourceAccess       = RHIResourceAccess::kTransferWrite,
+            .DestAccess         = RHIResourceAccess::kNone,
+            .OldLayout          = RHIResourceLayout::kTransferDst,
+            .NewLayout          = RHIResourceLayout::kPresent,
+            .Texture            = swapchainTexture,
+            .BaseMipLevel = 0,
+            .LevelCount = 1,
+            .ArrayLayer = 0,
+            .LayerCount = 1
+        };
+
+        commandBuffer->Barrier(beginRenderBarrier);
+        commandBuffer->ClearColor(swapchainTextureView, 1.0f, 0.0f, 0.0f);
+        commandBuffer->Barrier(endRenderBarrier);
         commandBuffer->End();
 
         mF2FSync->EndSynchronize(mCommandBuffers[frameIndex]);
         mF2FSync->PresentSurface();
+
+        firstFrame++;
     }
 }

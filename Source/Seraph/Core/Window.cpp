@@ -11,7 +11,7 @@ Window::Window(int width, int height, const StringView& title)
 {
     ASSERT_EQ(SDL_Init(SDL_INIT_VIDEO) == true, "Failed to initialize SDL3!");
 
-    mWindow = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+    mWindow = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN);
     ASSERT_EQ(mWindow != nullptr, "Failed to create SDL3 window!");
 }
 

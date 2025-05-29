@@ -194,18 +194,21 @@ void VulkanDevice::BuildLogicalDevice()
         VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
+        VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
     };
 
     // Base features
-    VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    VkPhysicalDeviceFeatures2 deviceFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
 
     VkPhysicalDeviceFeatures baseFeatures = {};
     baseFeatures.multiDrawIndirect = VK_TRUE;
     baseFeatures.drawIndirectFirstInstance = VK_TRUE;
     deviceFeatures2.features = baseFeatures;
 
-    // Feature chain
+    // Feature structs
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR };
+    sync2.synchronization2 = VK_TRUE;
+
     VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
     descriptorIndexing.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     descriptorIndexing.runtimeDescriptorArray = VK_TRUE;
@@ -232,14 +235,16 @@ void VulkanDevice::BuildLogicalDevice()
     VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptor = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT };
     mutableDescriptor.mutableDescriptorType = VK_TRUE;
 
-    // Chain them
-    deviceFeatures2.pNext = &descriptorIndexing;
+    // Chain pNexts (careful with ordering!)
+    deviceFeatures2.pNext = &sync2;
+    sync2.pNext = &descriptorIndexing;
     descriptorIndexing.pNext = &dynamicRendering;
     dynamicRendering.pNext = &accelerationStructure;
     accelerationStructure.pNext = &rayTracingPipeline;
     rayTracingPipeline.pNext = &rayQuery;
     rayQuery.pNext = &meshShader;
     meshShader.pNext = &mutableDescriptor;
+    mutableDescriptor.pNext = nullptr;
 
     // Queue family selection
     uint32_t queueFamilyCount = 0;
@@ -264,11 +269,10 @@ void VulkanDevice::BuildLogicalDevice()
             transferIndex = i;
     }
 
-    // Fallback if no dedicated compute/transfer
     if (computeIndex == UINT32_MAX) computeIndex = graphicsIndex;
     if (transferIndex == UINT32_MAX) transferIndex = graphicsIndex;
 
-    // Prepare queue create infos (deduplicate by index)
+    // Deduplicate queue families
     Array<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { graphicsIndex, computeIndex, transferIndex };
     float priority = 1.0f;
@@ -282,7 +286,7 @@ void VulkanDevice::BuildLogicalDevice()
         queueCreateInfos.push_back(queueInfo);
     }
 
-    // Create device
+    // Create the logical device
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = &deviceFeatures2;
@@ -296,11 +300,11 @@ void VulkanDevice::BuildLogicalDevice()
 
     volkLoadDevice(mDevice);
 
-    // Store queue family indices if needed
     mGraphicsQueueFamilyIndex = graphicsIndex;
     mComputeQueueFamilyIndex = computeIndex;
     mTransferQueueFamilyIndex = transferIndex;
 }
+
 
 void VulkanDevice::BuildAllocator()
 {

@@ -23,7 +23,7 @@
 - [x] Command queues
 - [x] Command buffers
 - [x] Synchronization
-- [ ] Clear screen
+- [x] Clear screen
 
 ## D3D12
 

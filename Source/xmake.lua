@@ -6,7 +6,7 @@
 target("Seraph")
     set_group("Executables")
     set_kind("binary")
-    set_languages("c++17")
+    set_languages("c++20")
 
     add_files("Seraph/**.cpp")
     add_headerfiles("Seraph/**.h")

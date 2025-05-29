@@ -10,6 +10,8 @@
 VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc viewDesc)
     : mParentDevice(static_cast<VulkanDevice*>(device))
 {
+    mDesc = viewDesc;
+
     VulkanTexture* vkTexture = static_cast<VulkanTexture*>(viewDesc.Texture);
     RHITextureDesc desc = vkTexture->GetDesc();
 

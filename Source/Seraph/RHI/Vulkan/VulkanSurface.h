@@ -26,7 +26,4 @@ private:
 
     VkSurfaceKHR mSurface;
     VkSwapchainKHR mSwapchain;
-
-    StaticArray<IRHITexture*, FRAMES_IN_FLIGHT> mTextures;
-    StaticArray<IRHITextureView*, FRAMES_IN_FLIGHT> mTextureViews;
 };

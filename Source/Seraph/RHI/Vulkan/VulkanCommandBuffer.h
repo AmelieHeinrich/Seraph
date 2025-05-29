@@ -19,8 +19,18 @@ public:
     void Begin() override;
     void End() override;
 
+    void Barrier(const RHITextureBarrier& barrier) override;
+    void BarrierGroup(const RHIBarrierGroup& barrierGroup) override;
+    
+    void ClearColor(IRHITextureView* view, float r, float g, float b) override;
+
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
+
+private:
+    VkPipelineStageFlags2 TranslatePipelineStageToVk(RHIPipelineStage stage);
+    VkAccessFlags2 TranslateAccessFlagsToVk(RHIResourceAccess access);
+    VkImageLayout TranslateLayoutToVk(RHIResourceLayout layout);
 
 private:
     bool mSingleTime = false;

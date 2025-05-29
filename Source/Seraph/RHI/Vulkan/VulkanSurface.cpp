@@ -63,7 +63,7 @@ VulkanSurface::VulkanSurface(IRHIDevice* device, Window* window)
     swapchainInfo.imageExtent.width = windowWidth;
     swapchainInfo.imageExtent.height = windowHeight;
     swapchainInfo.imageArrayLayers = 1;
-    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchainInfo.preTransform = capabilities.currentTransform;
     swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -98,7 +98,7 @@ VulkanSurface::VulkanSurface(IRHIDevice* device, Window* window)
         mTextures[i] = texture;
 
         // View
-        RHITextureViewDesc viewDesc(texture, RHITextureViewType::kRenderTarget);
+        RHITextureViewDesc viewDesc(mTextures[i], RHITextureViewType::kRenderTarget);
         mTextureViews[i] = mParentDevice->CreateTextureView(viewDesc);
     }
 }
