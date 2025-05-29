@@ -24,6 +24,10 @@
 - [x] Command buffers
 - [x] Synchronization
 - [x] Clear screen
+- [x] Begin/End rendering
+- [ ] Graphics pipeline
+- [ ] Hello triangle!
+- [ ] ImGui
 
 ## D3D12
 
@@ -37,8 +41,13 @@
 - [ ] Command buffers
 - [ ] Synchronization
 - [ ] Clear screen
+- [ ] Begin/End rendering
+- [ ] Graphics pipeline
+- [ ] Hello triangle!
+- [ ] ImGui
 
 ## RHI
 
+- [x] Shader compilation
 - [ ] Test framework using FLIP
 - [ ] Render graph

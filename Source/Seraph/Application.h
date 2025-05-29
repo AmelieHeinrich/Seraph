@@ -7,6 +7,7 @@
 
 #include "Core/Window.h"
 #include "RHI/Device.h"
+#include "RHI/ShaderCompiler.h"
 
 class Application
 {
@@ -16,6 +17,8 @@ public:
 
     void Run();
 private:
+    RHIBackend mBackend;
+
     SharedPtr<Window> mWindow;
 
     IRHIDevice* mDevice;

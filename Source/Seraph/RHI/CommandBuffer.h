@@ -89,14 +89,32 @@ struct RHIBarrierGroup
     Array<RHITextureBarrier> TextureBarriers;
 };
 
+struct RHIRenderAttachment
+{
+    IRHITextureView* View;
+    bool Clear;
+};
+
+struct RHIRenderBegin
+{
+    Array<RHIRenderAttachment> RenderTargets;
+    RHIRenderAttachment DepthTarget;
+    uint Width;
+    uint Height;
+};
+
 class IRHICommandBuffer
 {
 public:
     ~IRHICommandBuffer() = default;
 
     virtual void Reset() = 0;
+
     virtual void Begin() = 0;
     virtual void End() = 0;
+
+    virtual void BeginRendering(const RHIRenderBegin& begin) = 0;
+    virtual void EndRendering() = 0;
 
     virtual void Barrier(const RHITextureBarrier& barrier) = 0;
     virtual void BarrierGroup(const RHIBarrierGroup& barrierGroup) = 0;

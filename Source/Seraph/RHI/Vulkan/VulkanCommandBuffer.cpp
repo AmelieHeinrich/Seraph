@@ -6,6 +6,7 @@
 #include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
 #include "VulkanTexture.h"
+#include "VulkanTextureView.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
@@ -44,6 +45,52 @@ void VulkanCommandBuffer::End()
 {
     VkResult result = vkEndCommandBuffer(mCmdBuffer);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to end command buffer!");
+}
+
+void VulkanCommandBuffer::BeginRendering(const RHIRenderBegin& begin)
+{
+    Array<VkRenderingAttachmentInfo> colorAttachments;
+    colorAttachments.reserve(begin.RenderTargets.size());
+
+    for (const auto& rt : begin.RenderTargets) {
+        VkRenderingAttachmentInfo colorAttachment = {};
+        colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView = static_cast<VulkanTextureView*>(rt.View)->GetView();
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp = rt.Clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f }; // Customize if needed
+
+        colorAttachments.push_back(colorAttachment);
+    }
+
+    VkRenderingAttachmentInfo depthAttachment = {};
+    const bool hasDepth = begin.DepthTarget.View != nullptr;
+
+    if (hasDepth) {
+        depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depthAttachment.imageView = static_cast<VulkanTextureView*>(begin.DepthTarget.View)->GetView();
+        depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        depthAttachment.loadOp = begin.DepthTarget.Clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        depthAttachment.clearValue.depthStencil = { 1.0f, 0 };
+    }
+
+    VkRenderingInfo renderingInfo = {};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    renderingInfo.renderArea.offset = { 0, 0 };
+    renderingInfo.renderArea.extent = { begin.Width, begin.Height };
+    renderingInfo.layerCount = 1;
+    renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachments.size());
+    renderingInfo.pColorAttachments = colorAttachments.data();
+    renderingInfo.pDepthAttachment = hasDepth ? &depthAttachment : nullptr;
+
+    vkCmdBeginRendering(mCmdBuffer, &renderingInfo);
+}
+
+void VulkanCommandBuffer::EndRendering()
+{
+    vkCmdEndRendering(mCmdBuffer);
 }
 
 void VulkanCommandBuffer::Barrier(const RHITextureBarrier& barrier)

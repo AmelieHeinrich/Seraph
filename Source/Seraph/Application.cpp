@@ -5,11 +5,16 @@
 
 #include "Application.h"
 
+#include <filesystem>
+
 Application::Application()
+    : mBackend(RHIBackend::kVulkan)
 {
+    ShaderCompiler::Initialize(mBackend);
+
     mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
     
-    mDevice = IRHIDevice::CreateDevice(RHIBackend::kVulkan, true);
+    mDevice = IRHIDevice::CreateDevice(mBackend, true);
     mSurface = mDevice->CreateSurface(mWindow.get());
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
@@ -27,6 +32,8 @@ Application::~Application()
     delete mGraphicsQueue;
     delete mSurface;
     delete mDevice;
+
+    ShaderCompiler::Shutdown();
 }
 
 void Application::Run()
@@ -71,8 +78,19 @@ void Application::Run()
             .LayerCount = 1
         };
 
+        RHIRenderAttachment attachment = {};
+        attachment.Clear = true;
+        attachment.View = swapchainTextureView;
+
+        RHIRenderBegin renderBegin = {};
+        renderBegin.Width = 1280;
+        renderBegin.Height = 720;
+        renderBegin.RenderTargets = { attachment };
+        renderBegin.DepthTarget = {};
+
         commandBuffer->Barrier(beginRenderBarrier);
-        commandBuffer->ClearColor(swapchainTextureView, 1.0f, 0.0f, 0.0f);
+        commandBuffer->BeginRendering(renderBegin);
+        commandBuffer->EndRendering();
         commandBuffer->Barrier(endRenderBarrier);
         commandBuffer->End();
 

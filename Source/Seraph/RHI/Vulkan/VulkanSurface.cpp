@@ -13,6 +13,7 @@ VulkanSurface::VulkanSurface(IRHIDevice* device, Window* window)
 {
     // Surface
     SDL_Window* rawWindow = window->GetWindow();
+    SDL_SetWindowTitle(rawWindow, "Seraph | Vulkan");
 
     bool succeed = SDL_Vulkan_CreateSurface(rawWindow, mParentDevice->Instance(), nullptr, &mSurface);
     ASSERT_EQ(succeed, "Failed to create Vulkan surface!");

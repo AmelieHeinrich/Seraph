@@ -19,6 +19,9 @@ public:
     void Begin() override;
     void End() override;
 
+    void BeginRendering(const RHIRenderBegin& begin);
+    void EndRendering();
+
     void Barrier(const RHITextureBarrier& barrier) override;
     void BarrierGroup(const RHIBarrierGroup& barrierGroup) override;
     

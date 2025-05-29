@@ -13,6 +13,7 @@
 #include <memory>
 #include <array>
 #include <algorithm>
+#include <unordered_map>
 
 using int8 = int8_t;
 using int16 = int16_t;
@@ -47,6 +48,9 @@ using UniquePtr = std::unique_ptr<T>;
 
 template<typename T>
 using SharedPtr = std::shared_ptr<T>;
+
+template<typename K, typename T>
+using UnorderedMap = std::unordered_map<K, T>;
 
 #define BIT(x) (1 << x)
 

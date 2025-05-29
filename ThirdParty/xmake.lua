@@ -6,3 +6,4 @@
 -- Include every third party project
 includes("SDL3")
 includes("Vulkan")
+includes("Slang")
