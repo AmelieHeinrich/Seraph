@@ -8,6 +8,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include <set>
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -32,12 +34,14 @@ VulkanDevice::VulkanDevice(bool validationLayers)
 
     BuildInstance(validationLayers);
     BuildPhysicalDevice();
+    BuildLogicalDevice();
 
     SERAPH_INFO("Created Vulkan device!");
 }
 
 VulkanDevice::~VulkanDevice()
 {
+    vkDestroyDevice(mDevice, nullptr);
     if (mMessenger) vkDestroyDebugUtilsMessengerEXT(mInstance, mMessenger, nullptr);
     vkDestroyInstance(mInstance, nullptr);
     volkFinalize();
@@ -138,4 +142,129 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
 
     score += limits.maxDescriptorSetSamplers;
     return score;
+}
+
+void VulkanDevice::BuildLogicalDevice()
+{
+    // Required extensions
+    const Array<const char*> requiredExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+        VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+        VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
+        VK_KHR_RAY_QUERY_EXTENSION_NAME,
+        VK_EXT_MESH_SHADER_EXTENSION_NAME,
+    };
+
+    // Base features
+    VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+
+    VkPhysicalDeviceFeatures baseFeatures = {};
+    baseFeatures.multiDrawIndirect = VK_TRUE;
+    baseFeatures.drawIndirectFirstInstance = VK_TRUE;
+    deviceFeatures2.features = baseFeatures;
+
+    // Feature chain
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexing = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+    descriptorIndexing.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    descriptorIndexing.runtimeDescriptorArray = VK_TRUE;
+    descriptorIndexing.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    descriptorIndexing.descriptorBindingPartiallyBound = VK_TRUE;
+
+    VkPhysicalDeviceDynamicRenderingFeatures dynamicRendering = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES };
+    dynamicRendering.dynamicRendering = VK_TRUE;
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
+    accelerationStructure.accelerationStructure = VK_TRUE;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipeline = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
+    rayTracingPipeline.rayTracingPipeline = VK_TRUE;
+    rayTracingPipeline.rayTracingPipelineTraceRaysIndirect = VK_TRUE;
+
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQuery = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
+    rayQuery.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShader = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
+    meshShader.meshShader = VK_TRUE;
+    meshShader.meshShaderQueries = VK_TRUE;
+
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptor = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT };
+    mutableDescriptor.mutableDescriptorType = VK_TRUE;
+
+    // Chain them
+    deviceFeatures2.pNext = &descriptorIndexing;
+    descriptorIndexing.pNext = &dynamicRendering;
+    dynamicRendering.pNext = &accelerationStructure;
+    accelerationStructure.pNext = &rayTracingPipeline;
+    rayTracingPipeline.pNext = &rayQuery;
+    rayQuery.pNext = &meshShader;
+    meshShader.pNext = &mutableDescriptor;
+
+    // Queue family selection
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, nullptr);
+    Array<VkQueueFamilyProperties> families(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, families.data());
+
+    uint32_t graphicsIndex = UINT32_MAX;
+    uint32_t computeIndex = UINT32_MAX;
+    uint32_t transferIndex = UINT32_MAX;
+
+    for (uint32_t i = 0; i < queueFamilyCount; ++i) {
+        const auto& flags = families[i].queueFlags;
+
+        if ((flags & VK_QUEUE_GRAPHICS_BIT) && graphicsIndex == UINT32_MAX)
+            graphicsIndex = i;
+
+        if ((flags & VK_QUEUE_COMPUTE_BIT) && !(flags & VK_QUEUE_GRAPHICS_BIT) && computeIndex == UINT32_MAX)
+            computeIndex = i;
+
+        if ((flags & VK_QUEUE_TRANSFER_BIT) && !(flags & VK_QUEUE_GRAPHICS_BIT) && !(flags & VK_QUEUE_COMPUTE_BIT) && transferIndex == UINT32_MAX)
+            transferIndex = i;
+    }
+
+    // Fallback if no dedicated compute/transfer
+    if (computeIndex == UINT32_MAX) computeIndex = graphicsIndex;
+    if (transferIndex == UINT32_MAX) transferIndex = graphicsIndex;
+
+    // Prepare queue create infos (deduplicate by index)
+    Array<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = { graphicsIndex, computeIndex, transferIndex };
+    float priority = 1.0f;
+
+    for (uint32_t index : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueInfo = {};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.queueFamilyIndex = index;
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &priority;
+        queueCreateInfos.push_back(queueInfo);
+    }
+
+    // Create device
+    VkDeviceCreateInfo deviceCreateInfo = {};
+    deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.pNext = &deviceFeatures2;
+    deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+    deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+    deviceCreateInfo.ppEnabledExtensionNames = requiredExtensions.data();
+
+    VkResult result = vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice);
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to create logical Vulkan device!");
+
+    volkLoadDevice(mDevice);
+
+    // Store queue family indices if needed
+    mGraphicsQueueFamilyIndex = graphicsIndex;
+    mComputeQueueFamilyIndex = computeIndex;
+    mTransferQueueFamilyIndex = transferIndex;
 }
