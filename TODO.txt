@@ -16,8 +16,8 @@
 - [x] Physical Device
 - [x] Device
 - [x] Surface
-- [ ] Memory allocator
-- [ ] Textures
+- [x] Memory allocator
+- [x] Textures
 - [ ] Texture views
 - [ ] Swapchain
 - [ ] Command queues

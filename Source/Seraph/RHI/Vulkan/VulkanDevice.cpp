@@ -10,6 +10,7 @@
 
 #include "VulkanDevice.h"
 #include "VulkanSurface.h"
+#include "VulkanTexture.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -36,21 +37,29 @@ VulkanDevice::VulkanDevice(bool validationLayers)
     BuildInstance(validationLayers);
     BuildPhysicalDevice();
     BuildLogicalDevice();
+    BuildAllocator();
 
     SERAPH_INFO("Created Vulkan device!");
 }
 
 VulkanDevice::~VulkanDevice()
 {
-    vkDestroyDevice(mDevice, nullptr);
+    if (mAllocator) vmaDestroyAllocator(mAllocator);
+    if (mDevice) vkDestroyDevice(mDevice, nullptr);
     if (mMessenger) vkDestroyDebugUtilsMessengerEXT(mInstance, mMessenger, nullptr);
-    vkDestroyInstance(mInstance, nullptr);
+    if (mInstance) vkDestroyInstance(mInstance, nullptr);
+    
     volkFinalize();
 }
 
 IRHISurface* VulkanDevice::CreateSurface(Window* window)
 {
     return (new VulkanSurface(this, window));
+}
+
+IRHITexture* VulkanDevice::CreateTexture(RHITextureDesc desc)
+{
+    return (new VulkanTexture(this, desc));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)
@@ -273,4 +282,44 @@ void VulkanDevice::BuildLogicalDevice()
     mGraphicsQueueFamilyIndex = graphicsIndex;
     mComputeQueueFamilyIndex = computeIndex;
     mTransferQueueFamilyIndex = transferIndex;
+}
+
+void VulkanDevice::BuildAllocator()
+{
+    VmaVulkanFunctions functions = {};
+    functions.vkAllocateMemory = vkAllocateMemory;
+    functions.vkBindBufferMemory2KHR = vkBindBufferMemory2KHR;
+    functions.vkBindBufferMemory = vkBindBufferMemory;
+    functions.vkBindImageMemory2KHR = vkBindImageMemory2KHR;
+    functions.vkBindImageMemory = vkBindImageMemory;
+    functions.vkCmdCopyBuffer = vkCmdCopyBuffer;
+    functions.vkCreateBuffer = vkCreateBuffer;
+    functions.vkCreateImage = vkCreateImage;
+    functions.vkDestroyBuffer = vkDestroyBuffer;
+    functions.vkDestroyImage = vkDestroyImage;
+    functions.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+    functions.vkFreeMemory = vkFreeMemory;
+    functions.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
+    functions.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+    functions.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
+    functions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+    functions.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
+    functions.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+    functions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    functions.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2KHR;
+    functions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    functions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+    functions.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+    functions.vkMapMemory = vkMapMemory;
+    functions.vkUnmapMemory = vkUnmapMemory;
+
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+    allocatorInfo.instance = mInstance;
+    allocatorInfo.physicalDevice = mPhysicalDevice;
+    allocatorInfo.device = mDevice;
+    allocatorInfo.pVulkanFunctions = &functions;
+
+    VkResult result = vmaCreateAllocator(&allocatorInfo, &mAllocator);
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to create VMA allocator!");
 }

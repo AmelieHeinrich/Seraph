@@ -14,4 +14,5 @@ public:
     ~D3D12Device();
 
     IRHISurface* CreateSurface(Window* window) override { return nullptr; }
+    IRHITexture* CreateTexture(RHITextureDesc desc) override { return nullptr; }
 };

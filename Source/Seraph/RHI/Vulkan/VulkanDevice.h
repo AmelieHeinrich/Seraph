@@ -7,8 +7,10 @@
 
 #include <RHI/Device.hpp>
 #include <RHI/Surface.hpp>
+#include <RHI/Texture.hpp>
 
 #include <volk/volk.h>
+#include <vma/vk_mem_alloc.h>
 
 class VulkanDevice : public IRHIDevice
 {
@@ -17,17 +19,21 @@ public:
     ~VulkanDevice();
 
     IRHISurface* CreateSurface(Window* window) override;
+    IRHITexture* CreateTexture(RHITextureDesc desc) override;
 
 public:
     VkInstance Instance() const { return mInstance; }
     VkPhysicalDevice GPU() const { return mPhysicalDevice; }
     VkDevice Device() const { return mDevice; }
+    VmaAllocator Allocator() const { return mAllocator; }
 
 private:
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mMessenger;
     VkPhysicalDevice mPhysicalDevice;
     VkDevice mDevice;
+
+    VmaAllocator mAllocator;
 
     uint32 mGraphicsQueueFamilyIndex;
     uint32 mComputeQueueFamilyIndex;
@@ -36,6 +42,7 @@ private:
     void BuildInstance(bool validationLayers);
     void BuildPhysicalDevice();
     void BuildLogicalDevice();
+    void BuildAllocator();
 
 private:
     uint64 CalculateDeviceScore(VkPhysicalDevice device);

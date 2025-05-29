@@ -47,3 +47,5 @@ using UniquePtr = std::unique_ptr<T>;
 
 template<typename T>
 using SharedPtr = std::shared_ptr<T>;
+
+#define BIT(x) (1 << x)

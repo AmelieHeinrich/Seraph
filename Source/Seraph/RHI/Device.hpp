@@ -8,6 +8,7 @@
 #include <Core/Context.h>
 
 #include "Surface.hpp"
+#include "Texture.hpp"
 
 enum class RHIBackend
 {
@@ -23,6 +24,7 @@ public:
     static IRHIDevice* CreateDevice(RHIBackend backend, bool validationLayers);
 
     virtual IRHISurface* CreateSurface(Window* window) = 0;
+    virtual IRHITexture* CreateTexture(RHITextureDesc desc) = 0;
 protected:
     IRHIDevice() = default;
 };
