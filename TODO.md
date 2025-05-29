@@ -24,3 +24,21 @@
 - [ ] Command buffers
 - [ ] Synchronization
 - [ ] Clear screen
+
+## D3D12
+
+- [ ] Device
+- [ ] Descriptor Heaps
+- [ ] Memory allocator
+- [ ] Texture
+- [ ] Texture views
+- [ ] Swapchain
+- [ ] Command queues
+- [ ] Command buffers
+- [ ] Synchronization
+- [ ] Clear screen
+
+## RHI
+
+- [ ] Test framework using FLIP
+- [ ] Render graph

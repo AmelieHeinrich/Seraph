@@ -12,6 +12,7 @@
 #include "VulkanSurface.h"
 #include "VulkanTexture.h"
 #include "VulkanTextureView.h"
+#include "VulkanCommandQueue.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -66,6 +67,11 @@ IRHITexture* VulkanDevice::CreateTexture(RHITextureDesc desc)
 IRHITextureView* VulkanDevice::CreateTextureView(RHITextureViewDesc desc)
 {
     return (new VulkanTextureView(this, desc));
+}
+
+IRHICommandQueue* VulkanDevice::CreateCommandQueue(RHICommandQueueType type)
+{
+    return (new VulkanCommandQueue(this, type));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)

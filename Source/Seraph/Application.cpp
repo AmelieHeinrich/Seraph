@@ -11,10 +11,12 @@ Application::Application()
     
     mDevice = IRHIDevice::CreateDevice(RHIBackend::kVulkan, true);
     mSurface = mDevice->CreateSurface(mWindow.get());
+    mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
 }
 
 Application::~Application()
 {
+    delete mGraphicsQueue;
     delete mSurface;
     delete mDevice;
 }

@@ -20,4 +20,5 @@ private:
 
     IRHIDevice* mDevice;
     IRHISurface* mSurface;
+    IRHICommandQueue* mGraphicsQueue;
 };

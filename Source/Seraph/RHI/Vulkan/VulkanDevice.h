@@ -22,6 +22,7 @@ public:
     IRHISurface* CreateSurface(Window* window) override;
     IRHITexture* CreateTexture(RHITextureDesc desc) override;
     IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override;
+    IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;
 
 public:
     VkInstance Instance() const { return mInstance; }
@@ -29,7 +30,11 @@ public:
     VkDevice Device() const { return mDevice; }
     VmaAllocator Allocator() const { return mAllocator; }
 
-private:
+    uint32 GraphicsQueueFamilyIndex() const { return mGraphicsQueueFamilyIndex; }
+    uint32 ComputeQueueFamilyIndex() const { return mComputeQueueFamilyIndex; }
+    uint32 TransferQueueFamilyIndex() const { return mTransferQueueFamilyIndex; } 
+
+    private:
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mMessenger;
     VkPhysicalDevice mPhysicalDevice;
