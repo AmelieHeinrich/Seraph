@@ -9,6 +9,9 @@
 
 #include <Volk/volk.h>
 
+#include "VulkanTexture.h"
+#include "VulkanTextureView.h"
+
 class VulkanDevice;
 
 class VulkanSurface : public IRHISurface
@@ -21,4 +24,8 @@ private:
     VulkanDevice* mParentDevice;
 
     VkSurfaceKHR mSurface;
+    VkSwapchainKHR mSwapchain;
+
+    StaticArray<IRHITexture*, FRAMES_IN_FLIGHT> mTextures;
+    StaticArray<IRHITextureView*, FRAMES_IN_FLIGHT> mTextureViews;
 };

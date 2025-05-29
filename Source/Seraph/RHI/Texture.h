@@ -10,7 +10,8 @@
 enum class RHITextureFormat
 {
     kR8G8B8A8_UNORM,
-    kR8G8B8A8_sRGB
+    kR8G8B8A8_sRGB,
+    kB8G8R8A8_UNORM
 };
 
 enum class RHITextureUsage

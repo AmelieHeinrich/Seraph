@@ -7,6 +7,8 @@
 
 #include <Core/Window.h>
 
+constexpr uint FRAMES_IN_FLIGHT = 3;
+
 class IRHIDevice;
 
 class IRHISurface

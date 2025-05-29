@@ -15,6 +15,7 @@ class VulkanDevice;
 class VulkanTexture : public IRHITexture
 {
 public:
+    VulkanTexture() = default;
     VulkanTexture(IRHIDevice* device, RHITextureDesc desc);
     ~VulkanTexture();
 
@@ -28,6 +29,8 @@ public:
     static VkFormat RHIToVkFormat(RHITextureFormat format);
 
 private:
+    friend class VulkanSurface;
+
     VulkanDevice* mParentDevice;
 
     VmaAllocation mAllocation;

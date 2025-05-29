@@ -38,7 +38,7 @@ VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
 
 VulkanTexture::~VulkanTexture()
 {
-    if (mImage && mDesc.Reserved) vmaDestroyImage(mParentDevice->Allocator(), mImage, mAllocation);
+    if (mImage && !mDesc.Reserved) vmaDestroyImage(mParentDevice->Allocator(), mImage, mAllocation);
 }
 
 void VulkanTexture::SetName(const StringView& name)
@@ -58,6 +58,7 @@ VkFormat VulkanTexture::RHIToVkFormat(RHITextureFormat format)
     {
         case RHITextureFormat::kR8G8B8A8_sRGB: return VK_FORMAT_R8G8B8A8_SRGB;
         case RHITextureFormat::kR8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM;
+        case RHITextureFormat::kB8G8R8A8_UNORM: return VK_FORMAT_B8G8R8A8_UNORM;
     }
     return VK_FORMAT_UNDEFINED;
 }
