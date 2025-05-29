@@ -4,6 +4,7 @@
 //
 
 #include "D3D12Device.h"
+#include "D3D12CommandQueue.h"
 
 D3D12Device::D3D12Device(bool validationLayers)
 {
@@ -13,4 +14,9 @@ D3D12Device::D3D12Device(bool validationLayers)
 D3D12Device::~D3D12Device()
 {
     
+}
+
+IRHICommandQueue* D3D12Device::CreateCommandQueue(RHICommandQueueType type)
+{
+    return (new D3D12CommandQueue());
 }

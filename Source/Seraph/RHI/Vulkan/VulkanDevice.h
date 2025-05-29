@@ -23,6 +23,7 @@ public:
     IRHITexture* CreateTexture(RHITextureDesc desc) override;
     IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override;
     IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;
+    IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override;
 
 public:
     VkInstance Instance() const { return mInstance; }

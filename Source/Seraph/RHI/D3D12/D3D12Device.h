@@ -16,5 +16,6 @@ public:
     IRHISurface* CreateSurface(Window* window) override { return nullptr; }
     IRHITexture* CreateTexture(RHITextureDesc desc) override { return nullptr; }
     IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override { return nullptr; }
-    IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override { return nullptr; }
+    IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;
+    IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override { return nullptr; }
 };

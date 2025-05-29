@@ -15,7 +15,16 @@ public:
     VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime);
     ~VulkanCommandBuffer();
 
+    void Reset() override;
+    void Begin() override;
+    void End() override;
+
+public:
+    VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
+
 private:
+    bool mSingleTime = false;
+
     VulkanDevice* mParentDevice;
     VkCommandPool mParentPool;
     

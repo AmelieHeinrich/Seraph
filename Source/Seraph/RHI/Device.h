@@ -11,6 +11,7 @@
 #include "Texture.h"
 #include "TextureView.h"
 #include "CommandQueue.h"
+#include "F2FSync.h"
 
 enum class RHIBackend
 {
@@ -29,6 +30,7 @@ public:
     virtual IRHITexture* CreateTexture(RHITextureDesc desc) = 0;
     virtual IRHITextureView* CreateTextureView(RHITextureViewDesc desc) = 0;
     virtual IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) = 0;
+    virtual IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) = 0;
 protected:
     IRHIDevice() = default;
 };

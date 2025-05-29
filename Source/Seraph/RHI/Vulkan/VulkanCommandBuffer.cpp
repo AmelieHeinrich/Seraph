@@ -7,7 +7,7 @@
 #include "VulkanDevice.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
-    : mParentDevice(device), mParentPool(pool)
+    : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
 {
     VkCommandBufferAllocateInfo allocateInfo = {};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -22,4 +22,25 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool poo
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
     if (mCmdBuffer) vkFreeCommandBuffers(mParentDevice->Device(), mParentPool, 1, &mCmdBuffer);
+}
+
+void VulkanCommandBuffer::Reset()
+{
+    vkResetCommandBuffer(mCmdBuffer, 0);
+}
+
+void VulkanCommandBuffer::Begin()
+{
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = mSingleTime ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
+
+    VkResult result = vkBeginCommandBuffer(mCmdBuffer, &beginInfo);
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to begin command buffer!");
+}
+
+void VulkanCommandBuffer::End()
+{
+    VkResult result = vkEndCommandBuffer(mCmdBuffer);
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to end command buffer!");
 }

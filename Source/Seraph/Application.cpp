@@ -15,10 +15,12 @@ Application::Application()
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         mCommandBuffers[i] = mGraphicsQueue->CreateCommandBuffer(false);
     }
+    mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
 }
 
 Application::~Application()
 {
+    delete mF2FSync;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         delete mCommandBuffers[i];
     }
@@ -31,5 +33,16 @@ void Application::Run()
 {
     while (mWindow->IsOpen()) {
         mWindow->PollEvents();
+
+        uint frameIndex = mF2FSync->BeginSynchronize();
+        IRHICommandBuffer* commandBuffer = mCommandBuffers[frameIndex];
+        
+        commandBuffer->Reset();
+        commandBuffer->Begin();
+        // Transition, clear that shyte
+        commandBuffer->End();
+
+        mF2FSync->EndSynchronize(mCommandBuffers[frameIndex]);
+        mF2FSync->PresentSurface();
     }
 }

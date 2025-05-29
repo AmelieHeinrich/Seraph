@@ -18,6 +18,10 @@ public:
     ~VulkanCommandQueue();
 
     IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
+
+public:
+    VkQueue GetQueue() { return mQueue; }
+
 private:
     VulkanDevice* mParentDevice;
 

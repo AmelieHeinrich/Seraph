@@ -22,7 +22,7 @@
 - [x] Swapchain
 - [x] Command queues
 - [x] Command buffers
-- [ ] Synchronization
+- [x] Synchronization
 - [ ] Clear screen
 
 ## D3D12

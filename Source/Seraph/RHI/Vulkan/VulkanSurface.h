@@ -20,6 +20,7 @@ public:
     VulkanSurface(IRHIDevice* device, Window* window);
     ~VulkanSurface();
 
+    VkSwapchainKHR GetSwapchain() const { return mSwapchain; }
 private:
     VulkanDevice* mParentDevice;
 

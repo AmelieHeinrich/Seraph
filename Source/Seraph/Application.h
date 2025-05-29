@@ -22,4 +22,5 @@ private:
     IRHISurface* mSurface;
     IRHICommandQueue* mGraphicsQueue;
     StaticArray<IRHICommandBuffer*, FRAMES_IN_FLIGHT> mCommandBuffers;
+    IRHIF2FSync* mF2FSync;
 };

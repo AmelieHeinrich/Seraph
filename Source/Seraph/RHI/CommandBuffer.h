@@ -12,6 +12,11 @@ class IRHICommandBuffer
 public:
     ~IRHICommandBuffer() = default;
 
+    virtual void Reset() = 0;
+    virtual void Begin() = 0;
+    virtual void End() = 0;
+
+public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 
 protected:
