@@ -17,6 +17,10 @@ public:
 
     bool IsOpen() const;
     void PollEvents();
+
+public:
+    SDL_Window* GetWindow() { return mWindow; }
+
 private:
     SDL_Window* mWindow;
     bool mOpen;

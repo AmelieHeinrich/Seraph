@@ -7,6 +7,8 @@
 
 #include <Core/Context.h>
 
+#include "Surface.hpp"
+
 enum class RHIBackend
 {
     kVulkan,
@@ -20,6 +22,7 @@ public:
 
     static IRHIDevice* CreateDevice(RHIBackend backend, bool validationLayers);
 
+    virtual IRHISurface* CreateSurface(Window* window) = 0;
 protected:
     IRHIDevice() = default;
 };

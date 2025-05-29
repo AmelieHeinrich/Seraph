@@ -10,10 +10,12 @@ Application::Application()
     mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
     
     mDevice = IRHIDevice::CreateDevice(RHIBackend::kVulkan, true);
+    mSurface = mDevice->CreateSurface(mWindow.get());
 }
 
 Application::~Application()
 {
+    delete mSurface;
     delete mDevice;
 }
 

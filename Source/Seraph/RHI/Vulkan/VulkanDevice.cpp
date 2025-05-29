@@ -3,12 +3,13 @@
 // > Create Time: 2025-05-28 19:32:21
 //
 
-#include "VulkanDevice.h"
-
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
 #include <set>
+
+#include "VulkanDevice.h"
+#include "VulkanSurface.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -45,6 +46,11 @@ VulkanDevice::~VulkanDevice()
     if (mMessenger) vkDestroyDebugUtilsMessengerEXT(mInstance, mMessenger, nullptr);
     vkDestroyInstance(mInstance, nullptr);
     volkFinalize();
+}
+
+IRHISurface* VulkanDevice::CreateSurface(Window* window)
+{
+    return (new VulkanSurface(this, window));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)

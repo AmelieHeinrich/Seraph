@@ -12,4 +12,6 @@ class D3D12Device : public IRHIDevice
 public:
     D3D12Device(bool validationLayers);
     ~D3D12Device();
+
+    IRHISurface* CreateSurface(Window* window) override { return nullptr; }
 };

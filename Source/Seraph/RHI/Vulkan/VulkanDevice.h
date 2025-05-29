@@ -6,6 +6,7 @@
 #pragma once
 
 #include <RHI/Device.hpp>
+#include <RHI/Surface.hpp>
 
 #include <volk/volk.h>
 
@@ -14,6 +15,13 @@ class VulkanDevice : public IRHIDevice
 public:
     VulkanDevice(bool validationLayers);
     ~VulkanDevice();
+
+    IRHISurface* CreateSurface(Window* window) override;
+
+public:
+    VkInstance Instance() const { return mInstance; }
+    VkPhysicalDevice GPU() const { return mPhysicalDevice; }
+    VkDevice Device() const { return mDevice; }
 
 private:
     VkInstance mInstance;

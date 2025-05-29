@@ -19,4 +19,5 @@ private:
     SharedPtr<Window> mWindow;
 
     IRHIDevice* mDevice;
+    IRHISurface* mSurface;
 };
