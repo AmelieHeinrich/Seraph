@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include <RHI/Device.hpp>
-#include <RHI/Surface.hpp>
-#include <RHI/Texture.hpp>
+#include <RHI/Device.h>
+#include <RHI/Surface.h>
+#include <RHI/Texture.h>
+#include <RHI/TextureView.h>
 
 #include <volk/volk.h>
 #include <vma/vk_mem_alloc.h>
@@ -20,6 +21,7 @@ public:
 
     IRHISurface* CreateSurface(Window* window) override;
     IRHITexture* CreateTexture(RHITextureDesc desc) override;
+    IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override;
 
 public:
     VkInstance Instance() const { return mInstance; }

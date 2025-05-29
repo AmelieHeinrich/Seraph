@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Core/Window.h"
-#include "RHI/Device.hpp"
+#include "RHI/Device.h"
 
 class Application
 {

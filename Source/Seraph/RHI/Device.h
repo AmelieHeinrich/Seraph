@@ -7,8 +7,9 @@
 
 #include <Core/Context.h>
 
-#include "Surface.hpp"
-#include "Texture.hpp"
+#include "Surface.h"
+#include "Texture.h"
+#include "TextureView.h"
 
 enum class RHIBackend
 {
@@ -25,6 +26,7 @@ public:
 
     virtual IRHISurface* CreateSurface(Window* window) = 0;
     virtual IRHITexture* CreateTexture(RHITextureDesc desc) = 0;
+    virtual IRHITextureView* CreateTextureView(RHITextureViewDesc desc) = 0;
 protected:
     IRHIDevice() = default;
 };

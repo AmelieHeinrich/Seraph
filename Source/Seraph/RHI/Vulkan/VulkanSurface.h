@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <RHI/Surface.hpp>
+#include <RHI/Surface.h>
 
 #include <Volk/volk.h>
 

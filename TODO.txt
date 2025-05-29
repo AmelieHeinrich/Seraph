@@ -18,7 +18,7 @@
 - [x] Surface
 - [x] Memory allocator
 - [x] Textures
-- [ ] Texture views
+- [x] Texture views
 - [ ] Swapchain
 - [ ] Command queues
 - [ ] Command buffers

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <RHI/Texture.hpp>
+#include <RHI/Texture.h>
 
 #include <Volk/volk.h>
 #include <vma/vk_mem_alloc.h>

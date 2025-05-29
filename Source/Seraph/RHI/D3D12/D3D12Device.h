@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <RHI/Device.hpp>
+#include <RHI/Device.h>
 
 class D3D12Device : public IRHIDevice
 {
@@ -15,4 +15,5 @@ public:
 
     IRHISurface* CreateSurface(Window* window) override { return nullptr; }
     IRHITexture* CreateTexture(RHITextureDesc desc) override { return nullptr; }
+    IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override { return nullptr; }
 };
