@@ -7,9 +7,19 @@
 
 #include <RHI/Device.hpp>
 
+#include <volk/volk.h>
+
 class VulkanDevice : public IRHIDevice
 {
 public:
     VulkanDevice(bool validationLayers);
     ~VulkanDevice();
+
+private:
+    VkInstance mInstance;
+    VkDebugUtilsMessengerEXT mMessenger;
+    VkPhysicalDevice mPhysicalDevice;
+
+    void BuildInstance(bool validationLayers);
+    void BuildPhysicalDevice();
 };
