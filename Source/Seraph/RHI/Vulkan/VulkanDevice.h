@@ -22,4 +22,7 @@ private:
 
     void BuildInstance(bool validationLayers);
     void BuildPhysicalDevice();
+
+private:
+    uint64 CalculateDeviceScore(VkPhysicalDevice device);
 };

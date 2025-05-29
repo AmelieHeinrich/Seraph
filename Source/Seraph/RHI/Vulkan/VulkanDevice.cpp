@@ -50,7 +50,7 @@ void VulkanDevice::BuildInstance(bool validationLayers)
 
     uint32 sdlExtensionCount = 0;
     const char* const* sdlInstanceExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
-    std::vector<const char*> extensions(sdlInstanceExtensions, sdlInstanceExtensions + sdlExtensionCount);
+    Array<const char*> extensions(sdlInstanceExtensions, sdlInstanceExtensions + sdlExtensionCount);
     if (validationLayers) extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     VkApplicationInfo appInfo = {};
@@ -93,5 +93,49 @@ void VulkanDevice::BuildInstance(bool validationLayers)
 
 void VulkanDevice::BuildPhysicalDevice()
 {
+    uint gpuCount = 0;
+    vkEnumeratePhysicalDevices(mInstance, &gpuCount, nullptr);
+    Array<VkPhysicalDevice> gpus(gpuCount);
+    vkEnumeratePhysicalDevices(mInstance, &gpuCount, gpus.data());
+
+    uint64 bestScore = 0;
+    VkPhysicalDevice bestDevice = VK_NULL_HANDLE;
+    for (VkPhysicalDevice device : gpus) {
+        uint64 score = CalculateDeviceScore(device);
+        if (score > bestScore) {
+            bestScore = score;
+            bestDevice = device;
+        }
+    }
+
+    mPhysicalDevice = bestDevice;
+
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
+    SERAPH_INFO("Using GPU %s with score %llu", properties.deviceName, bestScore);
+}
+
+uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
+{
+    uint64 score = 0;
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);   
     
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    VkPhysicalDeviceLimits limits = deviceProperties.limits;
+
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 100000000;
+    if (deviceFeatures.depthClamp) score += 1000;
+    if (deviceFeatures.geometryShader) score += 1000;
+    if (deviceFeatures.multiDrawIndirect) score += 10000;
+    if (deviceFeatures.textureCompressionBC) score += 10000;
+    if (deviceFeatures.wideLines) score += 1000;
+    if (deviceFeatures.samplerAnisotropy) score += 10000;
+    if (deviceFeatures.pipelineStatisticsQuery) score += 10000;
+
+    score += limits.maxDescriptorSetSamplers;
+    return score;
 }
