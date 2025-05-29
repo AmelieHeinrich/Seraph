@@ -20,8 +20,8 @@
 - [x] Textures
 - [x] Texture views
 - [x] Swapchain
-- [ ] Command queues
-- [ ] Command buffers
+- [x] Command queues
+- [x] Command buffers
 - [ ] Synchronization
 - [ ] Clear screen
 

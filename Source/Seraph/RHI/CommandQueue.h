@@ -15,6 +15,7 @@ enum class RHICommandQueueType
 };
 
 class IRHIDevice;
+class IRHICommandBuffer;
 
 class IRHICommandQueue
 {
@@ -23,6 +24,7 @@ public:
 
     RHICommandQueueType GetType() const { return mType; }
 
+    virtual IRHICommandBuffer* CreateCommandBuffer(bool singleTime) = 0;
 protected:
     RHICommandQueueType mType;
 };

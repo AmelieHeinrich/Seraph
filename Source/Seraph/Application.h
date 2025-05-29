@@ -21,4 +21,5 @@ private:
     IRHIDevice* mDevice;
     IRHISurface* mSurface;
     IRHICommandQueue* mGraphicsQueue;
+    StaticArray<IRHICommandBuffer*, FRAMES_IN_FLIGHT> mCommandBuffers;
 };

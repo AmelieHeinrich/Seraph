@@ -5,6 +5,7 @@
 
 #include "VulkanCommandQueue.h"
 #include "VulkanDevice.h"
+#include "VulkanCommandBuffer.h"
 
 VulkanCommandQueue::VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType type)
     : mParentDevice(static_cast<VulkanDevice*>(device))
@@ -31,4 +32,9 @@ VulkanCommandQueue::VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType t
 VulkanCommandQueue::~VulkanCommandQueue()
 {
     if (mCommandPool) vkDestroyCommandPool(mParentDevice->Device(), mCommandPool, nullptr);
+}
+
+IRHICommandBuffer* VulkanCommandQueue::CreateCommandBuffer(bool singleTime)
+{
+    return new VulkanCommandBuffer(mParentDevice, mCommandPool, singleTime);
 }

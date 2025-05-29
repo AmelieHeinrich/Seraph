@@ -12,10 +12,16 @@ Application::Application()
     mDevice = IRHIDevice::CreateDevice(RHIBackend::kVulkan, true);
     mSurface = mDevice->CreateSurface(mWindow.get());
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
+    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+        mCommandBuffers[i] = mGraphicsQueue->CreateCommandBuffer(false);
+    }
 }
 
 Application::~Application()
 {
+    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+        delete mCommandBuffers[i];
+    }
     delete mGraphicsQueue;
     delete mSurface;
     delete mDevice;

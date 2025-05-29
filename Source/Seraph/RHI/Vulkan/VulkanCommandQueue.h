@@ -17,6 +17,7 @@ public:
     VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType type);
     ~VulkanCommandQueue();
 
+    IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
 private:
     VulkanDevice* mParentDevice;
 
