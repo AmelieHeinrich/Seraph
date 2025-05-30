@@ -27,7 +27,8 @@
 - [x] Begin/End rendering
 - [x] Graphics pipeline
 - [x] Hello triangle!
-- [ ] ImGui
+- [ ] Buffer
+- [ ] Bindless setup
 
 ## D3D12
 
@@ -44,7 +45,8 @@
 - [ ] Begin/End rendering
 - [ ] Graphics pipeline
 - [ ] Hello triangle!
-- [ ] ImGui
+- [ ] Buffer
+- [ ] Bindless setup
 
 ## RHI
 
