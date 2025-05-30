@@ -27,6 +27,10 @@ public:
     
     void ClearColor(IRHITextureView* view, float r, float g, float b) override;
 
+    void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) override;
+    void SetViewport(float width, float height, float x, float y) override;
+
+    void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) override;
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
 

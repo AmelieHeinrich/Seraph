@@ -7,6 +7,7 @@
 #include "VulkanDevice.h"
 #include "VulkanTexture.h"
 #include "VulkanTextureView.h"
+#include "VulkanGraphicsPipeline.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
@@ -203,6 +204,38 @@ void VulkanCommandBuffer::ClearColor(IRHITextureView* view, float r, float g, fl
     clearColor.float32[3] = 1.0f;
 
     vkCmdClearColorImage(mCmdBuffer, texture->Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor, 1, &range);
+}
+
+void VulkanCommandBuffer::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
+{
+    VulkanGraphicsPipeline* vkPipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
+
+    vkCmdBindPipeline(mCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetPipeline());
+}
+
+void VulkanCommandBuffer::SetViewport(float width, float height, float x, float y)
+{
+    VkViewport viewport = {};
+    viewport.width = width;
+    viewport.height = -height;          // Negate height to flip vertically
+    viewport.x = x;
+    viewport.y = y + height;            // Shift Y down by the original height
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissorRect = {};
+    scissorRect.extent.width = static_cast<uint32_t>(width);
+    scissorRect.extent.height = static_cast<uint32_t>(height);
+    scissorRect.offset.x = static_cast<int32_t>(x);
+    scissorRect.offset.y = static_cast<int32_t>(y);
+
+    vkCmdSetViewport(mCmdBuffer, 0, 1, &viewport);
+    vkCmdSetScissor(mCmdBuffer, 0, 1, &scissorRect);
+}
+
+void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
+{
+    vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)

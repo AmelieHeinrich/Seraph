@@ -14,6 +14,7 @@
 #include "VulkanTextureView.h"
 #include "VulkanCommandQueue.h"
 #include "VulkanF2FSync.h"
+#include "VulkanGraphicsPipeline.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -78,6 +79,11 @@ IRHICommandQueue* VulkanDevice::CreateCommandQueue(RHICommandQueueType type)
 IRHIF2FSync* VulkanDevice::CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue)
 {
     return (new VulkanF2FSync(this, static_cast<VulkanSurface*>(surface), static_cast<VulkanCommandQueue*>(queue)));
+}
+
+IRHIGraphicsPipeline* VulkanDevice::CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc)
+{
+    return (new VulkanGraphicsPipeline(this, desc));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)

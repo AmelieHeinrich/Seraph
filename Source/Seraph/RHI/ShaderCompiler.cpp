@@ -84,10 +84,12 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     for (int i = 0; i < entryPoints.size(); i++) {
         Slang::ComPtr<slang::IBlob> kernelBlob;
         linkedProgram->getEntryPointCode(i, 0, kernelBlob.writeRef());
-    
-        result.Entries[entryPoints[i]] = {};
-        result.Entries[entryPoints[i]].resize(kernelBlob->getBufferSize());
-        memcpy(result.Entries[entryPoints[i]].data(), kernelBlob->getBufferPointer(), result.Entries[entryPoints[i]].size());
+        
+        ShaderModule shaderModule = {};
+        shaderModule.Entry = entryPoints[i];
+        shaderModule.Bytecode.resize(kernelBlob->getBufferSize());
+        memcpy(shaderModule.Bytecode.data(), kernelBlob->getBufferPointer(), shaderModule.Bytecode.size());
+        result.Entries[entryPoints[i]] = shaderModule;
     }
 
     SERAPH_INFO("Compiled shader : %s", path.c_str());

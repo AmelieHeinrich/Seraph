@@ -11,6 +11,7 @@ Application::Application()
     : mBackend(RHIBackend::kVulkan)
 {
     ShaderCompiler::Initialize(mBackend);
+    CompiledShader shader = ShaderCompiler::Compile("StreamedTriangle", { "VSMain", "FSMain" });
 
     mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
     
@@ -21,10 +22,18 @@ Application::Application()
         mCommandBuffers[i] = mGraphicsQueue->CreateCommandBuffer(false);
     }
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
+
+    RHIGraphicsPipelineDesc desc = {};
+    desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
+    desc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
+    desc.RenderTargetFormats.push_back(mSurface->GetTexture(0)->GetDesc().Format);
+
+    mPipeline = mDevice->CreateGraphicsPipeline(desc);
 }
 
 Application::~Application()
 {
+    delete mPipeline;
     delete mF2FSync;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         delete mCommandBuffers[i];
@@ -90,6 +99,9 @@ void Application::Run()
 
         commandBuffer->Barrier(beginRenderBarrier);
         commandBuffer->BeginRendering(renderBegin);
+        commandBuffer->SetGraphicsPipeline(mPipeline);
+        commandBuffer->SetViewport(renderBegin.Width, renderBegin.Height, 0, 0);
+        commandBuffer->Draw(3, 1, 0, 0);
         commandBuffer->EndRendering();
         commandBuffer->Barrier(endRenderBarrier);
         commandBuffer->End();

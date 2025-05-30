@@ -7,17 +7,13 @@
 
 #include <Core/Context.h>
 
+#include "Backend.h"
 #include "Surface.h"
 #include "Texture.h"
 #include "TextureView.h"
 #include "CommandQueue.h"
 #include "F2FSync.h"
-
-enum class RHIBackend
-{
-    kVulkan,
-    kD3D12
-};
+#include "GraphicsPipeline.h"
 
 class IRHIDevice
 {
@@ -31,6 +27,7 @@ public:
     virtual IRHITextureView* CreateTextureView(RHITextureViewDesc desc) = 0;
     virtual IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) = 0;
     virtual IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) = 0;
+    virtual IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) = 0;
 protected:
     IRHIDevice() = default;
 };

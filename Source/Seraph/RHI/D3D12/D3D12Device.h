@@ -18,4 +18,5 @@ public:
     IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override { return nullptr; }
     IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;
     IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override { return nullptr; }
+    IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override { return nullptr; }
 };

@@ -11,11 +11,34 @@
 #include <slang/slang-com-ptr.h>
 #include <slang/slang-com-helper.h>
 
-#include "Device.h"
+#include "Backend.h"
+
+enum class ShaderStage
+{
+    kVertex,
+    kFragment,
+    kCompute,
+    kGeometry,
+    kTessellationEval,
+    kTessellationControl,
+    kMesh,
+    kAmplification,
+    kRayGen,
+    kClosestHit,
+    kAnyHit,
+    kMiss
+};
+
+struct ShaderModule
+{
+    ShaderStage Stage;
+    String Entry;
+    Array<uint8> Bytecode;
+};
 
 struct CompiledShader
 {
-    UnorderedMap<String, Array<uint8>> Entries;
+    UnorderedMap<String, ShaderModule> Entries;
 };
 
 class ShaderCompiler

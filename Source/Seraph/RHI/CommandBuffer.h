@@ -8,6 +8,7 @@
 #include "CommandQueue.h"
 #include "Texture.h"
 #include "TextureView.h"
+#include "GraphicsPipeline.h"
 
 enum class RHIPipelineStage : uint
 {
@@ -120,6 +121,11 @@ public:
     virtual void BarrierGroup(const RHIBarrierGroup& barrierGroup) = 0;
 
     virtual void ClearColor(IRHITextureView* view, float r, float g, float b) = 0;
+
+    virtual void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) = 0;
+    virtual void SetViewport(float width, float height, float x, float y) = 0;
+
+    virtual void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) = 0;
 public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 

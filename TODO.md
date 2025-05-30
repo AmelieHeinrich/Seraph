@@ -25,8 +25,8 @@
 - [x] Synchronization
 - [x] Clear screen
 - [x] Begin/End rendering
-- [ ] Graphics pipeline
-- [ ] Hello triangle!
+- [x] Graphics pipeline
+- [x] Hello triangle!
 - [ ] ImGui
 
 ## D3D12
