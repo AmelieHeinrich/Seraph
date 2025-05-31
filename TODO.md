@@ -28,7 +28,7 @@
 - [x] Graphics pipeline
 - [x] Hello triangle!
 - [x] Buffer
-- [ ] Hello quad!
+- [x] Hello quad!
 - [ ] Push constants
 - [ ] Bindless setup
 
@@ -55,3 +55,9 @@
 - [x] Shader compilation
 - [ ] Test framework using FLIP
 - [ ] Render graph
+
+## Asset
+
+- [ ] Texture loading
+- [ ] Mesh loading
+- [ ] Texture compression

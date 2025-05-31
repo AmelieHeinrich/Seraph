@@ -137,8 +137,10 @@ public:
     virtual void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) = 0;
     virtual void SetViewport(float width, float height, float x, float y) = 0;
     virtual void SetVertexBuffer(IRHIBuffer* buffer) = 0;
+    virtual void SetIndexBuffer(IRHIBuffer* buffer) = 0;
 
     virtual void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) = 0;
+    virtual void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) = 0;
 
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
 public:

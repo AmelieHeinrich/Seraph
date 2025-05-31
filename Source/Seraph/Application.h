@@ -30,4 +30,5 @@ private:
     IRHIF2FSync* mF2FSync;
     IRHIGraphicsPipeline* mPipeline;
     IRHIBuffer* mVertexBuffer;
+    IRHIBuffer* mIndexBuffer;
 };

@@ -8,9 +8,15 @@
 #include <filesystem>
 
 static const float VERTICES[] = {
-    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
      0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+    -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f
+};
+
+static const uint INDICES[] = {
+    0, 1, 3,
+    1, 2, 3
 };
 
 Application::Application()
@@ -29,13 +35,23 @@ Application::Application()
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
     Uploader::Initialize(mDevice, mGraphicsQueue);
 
-    RHIBufferDesc bufferDesc = {};
-    bufferDesc.Size = sizeof(VERTICES);
-    bufferDesc.Stride = sizeof(float) * 6;
-    bufferDesc.Usage = RHIBufferUsage::kVertex;
-    mVertexBuffer = mDevice->CreateBuffer(bufferDesc);
+    {
+        RHIBufferDesc bufferDesc = {};
+        bufferDesc.Size = sizeof(VERTICES);
+        bufferDesc.Stride = sizeof(float) * 6;
+        bufferDesc.Usage = RHIBufferUsage::kVertex;
+        mVertexBuffer = mDevice->CreateBuffer(bufferDesc);
+    }
+    {
+        RHIBufferDesc bufferDesc = {};
+        bufferDesc.Size = sizeof(INDICES);
+        bufferDesc.Stride = sizeof(uint);
+        bufferDesc.Usage = RHIBufferUsage::kIndex;
+        mIndexBuffer = mDevice->CreateBuffer(bufferDesc);
+    }
 
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
+    Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
     Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
@@ -51,6 +67,7 @@ Application::~Application()
 {
     Uploader::Shutdown();
 
+    delete mIndexBuffer;
     delete mVertexBuffer;
     delete mPipeline;
     delete mF2FSync;
@@ -121,7 +138,8 @@ void Application::Run()
         commandBuffer->SetGraphicsPipeline(mPipeline);
         commandBuffer->SetViewport(renderBegin.Width, renderBegin.Height, 0, 0);
         commandBuffer->SetVertexBuffer(mVertexBuffer);
-        commandBuffer->Draw(3, 1, 0, 0);
+        commandBuffer->SetIndexBuffer(mIndexBuffer);
+        commandBuffer->DrawIndexed(6, 1, 0, 0, 0);
         commandBuffer->EndRendering();
         commandBuffer->Barrier(endRenderBarrier);
         commandBuffer->End();

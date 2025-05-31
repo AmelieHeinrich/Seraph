@@ -299,9 +299,21 @@ void VulkanCommandBuffer::SetVertexBuffer(IRHIBuffer* buffer)
     vkCmdBindVertexBuffers(mCmdBuffer, 0, 1, &buf, offsets);
 }
 
+void VulkanCommandBuffer::SetIndexBuffer(IRHIBuffer* buffer)
+{
+    VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer);
+
+    vkCmdBindIndexBuffer(mCmdBuffer, vkBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+}
+
 void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void VulkanCommandBuffer::DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance)
+{
+    vkCmdDrawIndexed(mCmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void VulkanCommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
