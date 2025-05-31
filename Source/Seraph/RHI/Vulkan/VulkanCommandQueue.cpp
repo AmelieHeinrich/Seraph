@@ -38,3 +38,19 @@ IRHICommandBuffer* VulkanCommandQueue::CreateCommandBuffer(bool singleTime)
 {
     return new VulkanCommandBuffer(mParentDevice, mCommandPool, singleTime);
 }
+
+void VulkanCommandQueue::SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer)
+{
+    VulkanCommandBuffer* vkCmdBuffer = static_cast<VulkanCommandBuffer*>(cmdBuffer);
+    VkCommandBuffer vkCmd = vkCmdBuffer->GetCommandBuffer();
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &vkCmd;
+
+    VkResult result = vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to submit and flush command buffer!");
+
+    vkQueueWaitIdle(mQueue);
+}

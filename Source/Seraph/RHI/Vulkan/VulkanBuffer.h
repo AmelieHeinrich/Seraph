@@ -20,6 +20,17 @@ public:
 
     void SetName(const StringView& name) override;
 
+    void* Map() override;
+    void Unmap() override;
+
+public:
+    VmaAllocation GetAllocation() const { return mAllocation; }
+    VmaAllocationInfo GetAllocationInfo() const { return mAllocationInfo; }
+    VkBuffer GetBuffer() const { return mBuffer; }
+
+public:
+    static uint GetVulkanFormatSize(VkFormat format);
+
 private:
     VulkanDevice* mParentDevice;
 

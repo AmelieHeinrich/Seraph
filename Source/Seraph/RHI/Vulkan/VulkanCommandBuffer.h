@@ -23,14 +23,18 @@ public:
     void EndRendering();
 
     void Barrier(const RHITextureBarrier& barrier) override;
+    void Barrier(const RHIBufferBarrier& barrier) override;
     void BarrierGroup(const RHIBarrierGroup& barrierGroup) override;
     
     void ClearColor(IRHITextureView* view, float r, float g, float b) override;
 
     void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) override;
     void SetViewport(float width, float height, float x, float y) override;
+    void SetVertexBuffer(IRHIBuffer* buffer) override;
 
     void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) override;
+
+    void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) override;
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
 

@@ -20,7 +20,6 @@ Application::Application()
     CompiledShader shader = ShaderCompiler::Compile("StreamedTriangle", { "VSMain", "FSMain" });
 
     mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
-    
     mDevice = IRHIDevice::CreateDevice(mBackend, true);
     mSurface = mDevice->CreateSurface(mWindow.get());
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
@@ -28,17 +27,21 @@ Application::Application()
         mCommandBuffers[i] = mGraphicsQueue->CreateCommandBuffer(false);
     }
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
+    Uploader::Initialize(mDevice, mGraphicsQueue);
 
     RHIBufferDesc bufferDesc = {};
     bufferDesc.Size = sizeof(VERTICES);
     bufferDesc.Stride = sizeof(float) * 6;
     bufferDesc.Usage = RHIBufferUsage::kVertex;
-
     mVertexBuffer = mDevice->CreateBuffer(bufferDesc);
+
+    Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
+    Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
     desc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
+    desc.ReflectInputLayout = true;
     desc.RenderTargetFormats.push_back(mSurface->GetTexture(0)->GetDesc().Format);
 
     mPipeline = mDevice->CreateGraphicsPipeline(desc);
@@ -46,6 +49,8 @@ Application::Application()
 
 Application::~Application()
 {
+    Uploader::Shutdown();
+
     delete mVertexBuffer;
     delete mPipeline;
     delete mF2FSync;
@@ -115,6 +120,7 @@ void Application::Run()
         commandBuffer->BeginRendering(renderBegin);
         commandBuffer->SetGraphicsPipeline(mPipeline);
         commandBuffer->SetViewport(renderBegin.Width, renderBegin.Height, 0, 0);
+        commandBuffer->SetVertexBuffer(mVertexBuffer);
         commandBuffer->Draw(3, 1, 0, 0);
         commandBuffer->EndRendering();
         commandBuffer->Barrier(endRenderBarrier);

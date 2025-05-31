@@ -13,4 +13,6 @@ public:
     D3D12CommandQueue() = default;
 
     IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override { return nullptr; }
+
+    void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override {}
 };

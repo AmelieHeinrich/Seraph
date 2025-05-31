@@ -27,7 +27,9 @@
 - [x] Begin/End rendering
 - [x] Graphics pipeline
 - [x] Hello triangle!
-- [ ] Buffer
+- [x] Buffer
+- [ ] Hello quad!
+- [ ] Push constants
 - [ ] Bindless setup
 
 ## D3D12

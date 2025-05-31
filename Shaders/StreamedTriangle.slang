@@ -3,16 +3,10 @@
 // > Create Time: 2025-05-29 21:46:01
 //
 
-static const float3 POSITIONS[] = {
-    float3(-0.5f, -0.5f, 0.0f),
-    float3( 0.5f, -0.5f, 0.0f),
-    float3( 0.0f,  0.5f, 0.0f)
-};
-
-static const float3 COLORS[] = {
-    float3(1.0f, 0.0f, 0.0f),
-    float3(0.0f, 1.0f, 0.0f),
-    float3(0.0f, 0.0f, 1.0f)
+struct VertexInput
+{
+    float3 Position : POSITION;
+    float3 Color : COLOR;
 };
 
 struct VertexOutput
@@ -22,12 +16,12 @@ struct VertexOutput
 };
 
 [shader("vertex")]
-VertexOutput VSMain(uint VertexID : SV_VertexID)
+VertexOutput VSMain(VertexInput input)
 {
     VertexOutput output = {};
 
-    output.Position = float4(POSITIONS[VertexID], 1.0f);
-    output.Color = COLORS[VertexID];
+    output.Position = float4(input.Position, 1.0f);
+    output.Color = input.Color;
 
     return output;  
 }

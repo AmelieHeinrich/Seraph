@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "TextureView.h"
 #include "GraphicsPipeline.h"
+#include "Buffer.h"
 
 enum class RHIPipelineStage : uint
 {
@@ -85,9 +86,19 @@ struct RHITextureBarrier
     uint LayerCount = 1;
 };
 
+struct RHIBufferBarrier
+{
+    RHIPipelineStage SourceStage;
+    RHIPipelineStage DestStage;
+    RHIResourceAccess SourceAccess;
+    RHIResourceAccess DestAccess;
+    IRHIBuffer* Buffer;
+};
+
 struct RHIBarrierGroup
 {
     Array<RHITextureBarrier> TextureBarriers;
+    Array<RHIBufferBarrier> BufferBarriers;
 };
 
 struct RHIRenderAttachment
@@ -118,14 +129,18 @@ public:
     virtual void EndRendering() = 0;
 
     virtual void Barrier(const RHITextureBarrier& barrier) = 0;
+    virtual void Barrier(const RHIBufferBarrier& barrier) = 0;
     virtual void BarrierGroup(const RHIBarrierGroup& barrierGroup) = 0;
 
     virtual void ClearColor(IRHITextureView* view, float r, float g, float b) = 0;
 
     virtual void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) = 0;
     virtual void SetViewport(float width, float height, float x, float y) = 0;
+    virtual void SetVertexBuffer(IRHIBuffer* buffer) = 0;
 
     virtual void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) = 0;
+
+    virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
 public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 

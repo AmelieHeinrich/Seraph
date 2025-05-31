@@ -9,15 +9,15 @@
 
 enum class RHIBufferUsage
 {
-    kVertex,
-    kIndex,
-    kConstant,
-    kShaderRead,
-    kShaderWrite,
-    kStaging,
-    kReadback,
-    kAccelerationStructure,
-    kShaderBindingTable
+    kVertex = BIT(0),
+    kIndex = BIT(1),
+    kConstant = BIT(2),
+    kShaderRead = BIT(3),
+    kShaderWrite = BIT(4),
+    kStaging = BIT(5),
+    kReadback = BIT(6),
+    kAccelerationStructure = BIT(7),
+    kShaderBindingTable = BIT(8)
 };
 ENUM_CLASS_FLAGS(RHIBufferUsage);
 
@@ -37,6 +37,8 @@ public:
 
     RHIBufferDesc GetDesc() const { return mDesc; }
 
+    virtual void* Map() = 0;
+    virtual void Unmap() = 0;
 protected:
     RHIBufferDesc mDesc;
 };

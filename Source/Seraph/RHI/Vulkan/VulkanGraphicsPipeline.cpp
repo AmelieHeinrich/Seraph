@@ -4,10 +4,11 @@
 //
 
 #include "VulkanGraphicsPipeline.h"
-
-#include "VulkanGraphicsPipeline.h"
 #include "VulkanDevice.h"
 #include "VulkanTexture.h"
+#include "VulkanBuffer.h"
+
+#include <SPIRVReflect/spirv_reflect.h>
 
 VkCompareOp VulkanGraphicsPipeline::ToVkCompareOp(RHIDepthOperation op)
 {
@@ -66,8 +67,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     Array<VkPipelineShaderStageCreateInfo> shaderStages;
     Array<VkShaderModule> vkShaderModules;
 
-    for (auto& [stage, module] : desc.Bytecode)
-    {
+    for (auto& [stage, module] : desc.Bytecode) {
         VkShaderModuleCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = module.Bytecode.size();
@@ -84,6 +84,17 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
         stageInfo.module = shaderModule;
         stageInfo.pName = "main";
         shaderStages.push_back(stageInfo);
+    }
+
+    // Find vertex shader module if reflect
+    ShaderModule vertexModule = {};
+    if (desc.ReflectInputLayout) {
+        for (auto& [stage, module] : desc.Bytecode) {
+            if (stage == ShaderStage::kVertex) {
+                vertexModule = module;
+                break;
+            }
+        }
     }
 
     // Input assembly (basic)
@@ -136,8 +147,47 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     viewportState.scissorCount = 1;
 
     // Input state
+    VkVertexInputBindingDescription vertexInputBindingDesc = {};
+    vertexInputBindingDesc.binding = 0;
+    vertexInputBindingDesc.stride = 0;
+    vertexInputBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    Array<VkVertexInputAttributeDescription> attributeDescriptions;
+
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    if (desc.ReflectInputLayout) {
+        SpvReflectShaderModule inputLayoutReflect = {};
+        
+        SpvReflectResult reflectResult = spvReflectCreateShaderModule(vertexModule.Bytecode.size(), vertexModule.Bytecode.data(), &inputLayoutReflect);
+        ASSERT_EQ(reflectResult == SPV_REFLECT_RESULT_SUCCESS, "Failed to reflect vertex shader module!");
+
+        uint inputVarCount = 0;
+        spvReflectEnumerateInputVariables(&inputLayoutReflect, &inputVarCount, nullptr);
+        Array<SpvReflectInterfaceVariable*> interfaceVariables(inputVarCount);
+        spvReflectEnumerateInputVariables(&inputLayoutReflect, &inputVarCount, interfaceVariables.data());
+
+        for (int location = 0; location < inputVarCount; location++) {
+            for (int i = 0; i < inputVarCount; i++) {
+                SpvReflectInterfaceVariable* variable = interfaceVariables[i];
+                if (variable->location == (uint)location) {
+                    VkVertexInputAttributeDescription attrib = {};
+                    attrib.location = variable->location;
+                    attrib.binding = 0;
+                    attrib.format = (VkFormat)variable->format;
+                    attrib.offset = vertexInputBindingDesc.stride;
+
+                    attributeDescriptions.push_back(attrib);
+
+                    vertexInputBindingDesc.stride += VulkanBuffer::GetVulkanFormatSize(attrib.format);
+                }
+            }
+        }
+    }
+    vertexInputState.vertexBindingDescriptionCount = vertexInputBindingDesc.stride == 0 ? 0 : 1;
+    vertexInputState.pVertexBindingDescriptions = &vertexInputBindingDesc;
+    vertexInputState.vertexAttributeDescriptionCount = attributeDescriptions.size();
+    vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Multisample (single sample assumed)
     VkPipelineMultisampleStateCreateInfo multisample = {};

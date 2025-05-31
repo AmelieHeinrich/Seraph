@@ -19,6 +19,7 @@ public:
 
     IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
 
+    void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override;
 public:
     VkQueue GetQueue() { return mQueue; }
 

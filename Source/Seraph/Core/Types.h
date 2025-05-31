@@ -53,21 +53,24 @@ template<typename K, typename T>
 using UnorderedMap = std::unordered_map<K, T>;
 
 #define BIT(x) (1 << x)
+#define KILOBYTES(s) s * 1024
+#define MEGABYTES(s) KILOBYTES(s) * 1024
+#define GIGABYTES(s) MEGABYTES(s) * 1024
 
 #define ENUM_CLASS_FLAGS(EnumType)                                                \
-inline constexpr EnumType operator|(EnumType lhs, EnumType rhs) {                \
+inline constexpr EnumType operator|(EnumType lhs, EnumType rhs) {                 \
     using T = std::underlying_type_t<EnumType>;                                   \
-    return static_cast<EnumType>(static_cast<T>(lhs) | static_cast<T>(rhs));     \
+    return static_cast<EnumType>(static_cast<T>(lhs) | static_cast<T>(rhs));      \
 }                                                                                 \
-inline constexpr EnumType& operator|=(EnumType& lhs, EnumType rhs) {             \
+inline constexpr EnumType& operator|=(EnumType& lhs, EnumType rhs) {              \
     lhs = lhs | rhs;                                                              \
     return lhs;                                                                   \
 }                                                                                 \
-inline constexpr EnumType operator&(EnumType lhs, EnumType rhs) {                \
+inline constexpr EnumType operator&(EnumType lhs, EnumType rhs) {                 \
     using T = std::underlying_type_t<EnumType>;                                   \
-    return static_cast<EnumType>(static_cast<T>(lhs) & static_cast<T>(rhs));     \
+    return static_cast<EnumType>(static_cast<T>(lhs) & static_cast<T>(rhs));      \
 }                                                                                 \
-inline constexpr EnumType& operator&=(EnumType& lhs, EnumType rhs) {             \
+inline constexpr EnumType& operator&=(EnumType& lhs, EnumType rhs) {              \
     lhs = lhs & rhs;                                                              \
     return lhs;                                                                   \
 }                                                                                 \

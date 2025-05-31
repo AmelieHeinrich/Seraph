@@ -8,6 +8,7 @@
 #include "VulkanTexture.h"
 #include "VulkanTextureView.h"
 #include "VulkanGraphicsPipeline.h"
+#include "VulkanBuffer.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
@@ -137,9 +138,44 @@ void VulkanCommandBuffer::Barrier(const RHITextureBarrier& barrier)
     vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
 }
 
+void VulkanCommandBuffer::Barrier(const RHIBufferBarrier& barrier)
+{
+    RHIBufferDesc desc = barrier.Buffer->GetDesc();
+    VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(barrier.Buffer);
+
+    const VkBufferMemoryBarrier2 bufferBarrier = {
+        .sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+        .pNext               = nullptr,
+        .srcStageMask        = TranslatePipelineStageToVk(barrier.SourceStage),
+        .srcAccessMask       = TranslateAccessFlagsToVk(barrier.SourceAccess),
+        .dstStageMask        = TranslatePipelineStageToVk(barrier.DestStage),
+        .dstAccessMask       = TranslateAccessFlagsToVk(barrier.DestAccess),
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .buffer              = vkBuffer->GetBuffer(),
+        .offset              = 0,
+        .size                = VK_WHOLE_SIZE
+    };
+
+    const VkDependencyInfo dependencyInfo = {
+        .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .pNext                    = nullptr,
+        .dependencyFlags          = 0,
+        .memoryBarrierCount       = 0,
+        .pMemoryBarriers          = nullptr,
+        .bufferMemoryBarrierCount = 1,
+        .pBufferMemoryBarriers    = &bufferBarrier,
+        .imageMemoryBarrierCount  = 0,
+        .pImageMemoryBarriers     = nullptr
+    };
+
+    vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
+}
+
 void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 {
     Array<VkImageMemoryBarrier2> imageBarriers;
+    Array<VkBufferMemoryBarrier2> bufferBarriers;
     for (RHITextureBarrier barrier : barrierGroup.TextureBarriers) {
         RHITextureDesc desc = barrier.Texture->GetDesc();
         VulkanTexture* vkTexture = static_cast<VulkanTexture*>(barrier.Texture);
@@ -169,6 +205,26 @@ void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
     
         imageBarriers.push_back(imageBarrier);
     }
+    for (RHIBufferBarrier barrier : barrierGroup.BufferBarriers) {
+        RHIBufferDesc desc = barrier.Buffer->GetDesc();
+        VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(barrier.Buffer);
+
+        const VkBufferMemoryBarrier2 bufferBarrier = {
+            .sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .pNext               = nullptr,
+            .srcStageMask        = TranslatePipelineStageToVk(barrier.SourceStage),
+            .srcAccessMask       = TranslateAccessFlagsToVk(barrier.SourceAccess),
+            .dstStageMask        = TranslatePipelineStageToVk(barrier.DestStage),
+            .dstAccessMask       = TranslateAccessFlagsToVk(barrier.DestAccess),
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .buffer              = vkBuffer->GetBuffer(),
+            .offset              = 0,
+            .size                = VK_WHOLE_SIZE
+        };
+
+        bufferBarriers.push_back(bufferBarrier);
+    }
     
     const VkDependencyInfo dependencyInfo = {
         .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -176,8 +232,8 @@ void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
         .dependencyFlags          = 0,
         .memoryBarrierCount       = 0,
         .pMemoryBarriers          = nullptr,
-        .bufferMemoryBarrierCount = 0,
-        .pBufferMemoryBarriers    = nullptr,
+        .bufferMemoryBarrierCount = static_cast<uint>(bufferBarriers.size()),
+        .pBufferMemoryBarriers    = bufferBarriers.data(),
         .imageMemoryBarrierCount  = static_cast<uint>(imageBarriers.size()),
         .pImageMemoryBarriers     = imageBarriers.data()
     };
@@ -233,9 +289,30 @@ void VulkanCommandBuffer::SetViewport(float width, float height, float x, float 
     vkCmdSetScissor(mCmdBuffer, 0, 1, &scissorRect);
 }
 
+void VulkanCommandBuffer::SetVertexBuffer(IRHIBuffer* buffer)
+{
+    VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer);
+    VkBuffer buf = vkBuffer->GetBuffer();
+
+    VkDeviceSize offsets[] = { 0 };
+
+    vkCmdBindVertexBuffers(mCmdBuffer, 0, 1, &buf, offsets);
+}
+
 void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void VulkanCommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
+{
+    VulkanBuffer* vkDest = static_cast<VulkanBuffer*>(dest);
+    VulkanBuffer* vkSrc = static_cast<VulkanBuffer*>(src);
+
+    VkBufferCopy copyRegion = {};
+    copyRegion.size = src->GetDesc().Size;
+
+    vkCmdCopyBuffer(mCmdBuffer, vkSrc->GetBuffer(), vkDest->GetBuffer(), 1, &copyRegion);
 }
 
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)

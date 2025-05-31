@@ -6,8 +6,10 @@
 #pragma once
 
 #include "Core/Window.h"
+
 #include "RHI/Device.h"
 #include "RHI/ShaderCompiler.h"
+#include "RHI/Uploader.h"
 
 class Application
 {
