@@ -22,4 +22,5 @@ public:
     IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override { return nullptr; }
     IRHISampler* CreateSampler(RHISamplerDesc desc) override { return nullptr; }
     IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override { return nullptr; }
+    IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override { return nullptr; }
 };

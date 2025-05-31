@@ -33,6 +33,7 @@
 - [x] Bindless setup
 - [x] Compute shaders
 - [ ] Mesh shaders
+- [ ] Acceleration structures
 - [ ] Raytracing shaders
 
 ## D3D12
@@ -52,6 +53,10 @@
 - [ ] Hello triangle!
 - [ ] Buffer
 - [ ] Bindless setup
+- [ ] Compute shaders
+- [ ] Mesh shaders
+- [ ] Acceleration structures
+- [ ] Raytracing shaders
 
 ## RHI
 

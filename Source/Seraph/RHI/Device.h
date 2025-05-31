@@ -17,6 +17,7 @@
 #include "Buffer.h"
 #include "Sampler.h"
 #include "ComputePipeline.h"
+#include "MeshPipeline.h"
 
 class IRHIDevice
 {
@@ -34,6 +35,7 @@ public:
     virtual IRHIBuffer* CreateBuffer(RHIBufferDesc desc) = 0;
     virtual IRHISampler* CreateSampler(RHISamplerDesc desc) = 0;
     virtual IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) = 0;
+    virtual IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) = 0;
 
 protected:
     IRHIDevice() = default;
