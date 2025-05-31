@@ -47,6 +47,7 @@ Application::Application()
     triangleInstance.Transform[1][2] = 1;
     triangleInstance.Transform[2][2] = 1;
     triangleInstance.AccelerationStructureReference = mBLAS->GetAddress();
+    triangleInstance.Flags = TLAS_INSTANCE_OPAQUE;
     mInstances.push_back(triangleInstance);
 
     void* test = mInstanceBuffer->Map();
