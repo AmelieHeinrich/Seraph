@@ -27,6 +27,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
+    if (!strcmp(pCallbackData->pMessageIdName, "VUID-StandaloneSpirv-None-10684")) return VK_FALSE;
+
     switch (messageSeverity)
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {

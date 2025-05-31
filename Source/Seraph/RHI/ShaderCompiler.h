@@ -7,9 +7,9 @@
 
 #include <Core/Context.h>
 
-#include <slang/slang.h>
-#include <slang/slang-com-ptr.h>
-#include <slang/slang-com-helper.h>
+#include <slang.h>
+#include <slang-com-ptr.h>
+#include <slang-com-helper.h>
 
 #include "Backend.h"
 
