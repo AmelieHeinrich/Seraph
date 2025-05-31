@@ -10,8 +10,8 @@
 #include <RHI/Texture.h>
 #include <RHI/TextureView.h>
 
-#include <volk/volk.h>
 #include <vma/vk_mem_alloc.h>
+#include <volk/volk.h>
 
 class VulkanDevice : public IRHIDevice
 {
@@ -25,6 +25,7 @@ public:
     IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;
     IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override;
     IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override;
+    IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override;
 
 public:
     VkInstance Instance() const { return mInstance; }

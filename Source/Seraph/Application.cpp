@@ -7,6 +7,12 @@
 
 #include <filesystem>
 
+static const float VERTICES[] = {
+    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+     0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+};
+
 Application::Application()
     : mBackend(RHIBackend::kVulkan)
 {
@@ -23,6 +29,13 @@ Application::Application()
     }
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
 
+    RHIBufferDesc bufferDesc = {};
+    bufferDesc.Size = sizeof(VERTICES);
+    bufferDesc.Stride = sizeof(float) * 6;
+    bufferDesc.Usage = RHIBufferUsage::kVertex;
+
+    mVertexBuffer = mDevice->CreateBuffer(bufferDesc);
+
     RHIGraphicsPipelineDesc desc = {};
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
     desc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
@@ -33,6 +46,7 @@ Application::Application()
 
 Application::~Application()
 {
+    delete mVertexBuffer;
     delete mPipeline;
     delete mF2FSync;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {

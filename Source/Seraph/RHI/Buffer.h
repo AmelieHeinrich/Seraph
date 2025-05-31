@@ -14,10 +14,12 @@ enum class RHIBufferUsage
     kConstant,
     kShaderRead,
     kShaderWrite,
-    kTransfer,
+    kStaging,
     kReadback,
-    kAccelerationStructure
+    kAccelerationStructure,
+    kShaderBindingTable
 };
+ENUM_CLASS_FLAGS(RHIBufferUsage);
 
 struct RHIBufferDesc
 {

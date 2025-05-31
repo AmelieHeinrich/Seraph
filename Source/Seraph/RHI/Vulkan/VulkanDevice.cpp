@@ -15,6 +15,7 @@
 #include "VulkanCommandQueue.h"
 #include "VulkanF2FSync.h"
 #include "VulkanGraphicsPipeline.h"
+#include "VulkanBuffer.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -84,6 +85,11 @@ IRHIF2FSync* VulkanDevice::CreateF2FSync(IRHISurface* surface, IRHICommandQueue*
 IRHIGraphicsPipeline* VulkanDevice::CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc)
 {
     return (new VulkanGraphicsPipeline(this, desc));
+}
+
+IRHIBuffer* VulkanDevice::CreateBuffer(RHIBufferDesc desc)
+{
+    return (new VulkanBuffer(this, desc));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)

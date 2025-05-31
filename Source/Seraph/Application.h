@@ -27,4 +27,5 @@ private:
     StaticArray<IRHICommandBuffer*, FRAMES_IN_FLIGHT> mCommandBuffers;
     IRHIF2FSync* mF2FSync;
     IRHIGraphicsPipeline* mPipeline;
+    IRHIBuffer* mVertexBuffer;
 };
