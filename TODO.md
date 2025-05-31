@@ -30,8 +30,11 @@
 - [x] Buffer
 - [x] Hello quad!
 - [x] Push constants
-- [ ] Samplers
+- [x] Samplers
 - [ ] Bindless setup
+- [ ] Compute shaders
+- [ ] Mesh shaders
+- [ ] Raytracing shaders
 
 ## D3D12
 

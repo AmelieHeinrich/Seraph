@@ -84,6 +84,10 @@ struct RHITextureBarrier
     uint LevelCount = 1;
     uint ArrayLayer = 0;
     uint LayerCount = 1;
+
+    RHITextureBarrier() = default;
+    RHITextureBarrier(IRHITexture* texture)
+        : Texture(texture) {}
 };
 
 struct RHIBufferBarrier
@@ -93,6 +97,10 @@ struct RHIBufferBarrier
     RHIResourceAccess SourceAccess;
     RHIResourceAccess DestAccess;
     IRHIBuffer* Buffer;
+
+    RHIBufferBarrier() = default;
+    RHIBufferBarrier(IRHIBuffer* buffer)
+        : Buffer(buffer) {}
 };
 
 struct RHIBarrierGroup
@@ -105,6 +113,10 @@ struct RHIRenderAttachment
 {
     IRHITextureView* View;
     bool Clear;
+
+    RHIRenderAttachment() = default;
+    RHIRenderAttachment(IRHITextureView* view, bool clear = true)
+        : View(view), Clear(clear) {}
 };
 
 struct RHIRenderBegin
@@ -113,6 +125,10 @@ struct RHIRenderBegin
     RHIRenderAttachment DepthTarget;
     uint Width;
     uint Height;
+
+    RHIRenderBegin() = default;
+    RHIRenderBegin(uint w, uint h, Array<RHIRenderAttachment> rts, RHIRenderAttachment depth)
+        : Width(w), Height(h), RenderTargets(rts), DepthTarget(depth) {}
 };
 
 class IRHICommandBuffer

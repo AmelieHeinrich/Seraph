@@ -61,31 +61,24 @@ void Uploader::Flush()
             case UploadRequestType::kBufferCPUToGPU: {
                 RHIBufferDesc dstDesc = request.DstBuffer->GetDesc();
 
-                RHIBufferBarrier dstBarrier = {
-                    .SourceStage = RHIPipelineStage::kNone,
-                    .DestStage = RHIPipelineStage::kCopy,
-                    .SourceAccess = RHIResourceAccess::kNone,
-                    .DestAccess = RHIResourceAccess::kTransferWrite,
-                    .Buffer = request.DstBuffer
-                };
-                RHIBufferBarrier stagingBarrer = {
-                    .SourceStage = RHIPipelineStage::kNone,
-                    .DestStage = RHIPipelineStage::kCopy,
-                    .SourceAccess = RHIResourceAccess::kNone,
-                    .DestAccess = RHIResourceAccess::kTransferRead,
-                    .Buffer = request.DstBuffer
-                };
-                RHIBarrierGroup firstGroup = {};
-                firstGroup.BufferBarriers.push_back(dstBarrier);
-                firstGroup.BufferBarriers.push_back(stagingBarrer);
+                RHIBufferBarrier dstBarrier(request.DstBuffer);
+                dstBarrier.SourceStage = RHIPipelineStage::kNone;
+                dstBarrier.DestStage = RHIPipelineStage::kCopy;
+                dstBarrier.SourceAccess = RHIResourceAccess::kNone;
+                dstBarrier.DestAccess = RHIResourceAccess::kTransferWrite;
 
-                RHIBufferBarrier dstBarrierAfter = {
-                    .SourceStage = RHIPipelineStage::kCopy,
-                    .DestStage = RHIPipelineStage::kNone,
-                    .SourceAccess = RHIResourceAccess::kTransferWrite,
-                    .DestAccess = RHIResourceAccess::kNone,
-                    .Buffer = request.DstBuffer,
-                };
+                RHIBufferBarrier stagingBarrier(request.DstBuffer);
+                stagingBarrier.SourceStage = RHIPipelineStage::kNone;
+                stagingBarrier.DestStage = RHIPipelineStage::kCopy;
+                stagingBarrier.SourceAccess = RHIResourceAccess::kNone;
+                stagingBarrier.DestAccess = RHIResourceAccess::kTransferRead;
+
+                RHIBarrierGroup firstGroup = {};
+                firstGroup.BufferBarriers = { dstBarrier, stagingBarrier };
+
+                RHIBufferBarrier dstBarrierAfter(request.DstBuffer);
+                dstBarrierAfter.SourceStage = RHIPipelineStage::kCopy;
+                dstBarrierAfter.SourceAccess = RHIResourceAccess::kTransferWrite;        
                 if (Any(dstDesc.Usage & RHIBufferUsage::kVertex)) dstBarrierAfter.DestAccess = RHIResourceAccess::kVertexBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kVertexShader;
                 if (Any(dstDesc.Usage & RHIBufferUsage::kIndex)) dstBarrierAfter.DestAccess = RHIResourceAccess::kIndexBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kVertexShader;
                 if (Any(dstDesc.Usage & RHIBufferUsage::kConstant)) dstBarrierAfter.DestAccess = RHIResourceAccess::kConstantBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kAllGraphics;

@@ -26,6 +26,10 @@ struct RHIBufferDesc
     uint64 Size;
     uint64 Stride = 0;
     RHIBufferUsage Usage;
+
+    RHIBufferDesc() = default;
+    RHIBufferDesc(uint64 size, uint64 stride, RHIBufferUsage usage)
+        : Size(size), Stride(stride), Usage(usage) {}
 };
 
 class IRHIBuffer

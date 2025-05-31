@@ -35,20 +35,8 @@ Application::Application()
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
     Uploader::Initialize(mDevice, mGraphicsQueue);
 
-    {
-        RHIBufferDesc bufferDesc = {};
-        bufferDesc.Size = sizeof(VERTICES);
-        bufferDesc.Stride = sizeof(float) * 6;
-        bufferDesc.Usage = RHIBufferUsage::kVertex;
-        mVertexBuffer = mDevice->CreateBuffer(bufferDesc);
-    }
-    {
-        RHIBufferDesc bufferDesc = {};
-        bufferDesc.Size = sizeof(INDICES);
-        bufferDesc.Stride = sizeof(uint);
-        bufferDesc.Usage = RHIBufferUsage::kIndex;
-        mIndexBuffer = mDevice->CreateBuffer(bufferDesc);
-    }
+    mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 6, RHIBufferUsage::kVertex));
+    mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
 
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
     Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
@@ -96,42 +84,24 @@ void Application::Run()
         commandBuffer->Reset();
         commandBuffer->Begin();
         
-        RHITextureBarrier beginRenderBarrier = {
-            .SourceStage        = RHIPipelineStage::kBottomOfPipe,
-            .DestStage          = RHIPipelineStage::kCopy,
-            .SourceAccess       = RHIResourceAccess::kNone,
-            .DestAccess         = RHIResourceAccess::kTransferWrite,
-            .OldLayout          = firstFrame < 3 ? RHIResourceLayout::kUndefined : RHIResourceLayout::kPresent,
-            .NewLayout          = RHIResourceLayout::kTransferDst,
-            .Texture            = swapchainTexture,
-            .BaseMipLevel = 0,
-            .LevelCount = 1,
-            .ArrayLayer = 0,
-            .LayerCount = 1,
-        };
-        RHITextureBarrier endRenderBarrier = {
-            .SourceStage        = RHIPipelineStage::kCopy,
-            .DestStage          = RHIPipelineStage::kBottomOfPipe,
-            .SourceAccess       = RHIResourceAccess::kTransferWrite,
-            .DestAccess         = RHIResourceAccess::kNone,
-            .OldLayout          = RHIResourceLayout::kTransferDst,
-            .NewLayout          = RHIResourceLayout::kPresent,
-            .Texture            = swapchainTexture,
-            .BaseMipLevel = 0,
-            .LevelCount = 1,
-            .ArrayLayer = 0,
-            .LayerCount = 1
-        };
+        RHITextureBarrier beginRenderBarrier(swapchainTexture);
+        beginRenderBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
+        beginRenderBarrier.DestStage    = RHIPipelineStage::kCopy;
+        beginRenderBarrier.SourceAccess = RHIResourceAccess::kNone;
+        beginRenderBarrier.DestAccess   = RHIResourceAccess::kTransferWrite;
+        beginRenderBarrier.OldLayout    = firstFrame < 3 ? RHIResourceLayout::kUndefined : RHIResourceLayout::kPresent;
+        beginRenderBarrier.NewLayout    = RHIResourceLayout::kTransferDst;
 
-        RHIRenderAttachment attachment = {};
-        attachment.Clear = true;
-        attachment.View = swapchainTextureView;
+        RHITextureBarrier endRenderBarrier(swapchainTexture);
+        endRenderBarrier.SourceStage   = RHIPipelineStage::kCopy;
+        endRenderBarrier.DestStage     = RHIPipelineStage::kBottomOfPipe;
+        endRenderBarrier.SourceAccess  = RHIResourceAccess::kTransferWrite;
+        endRenderBarrier.DestAccess    = RHIResourceAccess::kNone;
+        endRenderBarrier.OldLayout     = RHIResourceLayout::kTransferDst;
+        endRenderBarrier.NewLayout     = RHIResourceLayout::kPresent;
 
-        RHIRenderBegin renderBegin = {};
-        renderBegin.Width = 1280;
-        renderBegin.Height = 720;
-        renderBegin.RenderTargets = { attachment };
-        renderBegin.DepthTarget = {};
+        RHIRenderAttachment attachment(swapchainTextureView);
+        RHIRenderBegin renderBegin(1280, 720, { RHIRenderAttachment(swapchainTextureView) }, {});
 
         commandBuffer->Barrier(beginRenderBarrier);
         commandBuffer->BeginRendering(renderBegin);

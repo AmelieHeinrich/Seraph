@@ -26,6 +26,7 @@ public:
     IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override;
     IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override;
     IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override;
+    IRHISampler* CreateSampler(RHISamplerDesc desc) override;
 
 public:
     VkInstance Instance() const { return mInstance; }

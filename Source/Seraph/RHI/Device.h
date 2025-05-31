@@ -15,6 +15,7 @@
 #include "F2FSync.h"
 #include "GraphicsPipeline.h"
 #include "Buffer.h"
+#include "Sampler.h"
 
 class IRHIDevice
 {
@@ -30,6 +31,8 @@ public:
     virtual IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) = 0;
     virtual IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) = 0;
     virtual IRHIBuffer* CreateBuffer(RHIBufferDesc desc) = 0;
+    virtual IRHISampler* CreateSampler(RHISamplerDesc desc) = 0;
+
 protected:
     IRHIDevice() = default;
 };

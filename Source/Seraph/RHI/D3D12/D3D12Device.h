@@ -20,4 +20,5 @@ public:
     IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override { return nullptr; }
     IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override { return nullptr; }
     IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override { return nullptr; }
+    IRHISampler* CreateSampler(RHISamplerDesc desc) override { return nullptr; }
 };
