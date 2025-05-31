@@ -33,7 +33,11 @@ private:
     IRHIBuffer* mVertexBuffer;
     IRHIBuffer* mIndexBuffer;
     IRHIBLAS* mBLAS;
+    IRHITLAS* mTLAS;
     IRHITexture* mTexture;
     IRHITextureView* mTextureSRV;
     IRHISampler* mSampler;
+
+    Array<TLASInstance> mInstances;
+    IRHIBuffer* mInstanceBuffer;
 };

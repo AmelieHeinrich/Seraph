@@ -11,6 +11,7 @@
 #include "VulkanBuffer.h"
 #include "VulkanComputePipeline.h"
 #include "VulkanBLAS.h"
+#include "VulkanTLAS.H"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
@@ -480,6 +481,29 @@ void VulkanCommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
     }
 
     vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkBlas->mBuildInfo, &range);
+}
+
+void VulkanCommandBuffer::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
+{
+    VulkanTLAS* vkTlas = static_cast<VulkanTLAS*>(blas);
+    vkTlas->mGeometry.geometry.instances.data.deviceAddress = buffer->GetAddress();
+    vkTlas->mRangeInfo.primitiveCount = instanceCount;
+
+    const VkAccelerationStructureBuildRangeInfoKHR* range = &vkTlas->mRangeInfo;
+    switch (mode) {
+        case RHIASBuildMode::kRebuild: {
+            vkTlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+            vkTlas->mBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+            break;
+        }
+        case RHIASBuildMode::kRefit: {
+            vkTlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+            vkTlas->mBuildInfo.srcAccelerationStructure = vkTlas->mHandle;
+            break;
+        }
+    }
+
+    vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkTlas->mBuildInfo, &range);
 }
 
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)

@@ -24,6 +24,20 @@ void Uploader::Shutdown()
     sData.Requests.clear();
 }
 
+void Uploader::EnqueueTLASBuild(IRHITLAS* tlas, IRHIBuffer* instanceBuffer, uint instanceCount)
+{
+    UploadRequest request = {};
+    request.Type = UploadRequestType::kTLASBuild;
+    request.TLAS = tlas;
+    request.InstanceBuffer = instanceBuffer;
+    request.InstanceCount = instanceCount;
+
+    sData.Requests.push_back(std::move(request));
+    sData.UploadBatchSize += MAX_TLAS_INSTANCES; // Approximate
+    if (sData.UploadBatchSize >= MAX_BATCH_SIZE)
+        Flush();
+}
+
 void Uploader::EnqueueBLASBuild(IRHIBLAS* blas)
 {
     UploadRequest request = {};
@@ -238,6 +252,24 @@ void Uploader::Flush()
 
                 sData.CommandBuffer->Barrier(beforeBarrier);
                 sData.CommandBuffer->BuildBLAS(request.BLAS, RHIASBuildMode::kRebuild);
+                sData.CommandBuffer->Barrier(afterBarrier);
+                break;
+            }
+            case UploadRequestType::kTLASBuild: {
+                RHIMemoryBarrier beforeBarrier;
+                beforeBarrier.SourceAccess = RHIResourceAccess::kVertexBufferRead | RHIResourceAccess::kIndexBufferRead;
+                beforeBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureWrite;
+                beforeBarrier.SourceStage = RHIPipelineStage::kVertexInput;
+                beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite; 
+
+                RHIMemoryBarrier afterBarrier;
+                afterBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureWrite;
+                afterBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureRead;
+                afterBarrier.SourceStage = RHIPipelineStage::kAccelStructureWrite;
+                afterBarrier.DestStage =  RHIPipelineStage::kRayTracingShader;
+
+                sData.CommandBuffer->Barrier(beforeBarrier);
+                sData.CommandBuffer->BuildTLAS(request.TLAS, RHIASBuildMode::kRebuild, request.InstanceCount, request.InstanceBuffer);
                 sData.CommandBuffer->Barrier(afterBarrier);
                 break;
             }

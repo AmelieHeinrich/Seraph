@@ -18,6 +18,7 @@ public:
     static void Initialize(IRHIDevice* device, IRHICommandQueue* copyQueue);
     static void Shutdown();
 
+    static void EnqueueTLASBuild(IRHITLAS* tlas, IRHIBuffer* instanceBuffer, uint instanceCount);
     static void EnqueueBLASBuild(IRHIBLAS* blas);
     static void EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITexture* texture);
     static void EnqueueBufferUpload(const void* data, uint64 size, IRHIBuffer* buffer);
@@ -29,7 +30,8 @@ private:
     {
         kBufferCPUToGPU,
         kTextureCPUToGPU,
-        kBLASBuild
+        kBLASBuild,
+        kTLASBuild
     };
 
     struct UploadRequest
@@ -37,9 +39,13 @@ private:
         UploadRequestType Type;
 
         IRHIBLAS* BLAS;
+        IRHITLAS* TLAS;
         IRHITexture* DstTexture;
         IRHIBuffer* DstBuffer;
         IRHIBuffer* StagingBuffer;
+
+        IRHIBuffer* InstanceBuffer;
+        uint InstanceCount;
     };
 
     static struct PrivateData {

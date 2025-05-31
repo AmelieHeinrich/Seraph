@@ -24,4 +24,5 @@ public:
     IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override { return nullptr; }
     IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override { return nullptr; }
     IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override { return nullptr; }
+    IRHITLAS* CreateTLAS() override { return nullptr; }
 };

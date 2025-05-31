@@ -1,23 +1,24 @@
 //
 // > Notice: Amélie Heinrich @ 2025
-// > Create Time: 2025-05-31 20:02:27
+// > Create Time: 2025-05-31 21:56:00
 //
 
 #pragma once
 
-#include <RHI/BLAS.h>
+#include <RHI/TLAS.h>
+#include <RHI/Buffer.h>
 
 #include <Volk/volk.h>
 
 class VulkanDevice;
 
-class VulkanBLAS : public IRHIBLAS
+class VulkanTLAS : public IRHITLAS
 {
 public:
-    VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc);
-    ~VulkanBLAS();
+    VulkanTLAS(VulkanDevice* device);
+    ~VulkanTLAS();
 
-    uint64 GetAddress() override;
+    VkAccelerationStructureKHR GetHandle() const { return mHandle; }
 private:
     friend class VulkanCommandBuffer;
 
@@ -27,6 +28,6 @@ private:
     IRHIBuffer* mScratch;
     VkAccelerationStructureKHR mHandle;
     VkAccelerationStructureBuildGeometryInfoKHR mBuildInfo;
-    VkAccelerationStructureGeometryKHR mGeometry;
     VkAccelerationStructureBuildRangeInfoKHR mRangeInfo;
+    VkAccelerationStructureGeometryKHR mGeometry;
 };

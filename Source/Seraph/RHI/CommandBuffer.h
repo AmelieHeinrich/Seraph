@@ -12,6 +12,7 @@
 #include "Buffer.h"
 #include "ComputePipeline.h"
 #include "BLAS.h"
+#include "TLAS.h"
 
 enum class RHIPipelineStage : uint64
 {
@@ -190,6 +191,7 @@ public:
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
     virtual void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) = 0;
     virtual void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) = 0;
+    virtual void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) = 0;
 public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 

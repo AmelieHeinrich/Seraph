@@ -38,7 +38,21 @@ Application::Application()
     mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 6, RHIBufferUsage::kVertex));
     mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
     mBLAS = mDevice->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
+    mTLAS = mDevice->CreateTLAS();
+    mInstanceBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance) * MAX_TLAS_INSTANCES, 0, RHIBufferUsage::kConstant));
     mSampler = mDevice->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, false));
+
+    TLASInstance triangleInstance = {};
+    triangleInstance.Transform[0][0] = 1;
+    triangleInstance.Transform[1][2] = 1;
+    triangleInstance.Transform[2][2] = 1;
+    triangleInstance.AccelerationStructureReference = mBLAS->GetAddress();
+    mInstances.push_back(triangleInstance);
+
+    void* test = mInstanceBuffer->Map();
+    memcpy(test, mInstances.data(), mInstances.size() * sizeof(TLASInstance));
+    mInstanceBuffer->Unmap();
+    
     {
         RHITextureDesc desc = {};
         desc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
@@ -57,6 +71,7 @@ Application::Application()
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
     Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
     Uploader::EnqueueBLASBuild(mBLAS);
+    Uploader::EnqueueTLASBuild(mTLAS, mInstanceBuffer, mInstances.size());
     Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
@@ -73,6 +88,8 @@ Application::~Application()
 {
     Uploader::Shutdown();
 
+    delete mInstanceBuffer;
+    delete mTLAS;
     delete mBLAS;
     delete mTextureSRV;
     delete mTexture;

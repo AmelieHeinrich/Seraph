@@ -1,52 +1,46 @@
 //
 // > Notice: Amélie Heinrich @ 2025
-// > Create Time: 2025-05-31 20:04:55
+// > Create Time: 2025-05-31 21:59:37
 //
 
-#include "VulkanBLAS.h"
+#include "VulkanTLAS.h"
 #include "VulkanDevice.h"
 #include "VulkanBuffer.h"
 
-VulkanBLAS::VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc)
+VulkanTLAS::VulkanTLAS(VulkanDevice* device)
     : mParentDevice(device)
 {
-    mDesc = desc;
-
-    // Geometry
-    mGeometry = {};
-    mGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    mGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    mGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-    mGeometry.geometry.triangles = {
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
-        nullptr,
-        VK_FORMAT_R32G32B32_SFLOAT,
-        desc.VertexBuffer->GetAddress(),
-        desc.VertexBuffer->GetDesc().Stride,
-        desc.VertexCount,
-        VK_INDEX_TYPE_UINT32,
-        desc.IndexBuffer->GetAddress(),
-        0
+    mGeometry = {
+        .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
+        .pNext = nullptr,
+        .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
+        .geometry = {
+            .instances = {
+                .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
+                .arrayOfPointers = VK_FALSE,
+                .data = {},
+            }
+        },
+        .flags = VK_GEOMETRY_OPAQUE_BIT_KHR
     };
 
-    // Range info
-    mRangeInfo.firstVertex = 0;
-    mRangeInfo.transformOffset = 0;
-    mRangeInfo.primitiveOffset = 0;
-    mRangeInfo.primitiveCount = desc.IndexCount / 3;
-
-    // Build info
     mBuildInfo = {};
     mBuildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    mBuildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    mBuildInfo.flags = desc.Static ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR : VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    mBuildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    mBuildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR; // if you want to allow refit
     mBuildInfo.geometryCount = 1;
     mBuildInfo.pGeometries = &mGeometry;
     mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 
-    // Get sizes
+    mRangeInfo = {
+        .primitiveCount = MAX_TLAS_INSTANCES,
+        .primitiveOffset = 0,
+        .firstVertex = 0,
+        .transformOffset = 0
+    };
+
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR
+        .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR
     };
 
     vkGetAccelerationStructureBuildSizesKHR(
@@ -59,7 +53,6 @@ VulkanBLAS::VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc)
 
     mMemory = mParentDevice->CreateBuffer(RHIBufferDesc(Align<uint>(sizeInfo.accelerationStructureSize, 256), 0, RHIBufferUsage::kAccelerationStructure | RHIBufferUsage::kShaderWrite));
 
-    // Create!
     VkAccelerationStructureCreateInfoKHR asInfo = {
         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR,
         nullptr,
@@ -67,12 +60,12 @@ VulkanBLAS::VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc)
         static_cast<VulkanBuffer*>(mMemory)->GetBuffer(),
         0,
         sizeInfo.accelerationStructureSize,
-        VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,
+        VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
         0
     };
 
     VkResult result = vkCreateAccelerationStructureKHR(mParentDevice->Device(), &asInfo, nullptr, &mHandle);
-    ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan BLAS!");
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan TLAS!");
 
     // Create scratch buffer
     uint64 scratchSize = std::max(sizeInfo.buildScratchSize, sizeInfo.updateScratchSize);
@@ -81,20 +74,15 @@ VulkanBLAS::VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc)
     // Update build info
     mBuildInfo.dstAccelerationStructure = mHandle;
     mBuildInfo.scratchData.deviceAddress = mScratch->GetAddress();
+
+    // Descriptor!
+    mBindless = mParentDevice->GetBindlessManager()->WriteAS(this);
 }
 
-VulkanBLAS::~VulkanBLAS()
+VulkanTLAS::~VulkanTLAS()
 {
+    mParentDevice->GetBindlessManager()->FreeAS(mBindless.Index);
     delete mMemory;
     delete mScratch;
     if (mHandle) vkDestroyAccelerationStructureKHR(mParentDevice->Device(), mHandle, nullptr);
-}
-
-uint64 VulkanBLAS::GetAddress()
-{
-    VkAccelerationStructureDeviceAddressInfoKHR address = {};
-    address.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-    address.accelerationStructure = mHandle;
-
-    return vkGetAccelerationStructureDeviceAddressKHR(mParentDevice->Device(), &address);
 }

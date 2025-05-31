@@ -32,9 +32,10 @@
 - [x] Samplers
 - [x] Bindless setup
 - [x] Compute shaders
-- [ ] Mesh shaders
-- [ ] Acceleration structures
-- [ ] Raytracing shaders
+- [x] Mesh shaders
+- [x] BLAS
+- [x] TLAS
+- [ ] Raytracing pipelines
 
 ## D3D12
 
@@ -55,8 +56,9 @@
 - [ ] Bindless setup
 - [ ] Compute shaders
 - [ ] Mesh shaders
-- [ ] Acceleration structures
-- [ ] Raytracing shaders
+- [ ] BLAS
+- [ ] TLAS
+- [ ] Raytracing pipelines
 
 ## RHI
 

@@ -16,6 +16,7 @@ constexpr uint64 MAX_BINDLESS_AS = 8;
 class VulkanDevice;
 class VulkanTextureView;
 class VulkanSampler;
+class VulkanTLAS;
 
 class VulkanBindlessManager
 {
@@ -34,6 +35,10 @@ public:
     // SamplerDescriptorHeap[]
     uint WriteSampler(VulkanSampler* sampler);
     void FreeSampler(uint index);
+
+    // AccelerationStructure
+    uint WriteAS(VulkanTLAS* as);
+    void FreeAS(uint index);
 private:
     VulkanDevice* mParentDevice;
 

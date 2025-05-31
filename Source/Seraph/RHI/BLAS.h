@@ -32,6 +32,8 @@ public:
     ~IRHIBLAS() = default;
 
     RHIBLASDesc GetDesc() const { return mDesc; }
+    
+    virtual uint64 GetAddress() = 0;
 protected:
     RHIBLASDesc mDesc;
 };

@@ -18,7 +18,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice* device, RHIBufferDesc desc)
     bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT; 
     if (Any(desc.Usage & RHIBufferUsage::kVertex)) bufferInfo.usage |= (VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
     if (Any(desc.Usage & RHIBufferUsage::kIndex)) bufferInfo.usage |= (VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
-    if (Any(desc.Usage & RHIBufferUsage::kConstant)) bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    if (Any(desc.Usage & RHIBufferUsage::kConstant)) bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     if (Any(desc.Usage & RHIBufferUsage::kShaderRead) || Any(desc.Usage & RHIBufferUsage::kShaderWrite)) bufferInfo.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     if (Any(desc.Usage & RHIBufferUsage::kAccelerationStructure)) bufferInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
     if (Any(desc.Usage & RHIBufferUsage::kShaderBindingTable)) bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;

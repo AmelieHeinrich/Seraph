@@ -19,6 +19,7 @@
 #include "ComputePipeline.h"
 #include "MeshPipeline.h"
 #include "BLAS.h"
+#include "TLAS.h"
 
 class IRHIDevice
 {
@@ -38,6 +39,7 @@ public:
     virtual IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) = 0;
     virtual IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) = 0;
     virtual IRHIBLAS* CreateBLAS(RHIBLASDesc desc) = 0;
+    virtual IRHITLAS* CreateTLAS() = 0;
 
 protected:
     IRHIDevice() = default;

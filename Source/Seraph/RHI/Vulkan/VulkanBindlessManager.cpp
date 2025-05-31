@@ -7,6 +7,7 @@
 #include "VulkanDevice.h"
 #include "VulkanTextureView.h"
 #include "VulkanSampler.h"
+#include "VulkanTLAS.h"
 
 VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     : mParentDevice(device)
@@ -206,4 +207,44 @@ uint VulkanBindlessManager::WriteSampler(VulkanSampler* sampler)
 void VulkanBindlessManager::FreeSampler(uint index)
 {
     mSamplerLUT[index] = false;
+}
+
+uint VulkanBindlessManager::WriteAS(VulkanTLAS* as)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mASLUT.size(); i++) {
+        if (mASLUT[i] == false) {
+            mASLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    VkAccelerationStructureKHR handle = as->GetHandle();
+
+    VkWriteDescriptorSetAccelerationStructureKHR accelWriteInfo = {};
+    accelWriteInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+    accelWriteInfo.pNext = nullptr;
+    accelWriteInfo.accelerationStructureCount = 1;
+    accelWriteInfo.pAccelerationStructures = &handle;
+
+    VkWriteDescriptorSet descriptorWrite = {};
+    descriptorWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.pNext            = &accelWriteInfo;
+    descriptorWrite.dstSet           = mSet;
+    descriptorWrite.dstBinding       = 2;
+    descriptorWrite.dstArrayElement  = availableIndex;
+    descriptorWrite.descriptorCount  = 1;
+    descriptorWrite.descriptorType   = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    descriptorWrite.pImageInfo       = nullptr;
+    descriptorWrite.pBufferInfo      = nullptr;  
+    
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &descriptorWrite, 0, nullptr);
+
+    return availableIndex;
+}
+
+void VulkanBindlessManager::FreeAS(uint index)
+{
+    mASLUT[index] = false;
 }

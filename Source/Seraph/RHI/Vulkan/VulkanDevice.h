@@ -32,6 +32,7 @@ public:
     IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override;
     IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override;
     IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override;
+    IRHITLAS* CreateTLAS() override;
 
 public:
     VkInstance Instance() const { return mInstance; }
