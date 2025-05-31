@@ -9,6 +9,7 @@
 #include "VulkanTextureView.h"
 #include "VulkanGraphicsPipeline.h"
 #include "VulkanBuffer.h"
+#include "VulkanComputePipeline.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
@@ -315,6 +316,22 @@ void VulkanCommandBuffer::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, c
     vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, 0, size, data);
 }
 
+void VulkanCommandBuffer::SetComputePipeline(IRHIComputePipeline* pipeline)
+{
+    VkDescriptorSet set = mParentDevice->GetBindlessManager()->GetSet();
+    VulkanComputePipeline* vkPipeline = static_cast<VulkanComputePipeline*>(pipeline);
+
+    vkCmdBindPipeline(mCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetPipeline());
+    vkCmdBindDescriptorSets(mCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetLayout(), 0, 1, &set, 0, nullptr);
+}
+
+void VulkanCommandBuffer::SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size)
+{
+    VulkanComputePipeline* vkPipeline = static_cast<VulkanComputePipeline*>(pipeline);
+
+    vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, size, data);
+}
+
 void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -323,6 +340,11 @@ void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstV
 void VulkanCommandBuffer::DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance)
 {
     vkCmdDrawIndexed(mCmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void VulkanCommandBuffer::Dispatch(uint x, uint y, uint z)
+{
+    vkCmdDispatch(mCmdBuffer, x, y, z);
 }
 
 void VulkanCommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)

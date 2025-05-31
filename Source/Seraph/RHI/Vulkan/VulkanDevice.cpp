@@ -17,6 +17,7 @@
 #include "VulkanGraphicsPipeline.h"
 #include "VulkanBuffer.h"
 #include "VulkanSampler.h"
+#include "VulkanComputePipeline.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -100,6 +101,11 @@ IRHIBuffer* VulkanDevice::CreateBuffer(RHIBufferDesc desc)
 IRHISampler* VulkanDevice::CreateSampler(RHISamplerDesc desc)
 {
     return (new VulkanSampler(this, desc));
+}
+
+IRHIComputePipeline* VulkanDevice::CreateComputePipeline(RHIComputePipelineDesc desc)
+{
+    return (new VulkanComputePipeline(this, desc));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)

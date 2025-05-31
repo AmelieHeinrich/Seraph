@@ -7,7 +7,6 @@
 - [ ] Input management
 - [ ] File system
 - [ ] File stream
-- [ ] Memory allocators (bump, TLSF)
 - [ ] JSON loading/writing
 
 ## Vulkan
@@ -32,7 +31,7 @@
 - [x] Push constants
 - [x] Samplers
 - [x] Bindless setup
-- [ ] Compute shaders
+- [x] Compute shaders
 - [ ] Mesh shaders
 - [ ] Raytracing shaders
 
@@ -57,7 +56,7 @@
 ## RHI
 
 - [x] Shader compilation
-- [ ] Texture upload
+- [x] Texture upload
 - [ ] Test framework using FLIP
 - [ ] Render graph
 

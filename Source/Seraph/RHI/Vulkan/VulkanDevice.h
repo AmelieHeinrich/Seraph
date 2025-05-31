@@ -29,6 +29,7 @@ public:
     IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override;
     IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override;
     IRHISampler* CreateSampler(RHISamplerDesc desc) override;
+    IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override;
 
 public:
     VkInstance Instance() const { return mInstance; }

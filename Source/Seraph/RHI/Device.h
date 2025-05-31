@@ -16,6 +16,7 @@
 #include "GraphicsPipeline.h"
 #include "Buffer.h"
 #include "Sampler.h"
+#include "ComputePipeline.h"
 
 class IRHIDevice
 {
@@ -32,6 +33,7 @@ public:
     virtual IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) = 0;
     virtual IRHIBuffer* CreateBuffer(RHIBufferDesc desc) = 0;
     virtual IRHISampler* CreateSampler(RHISamplerDesc desc) = 0;
+    virtual IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) = 0;
 
 protected:
     IRHIDevice() = default;

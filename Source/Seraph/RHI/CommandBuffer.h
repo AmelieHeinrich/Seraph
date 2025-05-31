@@ -10,6 +10,7 @@
 #include "TextureView.h"
 #include "GraphicsPipeline.h"
 #include "Buffer.h"
+#include "ComputePipeline.h"
 
 enum class RHIPipelineStage : uint
 {
@@ -150,14 +151,19 @@ public:
 
     virtual void ClearColor(IRHITextureView* view, float r, float g, float b) = 0;
 
-    virtual void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) = 0;
     virtual void SetViewport(float width, float height, float x, float y) = 0;
     virtual void SetVertexBuffer(IRHIBuffer* buffer) = 0;
     virtual void SetIndexBuffer(IRHIBuffer* buffer) = 0;
+
+    virtual void SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline) = 0;
     virtual void SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size) = 0;
+
+    virtual void SetComputePipeline(IRHIComputePipeline* pipeline) = 0;
+    virtual void SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size) = 0;
 
     virtual void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) = 0;
     virtual void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) = 0;
+    virtual void Dispatch(uint x, uint y, uint z) = 0;
 
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
     virtual void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) = 0;

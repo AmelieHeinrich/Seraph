@@ -21,4 +21,5 @@ public:
     IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override { return nullptr; }
     IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override { return nullptr; }
     IRHISampler* CreateSampler(RHISamplerDesc desc) override { return nullptr; }
+    IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override { return nullptr; }
 };
