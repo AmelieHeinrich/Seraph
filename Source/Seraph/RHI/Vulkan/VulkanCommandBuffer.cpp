@@ -306,6 +306,13 @@ void VulkanCommandBuffer::SetIndexBuffer(IRHIBuffer* buffer)
     vkCmdBindIndexBuffer(mCmdBuffer, vkBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 }
 
+void VulkanCommandBuffer::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size)
+{
+    VulkanGraphicsPipeline* vkPipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
+
+    vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, 0, size, data);
+}
+
 void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);

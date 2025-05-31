@@ -216,10 +216,16 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     renderingInfo.depthAttachmentFormat = desc.DepthEnabled ? VulkanTexture::RHIToVkFormat(desc.DepthFormat) : VK_FORMAT_UNDEFINED;
 
     // Pipeline layout (placeholder - assume you have one created)
+    VkPushConstantRange pushRange = {};
+    pushRange.offset = 0;
+    pushRange.size = desc.PushConstantSize;
+    pushRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.pushConstantRangeCount = pushRange.size > 0 ? 1 : 0;
+    pipelineLayoutInfo.pPushConstantRanges = &pushRange;
 
     VkResult result = vkCreatePipelineLayout(mParentDevice->Device(), &pipelineLayoutInfo, nullptr, &mLayout);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan pipeline layout!");

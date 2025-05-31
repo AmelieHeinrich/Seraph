@@ -23,7 +23,7 @@ VertexOutput VSMain(VertexInput input)
     output.Position = float4(input.Position, 1.0f);
     output.Color = input.Color;
 
-    return output;  
+    return output;
 }
 
 [shader("fragment")]

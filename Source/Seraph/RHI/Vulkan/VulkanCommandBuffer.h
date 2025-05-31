@@ -32,6 +32,7 @@ public:
     void SetViewport(float width, float height, float x, float y) override;
     void SetVertexBuffer(IRHIBuffer* buffer) override;
     void SetIndexBuffer(IRHIBuffer* buffer) override;
+    void SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size) override;
 
     void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) override;
     void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) override;

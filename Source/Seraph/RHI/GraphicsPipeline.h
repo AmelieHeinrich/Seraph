@@ -36,6 +36,8 @@ struct RHIGraphicsPipelineDesc
     RHICullMode CullMode = RHICullMode::kNone;
     bool CounterClockwise = true;
     bool LineTopology = false;
+
+    uint PushConstantSize = 0;
     
     Array<RHITextureFormat> RenderTargetFormats;
     RHIDepthOperation DepthOperation = RHIDepthOperation::kLess;

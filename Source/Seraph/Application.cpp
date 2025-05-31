@@ -92,7 +92,7 @@ void Application::Run()
         IRHICommandBuffer* commandBuffer = mCommandBuffers[frameIndex];
         IRHITexture* swapchainTexture = mSurface->GetTexture(frameIndex);
         IRHITextureView* swapchainTextureView = mSurface->GetTextureView(frameIndex);
-        
+
         commandBuffer->Reset();
         commandBuffer->Begin();
         

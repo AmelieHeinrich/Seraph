@@ -29,7 +29,8 @@
 - [x] Hello triangle!
 - [x] Buffer
 - [x] Hello quad!
-- [ ] Push constants
+- [x] Push constants
+- [ ] Samplers
 - [ ] Bindless setup
 
 ## D3D12
@@ -53,6 +54,7 @@
 ## RHI
 
 - [x] Shader compilation
+- [ ] Texture upload
 - [ ] Test framework using FLIP
 - [ ] Render graph
 

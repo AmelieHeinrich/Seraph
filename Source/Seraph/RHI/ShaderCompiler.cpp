@@ -41,6 +41,10 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     debugEntry.name = slang::CompilerOptionName::DebugInformation;
     debugEntry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL;
 
+    slang::PreprocessorMacroDesc platformDesc = {};
+    platformDesc.value = "1";
+    platformDesc.name = sData.Backend == RHIBackend::kVulkan ? "VULKAN" : "D3D12";
+
     slang::CompilerOptionEntry entries[] = { matrixLayoutEntry, debugEntry };
 
     slang::SessionDesc sessionDesc = {};
@@ -50,6 +54,8 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     sessionDesc.searchPathCount = 1;
     sessionDesc.compilerOptionEntries = entries;
     sessionDesc.compilerOptionEntryCount = 2;
+    sessionDesc.preprocessorMacroCount = 1;
+    sessionDesc.preprocessorMacros = &platformDesc;
 
     Slang::ComPtr<slang::ISession> session = nullptr;
     sData.GlobalSession->createSession(sessionDesc, session.writeRef());
