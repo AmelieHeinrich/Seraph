@@ -19,6 +19,7 @@
 #include "VulkanSampler.h"
 #include "VulkanComputePipeline.h"
 #include "VulkanMeshPipeline.h"
+#include "VulkanBLAS.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -60,8 +61,6 @@ VulkanDevice::~VulkanDevice()
     if (mDevice) vkDestroyDevice(mDevice, nullptr);
     if (mMessenger) vkDestroyDebugUtilsMessengerEXT(mInstance, mMessenger, nullptr);
     if (mInstance) vkDestroyInstance(mInstance, nullptr);
-    
-    volkFinalize();
 }
 
 IRHISurface* VulkanDevice::CreateSurface(Window* window)
@@ -112,6 +111,11 @@ IRHIComputePipeline* VulkanDevice::CreateComputePipeline(RHIComputePipelineDesc 
 IRHIMeshPipeline* VulkanDevice::CreateMeshPipeline(RHIMeshPipelineDesc desc)
 {
     return (new VulkanMeshPipeline(this, desc));
+}
+
+IRHIBLAS* VulkanDevice::CreateBLAS(RHIBLASDesc desc)
+{
+    return (new VulkanBLAS(this, desc));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)
@@ -229,7 +233,8 @@ void VulkanDevice::BuildLogicalDevice()
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-        VK_EXT_ROBUSTNESS_2_EXTENSION_NAME
+        VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
     };
 
     // Base features
@@ -276,6 +281,9 @@ void VulkanDevice::BuildLogicalDevice()
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
     robustness2.nullDescriptor = VK_TRUE;
 
+    VkPhysicalDeviceBufferDeviceAddressFeatures bda = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES };
+    bda.bufferDeviceAddress = VK_TRUE;
+
     // Chain pNexts (careful with ordering!)
     deviceFeatures2.pNext = &sync2;
     sync2.pNext = &descriptorIndexing;
@@ -286,7 +294,8 @@ void VulkanDevice::BuildLogicalDevice()
     rayQuery.pNext = &meshShader;
     meshShader.pNext = &mutableDescriptor;
     mutableDescriptor.pNext = &robustness2;
-    robustness2.pNext = nullptr;
+    robustness2.pNext = &bda;
+    bda.pNext = nullptr;
 
     // Queue family selection
     uint32_t queueFamilyCount = 0;
@@ -383,6 +392,7 @@ void VulkanDevice::BuildAllocator()
     allocatorInfo.physicalDevice = mPhysicalDevice;
     allocatorInfo.device = mDevice;
     allocatorInfo.pVulkanFunctions = &functions;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     VkResult result = vmaCreateAllocator(&allocatorInfo, &mAllocator);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create VMA allocator!");

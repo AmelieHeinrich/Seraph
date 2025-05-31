@@ -24,6 +24,7 @@ public:
 
     void Barrier(const RHITextureBarrier& barrier) override;
     void Barrier(const RHIBufferBarrier& barrier) override;
+    void Barrier(const RHIMemoryBarrier& barrier) override;
     void BarrierGroup(const RHIBarrierGroup& barrierGroup) override;
     
     void ClearColor(IRHITextureView* view, float r, float g, float b) override;
@@ -42,6 +43,7 @@ public:
 
     void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) override;
     void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) override;
+    void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) override;
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
 

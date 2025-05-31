@@ -1,0 +1,31 @@
+//
+// > Notice: Amélie Heinrich @ 2025
+// > Create Time: 2025-05-31 20:02:27
+//
+
+#pragma once
+
+#include <RHI/BLAS.h>
+
+#include <Volk/volk.h>
+
+class VulkanDevice;
+
+class VulkanBLAS : public IRHIBLAS
+{
+public:
+    VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc);
+    ~VulkanBLAS();
+
+private:
+    friend class VulkanCommandBuffer;
+
+    VulkanDevice* mParentDevice;
+
+    IRHIBuffer* mMemory;
+    IRHIBuffer* mScratch;
+    VkAccelerationStructureKHR mHandle;
+    VkAccelerationStructureBuildGeometryInfoKHR mBuildInfo;
+    VkAccelerationStructureGeometryKHR mGeometry;
+    VkAccelerationStructureBuildRangeInfoKHR mRangeInfo;
+};

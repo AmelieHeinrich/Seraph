@@ -15,9 +15,9 @@ VulkanBuffer::VulkanBuffer(VulkanDevice* device, RHIBufferDesc desc)
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = desc.Size;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT; 
-    if (Any(desc.Usage & RHIBufferUsage::kVertex)) bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    if (Any(desc.Usage & RHIBufferUsage::kIndex)) bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT; 
+    if (Any(desc.Usage & RHIBufferUsage::kVertex)) bufferInfo.usage |= (VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+    if (Any(desc.Usage & RHIBufferUsage::kIndex)) bufferInfo.usage |= (VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
     if (Any(desc.Usage & RHIBufferUsage::kConstant)) bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     if (Any(desc.Usage & RHIBufferUsage::kShaderRead) || Any(desc.Usage & RHIBufferUsage::kShaderWrite)) bufferInfo.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     if (Any(desc.Usage & RHIBufferUsage::kAccelerationStructure)) bufferInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
@@ -61,6 +61,15 @@ void* VulkanBuffer::Map()
 void VulkanBuffer::Unmap()
 {
     vmaUnmapMemory(mParentDevice->Allocator(), mAllocation);
+}
+
+uint64 VulkanBuffer::GetAddress()
+{
+    VkBufferDeviceAddressInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.buffer = mBuffer;
+
+    return vkGetBufferDeviceAddress(mParentDevice->Device(), &info);
 }
 
 uint VulkanBuffer::GetVulkanFormatSize(VkFormat format)

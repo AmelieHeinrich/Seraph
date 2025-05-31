@@ -10,6 +10,7 @@
 #include "VulkanGraphicsPipeline.h"
 #include "VulkanBuffer.h"
 #include "VulkanComputePipeline.h"
+#include "VulkanBLAS.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
@@ -173,10 +174,37 @@ void VulkanCommandBuffer::Barrier(const RHIBufferBarrier& barrier)
     vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
 }
 
+void VulkanCommandBuffer::Barrier(const RHIMemoryBarrier& barrier)
+{
+    VkMemoryBarrier2 memoryBarrier = {
+        .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+        .pNext         = nullptr,
+        .srcStageMask  = TranslatePipelineStageToVk(barrier.SourceStage),
+        .srcAccessMask = TranslateAccessFlagsToVk(barrier.SourceAccess),
+        .dstStageMask  = TranslatePipelineStageToVk(barrier.DestStage),
+        .dstAccessMask = TranslateAccessFlagsToVk(barrier.DestAccess)
+    };
+
+    const VkDependencyInfo dependencyInfo = {
+        .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .pNext                    = nullptr,
+        .dependencyFlags          = 0,
+        .memoryBarrierCount       = 1,
+        .pMemoryBarriers          = &memoryBarrier,
+        .bufferMemoryBarrierCount = 0,
+        .pBufferMemoryBarriers    = nullptr,
+        .imageMemoryBarrierCount  = 0,
+        .pImageMemoryBarriers     = nullptr
+    };
+
+    vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
+}
+
 void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 {
     Array<VkImageMemoryBarrier2> imageBarriers;
     Array<VkBufferMemoryBarrier2> bufferBarriers;
+    Array<VkMemoryBarrier2> memoryBarriers;
     for (RHITextureBarrier barrier : barrierGroup.TextureBarriers) {
         RHITextureDesc desc = barrier.Texture->GetDesc();
         VulkanTexture* vkTexture = static_cast<VulkanTexture*>(barrier.Texture);
@@ -226,13 +254,25 @@ void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 
         bufferBarriers.push_back(bufferBarrier);
     }
+    for (RHIMemoryBarrier barrier : barrierGroup.MemoryBarriers) {
+        VkMemoryBarrier2 memoryBarrier = {
+            .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+            .pNext         = nullptr,
+            .srcStageMask  = TranslatePipelineStageToVk(barrier.SourceStage),
+            .srcAccessMask = TranslateAccessFlagsToVk(barrier.SourceAccess),
+            .dstStageMask  = TranslatePipelineStageToVk(barrier.DestStage),
+            .dstAccessMask = TranslateAccessFlagsToVk(barrier.DestAccess)
+        };
+
+        memoryBarriers.push_back(memoryBarrier);
+    }
     
     const VkDependencyInfo dependencyInfo = {
         .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
         .pNext                    = nullptr,
         .dependencyFlags          = 0,
-        .memoryBarrierCount       = 0,
-        .pMemoryBarriers          = nullptr,
+        .memoryBarrierCount       = static_cast<uint>(memoryBarriers.size()),
+        .pMemoryBarriers          = memoryBarriers.data(),
         .bufferMemoryBarrierCount = static_cast<uint>(bufferBarriers.size()),
         .pBufferMemoryBarriers    = bufferBarriers.data(),
         .imageMemoryBarrierCount  = static_cast<uint>(imageBarriers.size()),
@@ -420,6 +460,28 @@ void VulkanCommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src
     }
 }
 
+void VulkanCommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
+{
+    VulkanBLAS* vkBlas = static_cast<VulkanBLAS*>(blas);
+
+    const VkAccelerationStructureBuildRangeInfoKHR* range = &vkBlas->mRangeInfo;
+
+    switch (mode) {
+        case RHIASBuildMode::kRebuild: {
+            vkBlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+            vkBlas->mBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+            break;
+        }
+        case RHIASBuildMode::kRefit: {
+            vkBlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+            vkBlas->mBuildInfo.srcAccelerationStructure = vkBlas->mHandle;
+            break;
+        }
+    }
+
+    vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkBlas->mBuildInfo, &range);
+}
+
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)
 {
     VkPipelineStageFlags2 flags = 0;
@@ -442,6 +504,7 @@ VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelin
     if (Any(stage & RHIPipelineStage::kBottomOfPipe))         flags |= VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
     if (Any(stage & RHIPipelineStage::kAllGraphics))          flags |= VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
     if (Any(stage & RHIPipelineStage::kAllCommands))          flags |= VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    if (Any(stage & RHIPipelineStage::kAccelStructureWrite))  flags |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 
     return flags;
 }
@@ -450,22 +513,24 @@ VkAccessFlags2 VulkanCommandBuffer::TranslateAccessFlagsToVk(RHIResourceAccess a
 {
     VkAccessFlags2 flags = 0;
 
-    if (Any(access & RHIResourceAccess::kIndirectCommandRead))  flags |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
-    if (Any(access & RHIResourceAccess::kVertexBufferRead))     flags |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
-    if (Any(access & RHIResourceAccess::kIndexBufferRead))      flags |= VK_ACCESS_2_INDEX_READ_BIT;
-    if (Any(access & RHIResourceAccess::kConstantBufferRead))   flags |= VK_ACCESS_2_UNIFORM_READ_BIT;
-    if (Any(access & RHIResourceAccess::kShaderRead))           flags |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
-    if (Any(access & RHIResourceAccess::kShaderWrite))          flags |= VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
-    if (Any(access & RHIResourceAccess::kColorAttachmentRead))  flags |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
-    if (Any(access & RHIResourceAccess::kColorAttachmentWrite)) flags |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    if (Any(access & RHIResourceAccess::kDepthStencilRead))     flags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-    if (Any(access & RHIResourceAccess::kDepthStencilWrite))    flags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    if (Any(access & RHIResourceAccess::kTransferRead))         flags |= VK_ACCESS_2_TRANSFER_READ_BIT;
-    if (Any(access & RHIResourceAccess::kTransferWrite))        flags |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    if (Any(access & RHIResourceAccess::kHostRead))             flags |= VK_ACCESS_2_HOST_READ_BIT;
-    if (Any(access & RHIResourceAccess::kHostWrite))            flags |= VK_ACCESS_2_HOST_WRITE_BIT;
-    if (Any(access & RHIResourceAccess::kMemoryRead))           flags |= VK_ACCESS_2_MEMORY_READ_BIT;
-    if (Any(access & RHIResourceAccess::kMemoryWrite))          flags |= VK_ACCESS_2_MEMORY_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kIndirectCommandRead))          flags |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    if (Any(access & RHIResourceAccess::kVertexBufferRead))             flags |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+    if (Any(access & RHIResourceAccess::kIndexBufferRead))              flags |= VK_ACCESS_2_INDEX_READ_BIT;
+    if (Any(access & RHIResourceAccess::kConstantBufferRead))           flags |= VK_ACCESS_2_UNIFORM_READ_BIT;
+    if (Any(access & RHIResourceAccess::kShaderRead))                   flags |= VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+    if (Any(access & RHIResourceAccess::kShaderWrite))                  flags |= VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kColorAttachmentRead))          flags |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    if (Any(access & RHIResourceAccess::kColorAttachmentWrite))         flags |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kDepthStencilRead))             flags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    if (Any(access & RHIResourceAccess::kDepthStencilWrite))            flags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kTransferRead))                 flags |= VK_ACCESS_2_TRANSFER_READ_BIT;
+    if (Any(access & RHIResourceAccess::kTransferWrite))                flags |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kHostRead))                     flags |= VK_ACCESS_2_HOST_READ_BIT;
+    if (Any(access & RHIResourceAccess::kHostWrite))                    flags |= VK_ACCESS_2_HOST_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kMemoryRead))                   flags |= VK_ACCESS_2_MEMORY_READ_BIT;
+    if (Any(access & RHIResourceAccess::kMemoryWrite))                  flags |= VK_ACCESS_2_MEMORY_WRITE_BIT;
+    if (Any(access & RHIResourceAccess::kAccelerationStructureRead))    flags |= VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    if (Any(access & RHIResourceAccess::kAccelerationStructureWrite))   flags |= VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
 
     return flags;
 }

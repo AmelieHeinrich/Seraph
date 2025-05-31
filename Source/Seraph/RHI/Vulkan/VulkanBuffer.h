@@ -23,6 +23,7 @@ public:
     void* Map() override;
     void Unmap() override;
 
+    uint64 GetAddress() override;
 public:
     VmaAllocation GetAllocation() const { return mAllocation; }
     VmaAllocationInfo GetAllocationInfo() const { return mAllocationInfo; }

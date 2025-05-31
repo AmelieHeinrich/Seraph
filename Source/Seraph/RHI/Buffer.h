@@ -43,6 +43,7 @@ public:
 
     virtual void* Map() = 0;
     virtual void Unmap() = 0;
+    virtual uint64 GetAddress() = 0;
 protected:
     RHIBufferDesc mDesc;
 };

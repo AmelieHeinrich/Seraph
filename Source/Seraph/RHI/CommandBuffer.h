@@ -11,8 +11,9 @@
 #include "GraphicsPipeline.h"
 #include "Buffer.h"
 #include "ComputePipeline.h"
+#include "BLAS.h"
 
-enum class RHIPipelineStage : uint
+enum class RHIPipelineStage : uint64
 {
     kNone                    = 0,
     kTopOfPipe               = BIT(0),
@@ -33,28 +34,31 @@ enum class RHIPipelineStage : uint
     kCopy                    = BIT(15),
     kAllGraphics             = BIT(16),
     kAllCommands             = BIT(17),
+    kAccelStructureWrite     = BIT(18)
 };
 ENUM_CLASS_FLAGS(RHIPipelineStage);
 
-enum class RHIResourceAccess : uint
+enum class RHIResourceAccess : uint64
 {
-    kNone                    = 0,
-    kIndirectCommandRead     = BIT(0),
-    kVertexBufferRead        = BIT(1),
-    kIndexBufferRead         = BIT(2),
-    kConstantBufferRead      = BIT(3),
-    kShaderRead              = BIT(4),
-    kShaderWrite             = BIT(5),
-    kColorAttachmentRead     = BIT(6),
-    kColorAttachmentWrite    = BIT(7),
-    kDepthStencilRead        = BIT(8),
-    kDepthStencilWrite       = BIT(9),
-    kTransferRead            = BIT(10),
-    kTransferWrite           = BIT(11),
-    kHostRead                = BIT(12),
-    kHostWrite               = BIT(13),
-    kMemoryRead              = BIT(14),
-    kMemoryWrite             = BIT(15),
+    kNone                        = 0,
+    kIndirectCommandRead         = BIT(0),
+    kVertexBufferRead            = BIT(1),
+    kIndexBufferRead             = BIT(2),
+    kConstantBufferRead          = BIT(3),
+    kShaderRead                  = BIT(4),
+    kShaderWrite                 = BIT(5),
+    kColorAttachmentRead         = BIT(6),
+    kColorAttachmentWrite        = BIT(7),
+    kDepthStencilRead            = BIT(8),
+    kDepthStencilWrite           = BIT(9),
+    kTransferRead                = BIT(10),
+    kTransferWrite               = BIT(11),
+    kHostRead                    = BIT(12),
+    kHostWrite                   = BIT(13),
+    kMemoryRead                  = BIT(14),
+    kMemoryWrite                 = BIT(15),
+    kAccelerationStructureRead   = BIT(16),
+    kAccelerationStructureWrite  = BIT(17),
 };
 ENUM_CLASS_FLAGS(RHIResourceAccess);
 
@@ -104,10 +108,21 @@ struct RHIBufferBarrier
         : Buffer(buffer) {}
 };
 
+struct RHIMemoryBarrier
+{
+    RHIResourceAccess SourceAccess;
+    RHIResourceAccess DestAccess;
+    RHIPipelineStage SourceStage;
+    RHIPipelineStage DestStage;
+
+    RHIMemoryBarrier() = default;
+};
+
 struct RHIBarrierGroup
 {
     Array<RHITextureBarrier> TextureBarriers;
     Array<RHIBufferBarrier> BufferBarriers;
+    Array<RHIMemoryBarrier> MemoryBarriers;
 };
 
 struct RHIRenderAttachment
@@ -132,6 +147,12 @@ struct RHIRenderBegin
         : Width(w), Height(h), RenderTargets(rts), DepthTarget(depth) {}
 };
 
+enum class RHIASBuildMode
+{
+    kRebuild,
+    kRefit
+};
+
 class IRHICommandBuffer
 {
 public:
@@ -147,6 +168,7 @@ public:
 
     virtual void Barrier(const RHITextureBarrier& barrier) = 0;
     virtual void Barrier(const RHIBufferBarrier& barrier) = 0;
+    virtual void Barrier(const RHIMemoryBarrier& barrier) = 0;
     virtual void BarrierGroup(const RHIBarrierGroup& barrierGroup) = 0;
 
     virtual void ClearColor(IRHITextureView* view, float r, float g, float b) = 0;
@@ -167,6 +189,7 @@ public:
 
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
     virtual void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) = 0;
+    virtual void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) = 0;
 public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 

@@ -37,6 +37,7 @@ Application::Application()
 
     mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 6, RHIBufferUsage::kVertex));
     mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
+    mBLAS = mDevice->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
     mSampler = mDevice->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, false));
     {
         RHITextureDesc desc = {};
@@ -55,6 +56,7 @@ Application::Application()
     Uploader::EnqueueTextureUploadRaw(&color, sizeof(uint), mTexture);
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
     Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
+    Uploader::EnqueueBLASBuild(mBLAS);
     Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
@@ -71,6 +73,7 @@ Application::~Application()
 {
     Uploader::Shutdown();
 
+    delete mBLAS;
     delete mTextureSRV;
     delete mTexture;
     delete mSampler;

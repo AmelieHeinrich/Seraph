@@ -23,4 +23,5 @@ public:
     IRHISampler* CreateSampler(RHISamplerDesc desc) override { return nullptr; }
     IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override { return nullptr; }
     IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override { return nullptr; }
+    IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override { return nullptr; }
 };

@@ -24,6 +24,18 @@ void Uploader::Shutdown()
     sData.Requests.clear();
 }
 
+void Uploader::EnqueueBLASBuild(IRHIBLAS* blas)
+{
+    UploadRequest request = {};
+    request.Type = UploadRequestType::kBLASBuild;
+    request.BLAS = blas;
+
+    sData.Requests.push_back(std::move(request));
+    sData.UploadBatchSize += blas->GetDesc().VertexCount * 2; // Approximate
+    if (sData.UploadBatchSize >= MAX_BATCH_SIZE)
+        Flush();
+}
+
 // This function is fucking beautiful actually and I'm very proud of it :3
 void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITexture* texture)
 {
@@ -209,6 +221,24 @@ void Uploader::Flush()
                 sData.CommandBuffer->BarrierGroup(firstGroup);
                 sData.CommandBuffer->CopyBufferToTexture(request.DstTexture, request.StagingBuffer);
                 sData.CommandBuffer->Barrier(dstBarrierAfter);
+                break;
+            }
+            case UploadRequestType::kBLASBuild: {
+                RHIMemoryBarrier beforeBarrier;
+                beforeBarrier.SourceAccess = RHIResourceAccess::kVertexBufferRead | RHIResourceAccess::kIndexBufferRead;
+                beforeBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureWrite;
+                beforeBarrier.SourceStage = RHIPipelineStage::kVertexInput;
+                beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite; 
+
+                RHIMemoryBarrier afterBarrier;
+                afterBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureWrite;
+                afterBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureRead;
+                afterBarrier.SourceStage = RHIPipelineStage::kAccelStructureWrite;
+                afterBarrier.DestStage =  RHIPipelineStage::kRayTracingShader;
+
+                sData.CommandBuffer->Barrier(beforeBarrier);
+                sData.CommandBuffer->BuildBLAS(request.BLAS, RHIASBuildMode::kRebuild);
+                sData.CommandBuffer->Barrier(afterBarrier);
                 break;
             }
         }

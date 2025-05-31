@@ -31,6 +31,7 @@ public:
     IRHISampler* CreateSampler(RHISamplerDesc desc) override;
     IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override;
     IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override;
+    IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override;
 
 public:
     VkInstance Instance() const { return mInstance; }

@@ -18,6 +18,7 @@
 #include "Sampler.h"
 #include "ComputePipeline.h"
 #include "MeshPipeline.h"
+#include "BLAS.h"
 
 class IRHIDevice
 {
@@ -36,6 +37,7 @@ public:
     virtual IRHISampler* CreateSampler(RHISamplerDesc desc) = 0;
     virtual IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) = 0;
     virtual IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) = 0;
+    virtual IRHIBLAS* CreateBLAS(RHIBLASDesc desc) = 0;
 
 protected:
     IRHIDevice() = default;
