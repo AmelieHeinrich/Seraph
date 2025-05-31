@@ -60,9 +60,13 @@ VulkanSampler::VulkanSampler(VulkanDevice* device, RHISamplerDesc desc)
 
     VkResult result = vkCreateSampler(mParentDevice->Device(), &samplerInfo, nullptr, &mSampler);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan sampler!");
+
+    // Bindless
+    mHandle.Index = mParentDevice->GetBindlessManager()->WriteSampler(this);
 }
 
 VulkanSampler::~VulkanSampler()
 {
+    mParentDevice->GetBindlessManager()->FreeSampler(mHandle.Index);
     if (mSampler) vkDestroySampler(mParentDevice->Device(), mSampler, nullptr);
 }

@@ -14,6 +14,8 @@ constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
 constexpr uint64 MAX_BINDLESS_AS = 8;
 
 class VulkanDevice;
+class VulkanTextureView;
+class VulkanSampler;
 
 class VulkanBindlessManager
 {
@@ -23,6 +25,15 @@ public:
 
     VkDescriptorSetLayout GetLayout() const { return mLayout; }
     VkDescriptorSet GetSet() const { return mSet; }
+
+    // ResourceDescriptorHeap[]
+    uint WriteTextureSRV(VulkanTextureView* srv);
+    uint WriteTextureUAV(VulkanTextureView* srv);
+    void FreeCBVSRVUAV(uint index);
+
+    // SamplerDescriptorHeap[]
+    uint WriteSampler(VulkanSampler* sampler);
+    void FreeSampler(uint index);
 private:
     VulkanDevice* mParentDevice;
 

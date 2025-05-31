@@ -264,9 +264,11 @@ void VulkanCommandBuffer::ClearColor(IRHITextureView* view, float r, float g, fl
 
 void VulkanCommandBuffer::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
 {
+    VkDescriptorSet set = mParentDevice->GetBindlessManager()->GetSet();
     VulkanGraphicsPipeline* vkPipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
 
     vkCmdBindPipeline(mCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetPipeline());
+    vkCmdBindDescriptorSets(mCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetLayout(), 0, 1, &set, 0, nullptr);
 }
 
 void VulkanCommandBuffer::SetViewport(float width, float height, float x, float y)
@@ -332,6 +334,68 @@ void VulkanCommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* s
     copyRegion.size = src->GetDesc().Size;
 
     vkCmdCopyBuffer(mCmdBuffer, vkSrc->GetBuffer(), vkDest->GetBuffer(), 1, &copyRegion);
+}
+
+void VulkanCommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
+{
+    RHITextureDesc textureDesc = dest->GetDesc();
+    VkImage image = static_cast<VulkanTexture*>(dest)->Image();
+    VkBuffer buffer = static_cast<VulkanBuffer*>(src)->GetBuffer();
+
+    const bool isBlockCompressed = IRHITexture::IsBlockFormat(textureDesc.Format);
+    const uint bytesPerUnit = IRHITexture::BytesPerPixel(textureDesc.Format); // bytes per pixel or per block
+
+    VkDeviceSize bufferOffset = 0;
+
+    for (uint mip = 0; mip < textureDesc.MipLevels; mip++) {
+        uint mipWidth = std::max(1u, textureDesc.Width >> mip);
+        uint mipHeight = std::max(1u, textureDesc.Height >> mip);
+
+        uint rowPitch = 0;
+        uint rowLength = 0;
+        uint imageHeight = 0;
+        VkExtent3D imageExtent = {};
+
+        if (isBlockCompressed) {
+            // Calculate block count (in 4x4 blocks)
+            uint blocksWide = (mipWidth + 3) / 4;
+            uint blocksHigh = (mipHeight + 3) / 4;
+
+            rowPitch = Align<uint>(blocksWide * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
+            rowLength = blocksWide * 4; // Expressed in texels, not blocks
+            imageExtent = { std::max(1u, mipWidth), std::max(1u, mipHeight), 1 };
+
+            // bufferImageHeight = 0 is acceptable here since it's same as mipHeight
+        }
+        else {
+            rowPitch = Align<uint>(mipWidth * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
+            rowLength = mipWidth;
+            imageExtent = { mipWidth, mipHeight, 1 };
+        }
+
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset = bufferOffset;
+        copyRegion.bufferRowLength = rowLength; // in texels, not bytes
+        copyRegion.bufferImageHeight = mipWidth == 1 ? 0 : rowPitch;       // tightly packed between rows
+        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel = mip;
+        copyRegion.imageSubresource.baseArrayLayer = 0;
+        copyRegion.imageSubresource.layerCount = 1;
+        copyRegion.imageOffset = { 0, 0, 0 };
+        copyRegion.imageExtent = imageExtent;
+
+        vkCmdCopyBufferToImage(
+            mCmdBuffer,
+            buffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &copyRegion
+        );
+
+        uint mipHeightInBlocks = isBlockCompressed ? (mipHeight + 3) / 4 : mipHeight;
+        bufferOffset += rowPitch * mipHeightInBlocks;
+    }
 }
 
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)

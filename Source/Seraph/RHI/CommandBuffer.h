@@ -160,6 +160,7 @@ public:
     virtual void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) = 0;
 
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
+    virtual void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) = 0;
 public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 

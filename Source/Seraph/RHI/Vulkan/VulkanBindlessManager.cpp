@@ -5,6 +5,8 @@
 
 #include "VulkanBindlessManager.h"
 #include "VulkanDevice.h"
+#include "VulkanTextureView.h"
+#include "VulkanSampler.h"
 
 VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     : mParentDevice(device)
@@ -65,7 +67,7 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     // Pool
     Array<VkDescriptorPoolSize> poolSizes = {
         { VK_DESCRIPTOR_TYPE_MUTABLE_EXT, MAX_BINDLESS_RESOURCES },
-        { VK_DESCRIPTOR_TYPE_SAMPLER, MAX_BINDLESS_SAMPLERS },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_BINDLESS_SAMPLERS },
         { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, MAX_BINDLESS_AS }
     };
 
@@ -90,12 +92,118 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     result = vkAllocateDescriptorSets(mParentDevice->Device(), &allocInfo, &mSet);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan descriptor set!");
 
+    // Allocate LUTs
+    mResourceLUT.resize(MAX_BINDLESS_RESOURCES);
+    mSamplerLUT.resize(MAX_BINDLESS_SAMPLERS);
+    mASLUT.resize(MAX_BINDLESS_AS);
+
     SERAPH_INFO("Initialized Vulkan Bindless Manager");
 }
 
 VulkanBindlessManager::~VulkanBindlessManager()
 {
+    mResourceLUT.clear();
+    mSamplerLUT.clear();
+    mASLUT.clear();
+
     if (mSet) vkFreeDescriptorSets(mParentDevice->Device(), mPool, 1, &mSet);
     if (mLayout) vkDestroyDescriptorSetLayout(mParentDevice->Device(), mLayout, nullptr);
     if (mPool) vkDestroyDescriptorPool(mParentDevice->Device(), mPool, nullptr);
+}
+
+uint VulkanBindlessManager::WriteTextureSRV(VulkanTextureView* srv)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = srv->GetView();
+    imageInfo.sampler = VK_NULL_HANDLE;
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    write.dstBinding = 0;
+    write.dstSet = mSet;
+    write.dstArrayElement = availableIndex;
+    write.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);
+
+    return availableIndex;
+}
+
+uint VulkanBindlessManager::WriteTextureUAV(VulkanTextureView* srv)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageView = srv->GetView();
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    write.dstBinding = 0;
+    write.dstSet = mSet;
+    write.pImageInfo = &imageInfo;
+    write.dstArrayElement = availableIndex;
+
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);
+
+    return availableIndex;
+}
+
+void VulkanBindlessManager::FreeCBVSRVUAV(uint index)
+{
+    mResourceLUT[index] = false;
+}
+
+uint VulkanBindlessManager::WriteSampler(VulkanSampler* sampler)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mSamplerLUT.size(); i++) {
+        if (mSamplerLUT[i] == false) {
+            mSamplerLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+    
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.sampler = sampler->GetSampler();
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    write.dstBinding = 1;
+    write.dstSet = mSet;
+    write.pImageInfo = &imageInfo;
+    write.dstArrayElement = availableIndex;
+
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);
+
+    return availableIndex;
+}
+
+void VulkanBindlessManager::FreeSampler(uint index)
+{
+    mSamplerLUT[index] = false;
 }

@@ -52,11 +52,16 @@ using SharedPtr = std::shared_ptr<T>;
 template<typename K, typename T>
 using UnorderedMap = std::unordered_map<K, T>;
 
+template<typename T>
+constexpr T Align(T value, T alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
 #define BIT(x) (1 << x)
 #define KILOBYTES(s) s * 1024
 #define MEGABYTES(s) KILOBYTES(s) * 1024
 #define GIGABYTES(s) MEGABYTES(s) * 1024
-
 #define ENUM_CLASS_FLAGS(EnumType)                                                \
 inline constexpr EnumType operator|(EnumType lhs, EnumType rhs) {                 \
     using T = std::underlying_type_t<EnumType>;                                   \

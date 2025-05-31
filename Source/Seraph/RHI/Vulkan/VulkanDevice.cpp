@@ -217,6 +217,7 @@ void VulkanDevice::BuildLogicalDevice()
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+        VK_EXT_ROBUSTNESS_2_EXTENSION_NAME
     };
 
     // Base features
@@ -225,6 +226,7 @@ void VulkanDevice::BuildLogicalDevice()
     VkPhysicalDeviceFeatures baseFeatures = {};
     baseFeatures.multiDrawIndirect = VK_TRUE;
     baseFeatures.drawIndirectFirstInstance = VK_TRUE;
+    baseFeatures.tessellationShader = VK_TRUE;
     deviceFeatures2.features = baseFeatures;
 
     // Feature structs
@@ -236,12 +238,14 @@ void VulkanDevice::BuildLogicalDevice()
     descriptorIndexing.runtimeDescriptorArray = VK_TRUE;
     descriptorIndexing.descriptorBindingVariableDescriptorCount = VK_TRUE;
     descriptorIndexing.descriptorBindingPartiallyBound = VK_TRUE;
+    descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 
     VkPhysicalDeviceDynamicRenderingFeatures dynamicRendering = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES };
     dynamicRendering.dynamicRendering = VK_TRUE;
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
     accelerationStructure.accelerationStructure = VK_TRUE;
+    accelerationStructure.descriptorBindingAccelerationStructureUpdateAfterBind = VK_TRUE;
 
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipeline = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
     rayTracingPipeline.rayTracingPipeline = VK_TRUE;
@@ -257,6 +261,9 @@ void VulkanDevice::BuildLogicalDevice()
     VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptor = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT };
     mutableDescriptor.mutableDescriptorType = VK_TRUE;
 
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
+    robustness2.nullDescriptor = VK_TRUE;
+
     // Chain pNexts (careful with ordering!)
     deviceFeatures2.pNext = &sync2;
     sync2.pNext = &descriptorIndexing;
@@ -266,7 +273,8 @@ void VulkanDevice::BuildLogicalDevice()
     rayTracingPipeline.pNext = &rayQuery;
     rayQuery.pNext = &meshShader;
     meshShader.pNext = &mutableDescriptor;
-    mutableDescriptor.pNext = nullptr;
+    mutableDescriptor.pNext = &robustness2;
+    robustness2.pNext = nullptr;
 
     // Queue family selection
     uint32_t queueFamilyCount = 0;

@@ -18,6 +18,7 @@ public:
     static void Initialize(IRHIDevice* device, IRHICommandQueue* copyQueue);
     static void Shutdown();
 
+    static void EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITexture* texture);
     static void EnqueueBufferUpload(const void* data, uint64 size, IRHIBuffer* buffer);
     static void Flush();
 private:
@@ -25,13 +26,15 @@ private:
 
     enum class UploadRequestType
     {
-        kBufferCPUToGPU
+        kBufferCPUToGPU,
+        kTextureCPUToGPU
     };
 
     struct UploadRequest
     {
         UploadRequestType Type;
 
+        IRHITexture* DstTexture;
         IRHIBuffer* DstBuffer;
         IRHIBuffer* StagingBuffer;
     };

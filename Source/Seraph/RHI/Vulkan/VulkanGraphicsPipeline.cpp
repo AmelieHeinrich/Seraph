@@ -221,9 +221,12 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     pushRange.size = desc.PushConstantSize;
     pushRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
 
+    VkDescriptorSetLayout bindlessLayout = mParentDevice->GetBindlessManager()->GetLayout();
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &bindlessLayout;
     pipelineLayoutInfo.pushConstantRangeCount = pushRange.size > 0 ? 1 : 0;
     pipelineLayoutInfo.pPushConstantRanges = &pushRange;
 

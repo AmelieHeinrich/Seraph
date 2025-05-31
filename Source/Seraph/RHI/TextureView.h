@@ -7,6 +7,7 @@
 
 #include <Core/Context.h>
 
+#include "Bindless.h"
 #include "Texture.h"
 
 enum class RHITextureViewType
@@ -53,6 +54,10 @@ public:
     ~IRHITextureView() = default;
 
     RHITextureViewDesc GetDesc() const { return mDesc; }
+    BindlessHandle GetBindlessHandle() const { return mBindless; }
+
 protected:
     RHITextureViewDesc mDesc;
+
+    BindlessHandle mBindless;
 };

@@ -7,9 +7,9 @@ module Bindless;
 
 #ifdef VULKAN
 
-[[vk::binding(0, 0)]] __DynamicResource<__DynamicResourceKind.General> gResourceHandles[];
-[[vk::binding(0, 1)]] __DynamicResource<__DynamicResourceKind.Sampler> gSamplerHandles[];
-[[vk::binding(0, 2)]] RaytracingAccelerationStructure gRaytracingASArray[];
+[[vk::binding(0, 0)]] Texture2D gTexture2DArray[];
+[[vk::binding(1, 0)]] SamplerState gSamplerHandles[];
+[[vk::binding(2, 0)]] RaytracingAccelerationStructure gRaytracingASArray[];
 
 #else
 
@@ -17,20 +17,34 @@ RaytracingAccelerationStructure gRaytracingASArray[] : register(b1);
 
 #endif
 
-export T getDescriptorFromHandle<T>(DescriptorHandle<T> handle) where T : IOpaqueDescriptor
+public struct BindlessSampler
 {
-#ifdef VULKAN
-    if (T.kind == __DynamicResourceKind.Sampler)
-        return gSamplerHandles[((uint2)handle).x].asOpaqueDescriptor<T>();
-    else if (T.kind == __DynamicResourceKind.General)
-        return gResourceHandles[((uint2)handle).x].asOpaqueDescriptor<T>();
-    return gResourceHandles[((uint2)handle).x].asOpaqueDescriptor<T>();
-#else
-    return defaultGetDescriptorFromHandle(handle);
-#endif
-}
+    int Index;
 
-export RaytracingAccelerationStructure GetAS(int index)
+    public SamplerState Load()
+    {
+        SamplerState result;
+#ifdef VULKAN
+        result = gSamplerHandles[Index];
+#else
+        result = defaultGetDescriptorFromHandle(DescriptorHandle<SamplerState>(uint2(Index, 0)));
+#endif
+        return result;
+    }
+};
+
+public struct BindlessTexture2D<T:ITexelElement>
 {
-    return gRaytracingASArray[index];
-}
+    int Index;
+
+    public Texture2D Load()
+    {
+        Texture2D result;
+#ifdef VULKAN
+        result = gTexture2DArray[Index];
+#else
+        result = defaultGetDescriptorFromHandle(DescriptorHandle<Texture2D>(uint2(Index, 0)));
+#endif
+        return result;
+    }
+};

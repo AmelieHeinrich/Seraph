@@ -33,10 +33,23 @@ VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc view
 
     VkResult result = vkCreateImageView(mParentDevice->Device(), &createInfo, nullptr, &mImageView);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan image view!");
+
+    // Get bindless
+    switch (viewDesc.Type) {
+        case RHITextureViewType::kShaderRead: {
+            mBindless.Index = mParentDevice->GetBindlessManager()->WriteTextureSRV(this);
+            break;
+        }
+        case RHITextureViewType::kShaderWrite: {
+            mBindless.Index = mParentDevice->GetBindlessManager()->WriteTextureUAV(this);
+            break;
+        }
+    }
 }
 
 VulkanTextureView::~VulkanTextureView()
 {
+    if (mBindless.Index != INVALID_HANDLE) mParentDevice->GetBindlessManager()->FreeCBVSRVUAV(mBindless.Index);
     if (mImageView) vkDestroyImageView(mParentDevice->Device(), mImageView, nullptr);
 }
 

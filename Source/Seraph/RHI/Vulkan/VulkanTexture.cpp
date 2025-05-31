@@ -16,6 +16,7 @@ VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = desc.Width;
     imageInfo.extent.height = desc.Height;
+    imageInfo.extent.depth = 1;
     imageInfo.mipLevels = desc.MipLevels;
     imageInfo.arrayLayers = desc.Depth;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -24,8 +25,7 @@ VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.format = RHIToVkFormat(desc.Format);
     imageInfo.flags = 0;
-    imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     if (Any(desc.Usage & RHITextureUsage::kRenderTarget)) imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     if (Any(desc.Usage & RHITextureUsage::kDepthTarget)) imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     if (Any(desc.Usage & RHITextureUsage::kShaderResource)) imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;

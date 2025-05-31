@@ -7,6 +7,8 @@
 
 #include <Core/Context.h>
 
+#include "Bindless.h"
+
 enum class RHISamplerAddress
 {
     kWrap,
@@ -38,7 +40,9 @@ public:
     ~IRHISampler() = default;
 
     RHISamplerDesc GetDesc() const { return mDesc; }
+    BindlessHandle GetBindlessHandle() const { return mHandle; }
 
 protected:
+    BindlessHandle mHandle;
     RHISamplerDesc mDesc;
 };

@@ -31,7 +31,7 @@
 - [x] Hello quad!
 - [x] Push constants
 - [x] Samplers
-- [ ] Bindless setup
+- [x] Bindless setup
 - [ ] Compute shaders
 - [ ] Mesh shaders
 - [ ] Raytracing shaders

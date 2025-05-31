@@ -38,13 +38,14 @@ public:
     void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) override;
 
     void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) override;
+    void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) override;
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
 
 private:
-    VkPipelineStageFlags2 TranslatePipelineStageToVk(RHIPipelineStage stage);
-    VkAccessFlags2 TranslateAccessFlagsToVk(RHIResourceAccess access);
-    VkImageLayout TranslateLayoutToVk(RHIResourceLayout layout);
+    static VkPipelineStageFlags2 TranslatePipelineStageToVk(RHIPipelineStage stage);
+    static VkAccessFlags2 TranslateAccessFlagsToVk(RHIResourceAccess access);
+    static VkImageLayout TranslateLayoutToVk(RHIResourceLayout layout);
 
 private:
     bool mSingleTime = false;

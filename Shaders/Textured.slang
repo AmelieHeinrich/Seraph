@@ -19,8 +19,8 @@ struct VertexOutput
 
 struct PushConstants
 {
-    DescriptorHandle<Texture2D<float4>> MyTexture;
-    DescriptorHandle<SamplerState> MySampler;
+    BindlessTexture2D<float4> MyTexture;
+    BindlessSampler MySampler;
 };
 
 [[vk::push_constant]] ConstantBuffer<PushConstants> Push : register(b0);
@@ -39,8 +39,8 @@ VertexOutput VSMain(VertexInput input)
 [shader("fragment")]
 float4 FSMain(VertexOutput input) : SV_Target
 {
-    Texture2D<float4> texture = getDescriptorFromHandle(Push.MyTexture);
-    SamplerState sampler = getDescriptorFromHandle(Push.MySampler);
+    Texture2D<float4> texture = Push.MyTexture.Load();
+    SamplerState sampler = Push.MySampler.Load();
 
     return texture.Sample(sampler, input.UV);
 }
