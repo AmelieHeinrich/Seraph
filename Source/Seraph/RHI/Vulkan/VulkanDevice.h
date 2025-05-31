@@ -13,6 +13,8 @@
 #include <vma/vk_mem_alloc.h>
 #include <volk/volk.h>
 
+#include "VulkanBindlessManager.h"
+
 class VulkanDevice : public IRHIDevice
 {
 public:
@@ -34,17 +36,21 @@ public:
     VkDevice Device() const { return mDevice; }
     VmaAllocator Allocator() const { return mAllocator; }
 
+    VulkanBindlessManager* GetBindlessManager() { return mBindlessManager; }
+
     uint32 GraphicsQueueFamilyIndex() const { return mGraphicsQueueFamilyIndex; }
     uint32 ComputeQueueFamilyIndex() const { return mComputeQueueFamilyIndex; }
     uint32 TransferQueueFamilyIndex() const { return mTransferQueueFamilyIndex; } 
 
-    private:
+private:
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mMessenger;
     VkPhysicalDevice mPhysicalDevice;
     VkDevice mDevice;
 
     VmaAllocator mAllocator;
+
+    VulkanBindlessManager* mBindlessManager;
 
     uint32 mGraphicsQueueFamilyIndex;
     uint32 mComputeQueueFamilyIndex;

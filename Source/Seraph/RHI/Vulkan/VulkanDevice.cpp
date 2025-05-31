@@ -45,11 +45,15 @@ VulkanDevice::VulkanDevice(bool validationLayers)
     BuildLogicalDevice();
     BuildAllocator();
 
+    mBindlessManager = new VulkanBindlessManager(this);
+
     SERAPH_INFO("Created Vulkan device!");
 }
 
 VulkanDevice::~VulkanDevice()
 {
+    delete mBindlessManager;
+
     if (mAllocator) vmaDestroyAllocator(mAllocator);
     if (mDevice) vkDestroyDevice(mDevice, nullptr);
     if (mMessenger) vkDestroyDebugUtilsMessengerEXT(mInstance, mMessenger, nullptr);

@@ -3,6 +3,8 @@
 // > Create Time: 2025-05-29 21:46:01
 //
 
+import Bindless;
+
 struct VertexInput
 {
     float3 Position : POSITION;
