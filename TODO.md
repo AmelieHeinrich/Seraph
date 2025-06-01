@@ -48,22 +48,17 @@
 - [x] Memory allocator
 - [x] Texture
 - [x] Texture views
-- [ ] Swapchain
-- [ ] Command queues
+- [x] Swapchain
+- [x] Command queues
+- [x] Buffer
+- [ ] Buffer views
 - [ ] Command buffers
 - [ ] Synchronization
-- [ ] Clear screen
-- [ ] Begin/End rendering
-- [ ] Graphics pipeline
-- [ ] Hello triangle!
-- [ ] Buffer
-- [ ] Bindless setup
 - [ ] Compute shaders
 - [ ] Mesh shaders
 - [ ] BLAS
 - [ ] TLAS
 - [ ] Profiler tools
-- [ ] Buffer views
 - [ ] Indirect
 - [ ] Raytracing pipelines
 - [ ] GPU timestamps

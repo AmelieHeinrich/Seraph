@@ -27,8 +27,8 @@ Application::Application()
 
     mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
     mDevice = IRHIDevice::CreateDevice(mBackend, true);
-    mSurface = mDevice->CreateSurface(mWindow.get());
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
+    mSurface = mDevice->CreateSurface(mWindow.get(), mGraphicsQueue);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         mCommandBuffers[i] = mGraphicsQueue->CreateCommandBuffer(false);
     }

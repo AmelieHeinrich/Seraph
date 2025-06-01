@@ -67,7 +67,7 @@ VulkanDevice::~VulkanDevice()
     if (mInstance) vkDestroyInstance(mInstance, nullptr);
 }
 
-IRHISurface* VulkanDevice::CreateSurface(Window* window)
+IRHISurface* VulkanDevice::CreateSurface(Window* window, IRHICommandQueue* graphicsQueue)
 {
     return (new VulkanSurface(this, window));
 }

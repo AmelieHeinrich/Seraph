@@ -8,6 +8,11 @@
 
 #include <Core/String.h>
 
+D3D12Texture::D3D12Texture(RHITextureDesc desc)
+{
+    mDesc = desc;
+}
+
 D3D12Texture::D3D12Texture(D3D12Device* device, RHITextureDesc desc)
 {
     mDesc = desc;
@@ -32,6 +37,8 @@ D3D12Texture::D3D12Texture(D3D12Device* device, RHITextureDesc desc)
 
     HRESULT hr = device->GetAllocator()->CreateResource(&allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &mAllocation, IID_PPV_ARGS(&mResource));
     ASSERT_EQ(SUCCEEDED(hr), "Failed to create D3D12 texture!");
+
+    SERAPH_WHATEVER("Created D3D12 texture");
 }
 
 D3D12Texture::~D3D12Texture()

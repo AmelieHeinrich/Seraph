@@ -30,6 +30,8 @@ public:
     ID3D12Resource* GetResource() { return mResource; }
 
 private:
+    D3D12Device* mParentDevice;
+
     ID3D12Resource* mResource;
     D3D12MA::Allocation* mAllocation;
 };

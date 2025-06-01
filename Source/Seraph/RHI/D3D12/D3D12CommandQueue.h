@@ -7,6 +7,8 @@
 
 #include <RHI/CommandQueue.h>
 
+#include <Agility/d3d12.h>
+
 class D3D12Device;
 
 class D3D12CommandQueue : public IRHICommandQueue
@@ -18,6 +20,13 @@ public:
     IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
 
     void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override;
+
+public:
+    static D3D12_COMMAND_LIST_TYPE TranslateToD3D12List(RHICommandQueueType type);
+
+    ID3D12CommandQueue* GetQueue() { return mQueue; }
+
 private:
     D3D12Device* mParentDevice;
+    ID3D12CommandQueue* mQueue = nullptr;
 };

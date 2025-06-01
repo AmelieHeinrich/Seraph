@@ -15,7 +15,7 @@ class D3D12Device;
 class D3D12Texture : public IRHITexture
 {
 public:
-    D3D12Texture() = default;
+    D3D12Texture(RHITextureDesc desc);
     D3D12Texture(D3D12Device* device, RHITextureDesc desc);
     ~D3D12Texture();
 
@@ -26,6 +26,8 @@ public:
     static DXGI_FORMAT TranslateToDXGIFormat(RHITextureFormat format);
 
 private:
+    friend class D3D12Surface;
+
     D3D12MA::Allocation* mAllocation;
     ID3D12Resource* mResource;
 };

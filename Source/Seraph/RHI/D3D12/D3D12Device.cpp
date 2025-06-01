@@ -171,9 +171,9 @@ uint64 D3D12Device::CalculateAdapterScore(IDXGIAdapter1* adapter)
     return resultScore;
 }
 
-IRHISurface* D3D12Device::CreateSurface(Window* window)
+IRHISurface* D3D12Device::CreateSurface(Window* window, IRHICommandQueue* graphicsQueue)
 {
-    return (new D3D12Surface(this, window));
+    return (new D3D12Surface(this, window, static_cast<D3D12CommandQueue*>(graphicsQueue)));
 }
 
 IRHITexture* D3D12Device::CreateTexture(RHITextureDesc desc)

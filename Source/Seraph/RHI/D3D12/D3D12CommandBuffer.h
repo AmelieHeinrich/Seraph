@@ -12,7 +12,8 @@
 
 #include <RHI/CommandBuffer.h>
 
-#include "D3D12CommandQueue.h"
+class D3D12Device;
+class D3D12CommandQueue;
 
 class D3D12CommandBuffer : public IRHICommandBuffer
 {

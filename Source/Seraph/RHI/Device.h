@@ -29,7 +29,7 @@ public:
 
     static IRHIDevice* CreateDevice(RHIBackend backend, bool validationLayers);
 
-    virtual IRHISurface* CreateSurface(Window* window) = 0;
+    virtual IRHISurface* CreateSurface(Window* window, IRHICommandQueue* graphicsQueue) = 0;
     virtual IRHITexture* CreateTexture(RHITextureDesc desc) = 0;
     virtual IRHITextureView* CreateTextureView(RHITextureViewDesc desc) = 0;
     virtual IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) = 0;

@@ -19,7 +19,7 @@ public:
     D3D12Device(bool validationLayers);
     ~D3D12Device();
 
-    IRHISurface* CreateSurface(Window* window) override;
+    IRHISurface* CreateSurface(Window* window, IRHICommandQueue* graphicsQueue) override;
     IRHITexture* CreateTexture(RHITextureDesc desc) override;
     IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override;
     IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;

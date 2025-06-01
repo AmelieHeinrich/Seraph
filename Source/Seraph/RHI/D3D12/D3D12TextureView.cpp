@@ -28,6 +28,8 @@ D3D12TextureView::D3D12TextureView(D3D12Device* device, RHITextureViewDesc viewD
     }
     
     mBindless.Index = mAlloc.Index;
+
+    SERAPH_WHATEVER("Created D3D12 texture view");
 }
 
 D3D12TextureView::~D3D12TextureView()

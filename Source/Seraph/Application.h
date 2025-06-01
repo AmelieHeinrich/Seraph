@@ -24,8 +24,8 @@ private:
     SharedPtr<Window> mWindow;
 
     IRHIDevice* mDevice;
-    IRHISurface* mSurface;
     IRHICommandQueue* mGraphicsQueue;
+    IRHISurface* mSurface;
     StaticArray<IRHICommandBuffer*, FRAMES_IN_FLIGHT> mCommandBuffers;
     IRHIF2FSync* mF2FSync;
     
