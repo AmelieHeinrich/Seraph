@@ -28,6 +28,7 @@ private:
     IRHISurface* mSurface;
     StaticArray<IRHICommandBuffer*, FRAMES_IN_FLIGHT> mCommandBuffers;
     IRHIF2FSync* mF2FSync;
+    IRHIImGuiContext* mImGuiContext;
     
     IRHIGraphicsPipeline* mPipeline;
     IRHIBuffer* mVertexBuffer;

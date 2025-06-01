@@ -38,6 +38,8 @@ public:
     D3D12BindlessAlloc WriteAS(D3D12TLAS* as);
     void FreeCBVSRVUAV(D3D12BindlessAlloc index);
 
+    D3D12BindlessAlloc FindFreeSpace();
+
     // SamplerDescriptorHeap[]
     D3D12BindlessAlloc WriteSampler(D3D12Sampler* sampler);
     void FreeSampler(D3D12BindlessAlloc index);

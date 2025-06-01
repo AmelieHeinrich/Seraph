@@ -283,6 +283,27 @@ void D3D12BindlessManager::FreeCBVSRVUAV(D3D12BindlessAlloc index)
     mResourceLUT[index.Index] = false;
 }
 
+D3D12BindlessAlloc D3D12BindlessManager::FindFreeSpace()
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    D3D12BindlessAlloc alloc = {};
+    alloc.Index = availableIndex;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
+
+    return alloc;
+}
+
 D3D12BindlessAlloc D3D12BindlessManager::WriteSampler(D3D12Sampler* sampler)
 {
     RHISamplerDesc desc = sampler->GetDesc();

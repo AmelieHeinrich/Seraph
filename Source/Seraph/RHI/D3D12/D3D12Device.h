@@ -32,6 +32,7 @@ public:
     IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override;
     IRHITLAS* CreateTLAS() override;
     IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) override;
+    IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
 public:
     ID3D12Device14* GetDevice() { return mDevice; }

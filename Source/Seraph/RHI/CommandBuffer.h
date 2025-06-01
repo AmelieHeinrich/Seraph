@@ -196,6 +196,9 @@ public:
 
     virtual void PushMarker(const StringView& name) = 0;
     virtual void PopMarker() = 0;
+    
+    virtual void BeginImGui() = 0;
+    virtual void EndImGui() = 0;
 public:
     IRHICommandQueue* GetParentQueue() { return mParentQueue; }
 

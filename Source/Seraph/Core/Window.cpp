@@ -6,6 +6,8 @@
 #include "Window.h"
 #include "Context.h"
 
+#include <imgui/imgui_impl_sdl3.h>
+
 Window::Window(int width, int height, const StringView& title)
     : mOpen(true)
 {
@@ -30,6 +32,7 @@ void Window::PollEvents()
 {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
         if (event.type == SDL_EVENT_QUIT)
             mOpen = false;
     }

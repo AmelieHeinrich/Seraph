@@ -21,6 +21,7 @@
 #include "BLAS.h"
 #include "TLAS.h"
 #include "BufferView.h"
+#include "ImGuiContext.h"
 
 class IRHIDevice
 {
@@ -42,6 +43,7 @@ public:
     virtual IRHIBLAS* CreateBLAS(RHIBLASDesc desc) = 0;
     virtual IRHITLAS* CreateTLAS() = 0;
     virtual IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) = 0;
+    virtual IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) = 0;
 
 protected:
     IRHIDevice() = default;

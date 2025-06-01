@@ -48,6 +48,9 @@ public:
     
     void PushMarker(const StringView& name) override;
     void PopMarker() override;
+
+    void BeginImGui() override;
+    void EndImGui() override;
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
 

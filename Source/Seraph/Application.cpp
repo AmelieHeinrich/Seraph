@@ -5,7 +5,7 @@
 
 #include "Application.h"
 
-#include <filesystem>
+#include <imgui/imgui.h>
 
 static const float VERTICES[] = {
      0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
@@ -34,6 +34,7 @@ Application::Application()
     }
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
     Uploader::Initialize(mDevice, mGraphicsQueue);
+    mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());
 
     mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 5, RHIBufferUsage::kVertex));
     mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
@@ -113,6 +114,8 @@ Application::~Application()
     delete mIndexBuffer;
     delete mVertexBuffer;
     delete mPipeline;
+
+    delete mImGuiContext;
     delete mF2FSync;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         delete mCommandBuffers[i];
@@ -173,8 +176,9 @@ void Application::Run()
             mCBV->GetBindlessHandle()
         };
 
-        commandBuffer->PushMarker("My rectangle");
+        commandBuffer->PushMarker("Meow");
         commandBuffer->Barrier(beginRenderBarrier);
+        
         commandBuffer->BeginRendering(renderBegin);
         commandBuffer->SetGraphicsPipeline(mPipeline);
         commandBuffer->SetViewport(renderBegin.Width, renderBegin.Height, 0, 0);
@@ -183,6 +187,11 @@ void Application::Run()
         commandBuffer->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
         commandBuffer->DrawIndexed(6, 1, 0, 0, 0);
         commandBuffer->EndRendering();
+
+        commandBuffer->BeginImGui();
+        ImGui::ShowDemoWindow(nullptr);
+        commandBuffer->EndImGui();
+
         commandBuffer->Barrier(endRenderBarrier);
         commandBuffer->PopMarker();
         

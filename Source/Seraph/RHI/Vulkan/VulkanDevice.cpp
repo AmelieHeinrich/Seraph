@@ -22,6 +22,7 @@
 #include "VulkanBLAS.h"
 #include "VulkanTLAS.h"
 #include "VulkanBufferView.h"
+#include "VulkanImGuiContext.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -132,6 +133,11 @@ IRHIBufferView* VulkanDevice::CreateBufferView(RHIBufferViewDesc desc)
     return (new VulkanBufferView(this, desc));
 }
 
+IRHIImGuiContext* VulkanDevice::CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window)
+{
+    return (new VulkanImGuiContext(this, static_cast<VulkanCommandQueue*>(mainQueue), window));
+}
+
 void VulkanDevice::BuildInstance(bool validationLayers)
 {
     uint32 instanceLayerCount = 1;
@@ -140,7 +146,7 @@ void VulkanDevice::BuildInstance(bool validationLayers)
     uint32 sdlExtensionCount = 0;
     const char* const* sdlInstanceExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
     Array<const char*> extensions(sdlInstanceExtensions, sdlInstanceExtensions + sdlExtensionCount);
-    if (validationLayers) extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;

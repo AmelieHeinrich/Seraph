@@ -17,6 +17,7 @@
 #include "D3D12BLAS.h"
 #include "D3D12TLAS.h"
 #include "D3D12BufferView.h"
+#include "D3D12ImGuiContext.h"
 
 #include <Core/String.h>
 
@@ -228,4 +229,9 @@ IRHITLAS* D3D12Device::CreateTLAS()
 IRHIBufferView* D3D12Device::CreateBufferView(RHIBufferViewDesc desc)
 {
     return (new D3D12BufferView(this, desc));
+}
+
+IRHIImGuiContext* D3D12Device::CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window)
+{
+    return (new D3D12ImGuiContext(this, static_cast<D3D12CommandQueue*>(mainQueue), window));
 }

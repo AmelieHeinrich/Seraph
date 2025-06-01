@@ -57,6 +57,8 @@ public:
     void PushMarker(const StringView& name) override;
     void PopMarker() override;
 
+    void BeginImGui() override;
+    void EndImGui() override;
 public:
     ID3D12GraphicsCommandList10* GetList() { return mList; }
 

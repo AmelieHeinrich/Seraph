@@ -14,6 +14,10 @@
 #include "D3D12BLAS.h"
 #include "D3D12TLAS.h"
 
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_dx12.h>
+#include <ImGui/imgui_impl_sdl3.h>
+
 #include <PIX/pix3.h>
 
 D3D12CommandBuffer::D3D12CommandBuffer(D3D12Device* device, D3D12CommandQueue* queue, bool singleTime)
@@ -385,6 +389,19 @@ void D3D12CommandBuffer::PushMarker(const StringView& name)
 void D3D12CommandBuffer::PopMarker()
 {
     PIXEndEvent(mList);
+}
+
+void D3D12CommandBuffer::BeginImGui()
+{
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+}
+
+void D3D12CommandBuffer::EndImGui()
+{
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mList);
 }
 
 D3D12_BARRIER_SYNC D3D12CommandBuffer::ToD3D12BarrierSync(RHIPipelineStage stage)

@@ -13,6 +13,10 @@
 #include "VulkanBLAS.h"
 #include "VulkanTLAS.H"
 
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_sdl3.h>
+#include <ImGui/imgui_impl_vulkan.h>
+
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
 {
@@ -526,6 +530,19 @@ void VulkanCommandBuffer::PushMarker(const StringView& name)
 void VulkanCommandBuffer::PopMarker()
 {
     vkCmdEndDebugUtilsLabelEXT(mCmdBuffer);
+}
+
+void VulkanCommandBuffer::BeginImGui()
+{
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+}
+
+void VulkanCommandBuffer::EndImGui()
+{
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mCmdBuffer);
 }
 
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)
