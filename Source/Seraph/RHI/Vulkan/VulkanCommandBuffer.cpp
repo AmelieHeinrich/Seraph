@@ -527,6 +527,7 @@ VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelin
     if (Any(stage & RHIPipelineStage::kTopOfPipe))            flags |= VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
     if (Any(stage & RHIPipelineStage::kDrawIndirect))         flags |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     if (Any(stage & RHIPipelineStage::kVertexInput))          flags |= VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
+    if (Any(stage & RHIPipelineStage::kIndexInput))           flags |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
     if (Any(stage & RHIPipelineStage::kVertexShader))         flags |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
     if (Any(stage & RHIPipelineStage::kHullShader))           flags |= VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT;
     if (Any(stage & RHIPipelineStage::kDomainShader))         flags |= VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT;

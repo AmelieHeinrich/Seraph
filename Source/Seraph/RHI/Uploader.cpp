@@ -197,9 +197,26 @@ void Uploader::Flush()
                 RHIBufferBarrier dstBarrierAfter(request.DstBuffer);
                 dstBarrierAfter.SourceStage = RHIPipelineStage::kCopy;
                 dstBarrierAfter.SourceAccess = RHIResourceAccess::kTransferWrite;
-                if (Any(dstDesc.Usage & RHIBufferUsage::kVertex)) dstBarrierAfter.DestAccess = RHIResourceAccess::kVertexBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kVertexShader;
-                if (Any(dstDesc.Usage & RHIBufferUsage::kIndex)) dstBarrierAfter.DestAccess = RHIResourceAccess::kIndexBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kVertexShader;
-                if (Any(dstDesc.Usage & RHIBufferUsage::kConstant)) dstBarrierAfter.DestAccess = RHIResourceAccess::kConstantBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kAllCommands;
+                if (Any(dstDesc.Usage & RHIBufferUsage::kVertex)) {
+                    dstBarrierAfter.DestAccess = RHIResourceAccess::kVertexBufferRead;
+                    dstBarrierAfter.DestStage = RHIPipelineStage::kVertexInput;
+                }
+                if (Any(dstDesc.Usage & RHIBufferUsage::kIndex)) {
+                    dstBarrierAfter.DestAccess = RHIResourceAccess::kIndexBufferRead;
+                    dstBarrierAfter.DestStage = RHIPipelineStage::kVertexInput;
+                }
+                if (Any(dstDesc.Usage & RHIBufferUsage::kConstant)) {
+                    dstBarrierAfter.DestAccess = RHIResourceAccess::kConstantBufferRead;
+                    dstBarrierAfter.DestStage = RHIPipelineStage::kAllCommands;
+                }
+                if (Any(dstDesc.Usage & RHIBufferUsage::kShaderRead)) {
+                    dstBarrierAfter.DestAccess = RHIResourceAccess::kShaderRead;
+                    dstBarrierAfter.DestStage = RHIPipelineStage::kAllGraphics;
+                }
+                if (Any(dstDesc.Usage & RHIBufferUsage::kShaderWrite)) {
+                    dstBarrierAfter.DestAccess = RHIResourceAccess::kShaderWrite;
+                    dstBarrierAfter.DestStage = RHIPipelineStage::kAllGraphics;
+                }
 
                 sData.CommandBuffer->BarrierGroup(firstGroup);
                 sData.CommandBuffer->CopyBufferToBufferFull(request.DstBuffer, request.StagingBuffer);

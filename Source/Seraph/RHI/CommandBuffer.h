@@ -35,7 +35,8 @@ enum class RHIPipelineStage : uint64
     kCopy                    = BIT(15),
     kAllGraphics             = BIT(16),
     kAllCommands             = BIT(17),
-    kAccelStructureWrite     = BIT(18)
+    kAccelStructureWrite     = BIT(18),
+    kIndexInput              = BIT(19)
 };
 ENUM_CLASS_FLAGS(RHIPipelineStage);
 

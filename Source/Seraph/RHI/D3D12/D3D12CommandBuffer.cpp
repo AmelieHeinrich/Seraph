@@ -362,7 +362,8 @@ D3D12_BARRIER_SYNC D3D12CommandBuffer::ToD3D12BarrierSync(RHIPipelineStage stage
     if (Any(stage & kAllCommands)) sync |= D3D12_BARRIER_SYNC_ALL;
     if (Any(stage & kAllGraphics)) sync |= D3D12_BARRIER_SYNC_ALL_SHADING;
     if (Any(stage & kDrawIndirect)) sync |= D3D12_BARRIER_SYNC_EXECUTE_INDIRECT;
-    if (Any(stage & kVertexInput)) sync |= D3D12_BARRIER_SYNC_INDEX_INPUT;
+    if (Any(stage & kVertexInput)) sync |= D3D12_BARRIER_SYNC_DRAW;
+    if (Any(stage & kIndexInput)) sync |= D3D12_BARRIER_SYNC_INDEX_INPUT;
     if (Any(stage & kVertexShader)) sync |= D3D12_BARRIER_SYNC_VERTEX_SHADING;
     if (Any(stage & kHullShader) || Any(stage & kDomainShader) || Any(stage & kGeometryShader)) sync |= D3D12_BARRIER_SYNC_NON_PIXEL_SHADING;
     if (Any(stage & kPixelShader)) sync |= D3D12_BARRIER_SYNC_PIXEL_SHADING;
