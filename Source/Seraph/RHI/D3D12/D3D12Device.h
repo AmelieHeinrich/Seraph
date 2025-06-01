@@ -10,6 +10,8 @@
 #include <Agility/d3d12.h>
 #include <dxgi1_6.h>
 
+#include "D3D12BindlessManager.h"
+
 class D3D12Device : public IRHIDevice
 {
 public:
@@ -33,12 +35,15 @@ public:
 public:
     ID3D12Device14* GetDevice() { return mDevice; }
     IDXGIFactory6* GetFactory() { return mFactory; }
+    D3D12BindlessManager* GetBindlessManager() { return mBindlessManager; }
 
 private:
     IDXGIFactory6* mFactory = nullptr;
     IDXGIAdapter1* mAdapter = nullptr;
     ID3D12Device14* mDevice = nullptr;
     ID3D12Debug1* mDebug = nullptr;
+
+    D3D12BindlessManager* mBindlessManager;
 
     uint64 CalculateAdapterScore(IDXGIAdapter1* adapter);
 };

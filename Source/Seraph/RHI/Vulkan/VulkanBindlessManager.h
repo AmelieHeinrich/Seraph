@@ -9,10 +9,6 @@
 
 #include <Volk/volk.h>
 
-constexpr uint64 MAX_BINDLESS_RESOURCES = 1000000;
-constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
-constexpr uint64 MAX_BINDLESS_AS = 8;
-
 class VulkanDevice;
 class VulkanTextureView;
 class VulkanSampler;

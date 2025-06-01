@@ -107,11 +107,14 @@ D3D12Device::D3D12Device(bool validationLayers)
         infoQueue->Release();
     }
 
+    mBindlessManager = new D3D12BindlessManager(this);
+
     SERAPH_INFO("Created D3D12 device!");
 }
 
 D3D12Device::~D3D12Device()
 {
+    delete mBindlessManager;
     if (mDevice) mDevice->Release();
     if (mAdapter) mAdapter->Release();
     if (mDebug) mDebug->Release();

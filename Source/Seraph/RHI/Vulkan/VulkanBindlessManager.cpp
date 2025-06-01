@@ -11,6 +11,10 @@
 #include "VulkanBufferView.h"
 #include "VulkanBuffer.h"
 
+constexpr uint64 MAX_BINDLESS_RESOURCES = 1000000;
+constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
+constexpr uint64 MAX_BINDLESS_AS = 8;
+
 VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     : mParentDevice(device)
 {
