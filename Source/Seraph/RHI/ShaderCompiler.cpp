@@ -28,7 +28,7 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
 {
     CompiledShader result = {};
 
-    const char* searchPaths[] = { "Shaders" };
+    const char* searchPaths[] = { "Data/Shaders" };
 
     slang::TargetDesc targetDesc = {};
     targetDesc.format = sData.Backend == RHIBackend::kVulkan ? SLANG_SPIRV : SLANG_DXIL;
