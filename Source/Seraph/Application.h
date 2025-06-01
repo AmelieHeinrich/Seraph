@@ -34,12 +34,7 @@ private:
     IRHIBuffer* mIndexBuffer;
     IRHIBuffer* mTestCBV;
     IRHIBufferView* mCBV;
-    IRHIBLAS* mBLAS;
-    IRHITLAS* mTLAS;
     IRHITexture* mTexture;
     IRHITextureView* mTextureSRV;
     IRHISampler* mSampler;
-
-    Array<TLASInstance> mInstances;
-    IRHIBuffer* mInstanceBuffer;
 };

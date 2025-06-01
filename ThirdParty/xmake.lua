@@ -7,3 +7,6 @@
 includes("SDL3")
 includes("Vulkan")
 includes("Slang")
+includes("D3D12")
+includes("PIX")
+includes("DXC")
