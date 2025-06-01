@@ -13,6 +13,8 @@ D3D12Sampler::D3D12Sampler(D3D12Device* device, RHISamplerDesc desc)
 
     mAlloc = mParentDevice->GetBindlessManager()->WriteSampler(this);
     mHandle.Index = mAlloc.Index;
+
+    SERAPH_WHATEVER("Created D3D12 sampler!");
 }
 
 D3D12Sampler::~D3D12Sampler()

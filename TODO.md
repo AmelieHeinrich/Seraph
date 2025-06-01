@@ -54,7 +54,7 @@
 - [x] Buffer views
 - [x] Command buffers
 - [x] Synchronization
-- [ ] Compute shaders
+- [x] Compute shaders
 - [ ] Mesh shaders
 - [ ] BLAS
 - [ ] TLAS

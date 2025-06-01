@@ -36,7 +36,7 @@ D3D12GraphicsPipeline::D3D12GraphicsPipeline(D3D12Device* device, RHIGraphicsPip
     D3D12_SHADER_DESC vertexDesc;
     pVertexReflection->GetDesc(&vertexDesc);
 
-     std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
+    std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
     std::vector<std::string> InputElementSemanticNames;
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC Desc = {};

@@ -10,6 +10,7 @@
 #include "D3D12Texture.h"
 #include "D3D12Buffer.h"
 #include "D3D12GraphicsPipeline.h"
+#include "D3D12ComputePipeline.h"
 
 #include <PIX/pix3.h>
 
@@ -25,6 +26,8 @@ D3D12CommandBuffer::D3D12CommandBuffer(D3D12Device* device, D3D12CommandQueue* q
     if (!singleTime) {
         mList->Close();
     }
+
+    SERAPH_WHATEVER("Created D3D12 command buffer!");
 }
 
 D3D12CommandBuffer::~D3D12CommandBuffer()
@@ -274,7 +277,8 @@ void D3D12CommandBuffer::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, co
 
 void D3D12CommandBuffer::SetComputePipeline(IRHIComputePipeline* pipeline)
 {
-    // TODO: set compute pipeline
+    mList->SetPipelineState(static_cast<D3D12ComputePipeline*>(pipeline)->GetPipelineState());
+    mList->SetComputeRootSignature(static_cast<D3D12ComputePipeline*>(pipeline)->GetRootSignature());
 }
 
 void D3D12CommandBuffer::SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size)
