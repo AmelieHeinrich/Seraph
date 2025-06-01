@@ -109,11 +109,19 @@ D3D12Device::D3D12Device(bool validationLayers)
 
     mBindlessManager = new D3D12BindlessManager(this);
 
+    D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
+    allocatorDesc.pDevice = mDevice;
+    allocatorDesc.pAdapter = mAdapter;
+
+    result = D3D12MA::CreateAllocator(&allocatorDesc, &mAllocator);
+    ASSERT_EQ(SUCCEEDED(result), "Failed to create D3D12MA allocator!");
+
     SERAPH_INFO("Created D3D12 device!");
 }
 
 D3D12Device::~D3D12Device()
 {
+    if (mAllocator) mAllocator->Release();
     delete mBindlessManager;
     if (mDevice) mDevice->Release();
     if (mAdapter) mAdapter->Release();

@@ -67,12 +67,12 @@ Application::Application()
         mTexture = mDevice->CreateTexture(desc);
         mTextureSRV = mDevice->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
 
-        Uploader::EnqueueTextureUploadRaw(pixels.data(), pixels.size() * sizeof(uint32_t), mTexture);
+        // Uploader::EnqueueTextureUploadRaw(pixels.data(), pixels.size() * sizeof(uint32_t), mTexture);
     }
 
-    Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
-    Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
-    Uploader::Flush();
+    // Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
+    // Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
+    // Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];

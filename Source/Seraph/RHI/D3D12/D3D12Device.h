@@ -9,6 +9,7 @@
 
 #include <Agility/d3d12.h>
 #include <dxgi1_6.h>
+#include <D3D12MA/D3D12MemAlloc.h>
 
 #include "D3D12BindlessManager.h"
 
@@ -36,6 +37,7 @@ public:
     ID3D12Device14* GetDevice() { return mDevice; }
     IDXGIFactory6* GetFactory() { return mFactory; }
     D3D12BindlessManager* GetBindlessManager() { return mBindlessManager; }
+    D3D12MA::Allocator* GetAllocator() { return mAllocator; }
 
 private:
     IDXGIFactory6* mFactory = nullptr;
@@ -44,6 +46,7 @@ private:
     ID3D12Debug1* mDebug = nullptr;
 
     D3D12BindlessManager* mBindlessManager;
+    D3D12MA::Allocator* mAllocator;
 
     uint64 CalculateAdapterScore(IDXGIAdapter1* adapter);
 };

@@ -7,7 +7,7 @@
 
 #include <Core/Context.h>
 
-#include <Volk/volk.h>
+#include <Vk/volk.h>
 
 class VulkanDevice;
 class VulkanTextureView;

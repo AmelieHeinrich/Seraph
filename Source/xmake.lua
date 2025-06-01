@@ -13,7 +13,7 @@ target("Seraph")
     add_headerfiles("Seraph/**.h")
     add_includedirs("Seraph")
     add_syslinks("user32")
-    add_deps("SDL3", "Vulkan", "Slang", "D3D12", "PIX", "DXC")
+    add_deps("SDL3", "Vulkan", "Slang", "DirectX", "PIX", "DXC")
 
     before_link(function (target)
         os.cp("Binaries/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")

@@ -45,7 +45,7 @@
 
 - [x] Device
 - [x] Descriptor Heaps
-- [ ] Memory allocator
+- [x] Memory allocator
 - [ ] Texture
 - [ ] Texture views
 - [ ] Swapchain
