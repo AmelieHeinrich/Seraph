@@ -17,6 +17,7 @@ D3D12Surface::D3D12Surface(D3D12Device* device, Window* window, D3D12CommandQueu
 
     int width, height;
     SDL_GetWindowSize(sdlWindow, &width, &height);
+    SDL_SetWindowTitle(sdlWindow, "Seraph | D3D12");
 
     DXGI_SWAP_CHAIN_DESC1 desc = {};
     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;

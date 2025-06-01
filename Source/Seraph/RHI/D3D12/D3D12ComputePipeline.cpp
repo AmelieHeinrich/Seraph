@@ -7,10 +7,10 @@
 
 D3D12ComputePipeline::D3D12ComputePipeline(D3D12Device* device, RHIComputePipelineDesc desc)
 {
-
+    // TODO: compute pipeline create
 }
 
 D3D12ComputePipeline::~D3D12ComputePipeline()
 {
-    
+    // TODO: compute pipeline free
 }

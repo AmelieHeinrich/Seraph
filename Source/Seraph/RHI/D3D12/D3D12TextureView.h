@@ -17,6 +17,7 @@ public:
     D3D12TextureView(D3D12Device* device, RHITextureViewDesc viewDesc);
     ~D3D12TextureView();
 
+    D3D12BindlessAlloc GetAlloc() { return mAlloc; }
 private:
     D3D12Device* mParentDevice;
 

@@ -4,13 +4,18 @@
 //
 
 #include "D3D12Sampler.h"
+#include "D3D12Device.h"
 
 D3D12Sampler::D3D12Sampler(D3D12Device* device, RHISamplerDesc desc)
+    : mParentDevice(device)
 {
+    mDesc = desc;
 
+    mAlloc = mParentDevice->GetBindlessManager()->WriteSampler(this);
+    mHandle.Index = mAlloc.Index;
 }
 
 D3D12Sampler::~D3D12Sampler()
 {
-    
+    mParentDevice->GetBindlessManager()->FreeSampler(mAlloc);
 }

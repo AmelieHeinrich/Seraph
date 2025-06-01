@@ -55,7 +55,10 @@ D3D12CommandQueue::~D3D12CommandQueue()
 
 void D3D12CommandQueue::SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer)
 {
-    // TODO!
+    ID3D12CommandList* lists[] = { static_cast<D3D12CommandBuffer*>(cmdBuffer)->GetList() };
+    mQueue->ExecuteCommandLists(1, lists);
+
+    AwaitQueue(mParentDevice->GetDevice(), mQueue, UINT64_MAX);
 }
 
 D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::TranslateToD3D12List(RHICommandQueueType type)

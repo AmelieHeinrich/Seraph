@@ -12,6 +12,8 @@
 
 #include <RHI/CommandBuffer.h>
 
+#include <Agility/d3d12.h>
+
 class D3D12Device;
 class D3D12CommandQueue;
 
@@ -54,4 +56,20 @@ public:
     
     void PushMarker(const StringView& name) override;
     void PopMarker() override;
+
+public:
+    ID3D12GraphicsCommandList10* GetList() { return mList; }
+
+private:
+    static D3D12_BARRIER_SYNC ToD3D12BarrierSync(RHIPipelineStage stage);
+    static D3D12_BARRIER_ACCESS ToD3D12BarrierAccess(RHIResourceAccess access);
+    static D3D12_BARRIER_LAYOUT ToD3D12BarrierLayout(RHIResourceLayout layout);
+
+private:
+    D3D12Device* mParentDevice;
+
+    bool mSingleTime;
+
+    ID3D12CommandAllocator* mAllocator = nullptr;
+    ID3D12GraphicsCommandList10* mList = nullptr;
 };

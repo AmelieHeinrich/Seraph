@@ -7,10 +7,10 @@
 
 D3D12TLAS::D3D12TLAS(D3D12Device* device)
 {
-
+    // TODO: tlas create
 }
 
 D3D12TLAS::~D3D12TLAS()
 {
-    
+    // TODO: tlas free   
 }

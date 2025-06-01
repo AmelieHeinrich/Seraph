@@ -51,14 +51,14 @@
 - [x] Swapchain
 - [x] Command queues
 - [x] Buffer
-- [ ] Buffer views
-- [ ] Command buffers
-- [ ] Synchronization
+- [x] Buffer views
+- [x] Command buffers
+- [x] Synchronization
 - [ ] Compute shaders
 - [ ] Mesh shaders
 - [ ] BLAS
 - [ ] TLAS
-- [ ] Profiler tools
+- [x] Profiler tools
 - [ ] Indirect
 - [ ] Raytracing pipelines
 - [ ] GPU timestamps

@@ -23,4 +23,8 @@ private:
     D3D12Device* mParentDevice;
     D3D12Surface* mSurface;
     D3D12CommandQueue* mCommandQueue;
+
+    ID3D12Fence* mFence;
+    StaticArray<uint64, FRAMES_IN_FLIGHT> mFrameValues;
+    uint mFrameIndex;
 };

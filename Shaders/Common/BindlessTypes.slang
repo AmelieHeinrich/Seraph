@@ -11,10 +11,6 @@ module Bindless;
 [[vk::binding(1, 0)]] SamplerState gSamplerHandles[];
 [[vk::binding(2, 0)]] RaytracingAccelerationStructure gRaytracingASArray[];
 
-#else
-
-RaytracingAccelerationStructure gRaytracingASArray[] : register(t1);
-
 #endif
 
 public struct BindlessSampler

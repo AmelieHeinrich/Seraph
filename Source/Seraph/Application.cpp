@@ -35,7 +35,7 @@ Application::Application()
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
     Uploader::Initialize(mDevice, mGraphicsQueue);
 
-    mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 6, RHIBufferUsage::kVertex));
+    mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 5, RHIBufferUsage::kVertex));
     mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
     mTestCBV = mDevice->CreateBuffer(RHIBufferDesc(256, 0, RHIBufferUsage::kConstant));
     mCBV = mDevice->CreateBufferView(RHIBufferViewDesc(mTestCBV, RHIBufferViewType::kConstant));
@@ -67,12 +67,12 @@ Application::Application()
         mTexture = mDevice->CreateTexture(desc);
         mTextureSRV = mDevice->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
 
-        // Uploader::EnqueueTextureUploadRaw(pixels.data(), pixels.size() * sizeof(uint32_t), mTexture);
+        Uploader::EnqueueTextureUploadRaw(pixels.data(), pixels.size() * sizeof(uint32_t), mTexture);
     }
 
-    // Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
-    // Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
-    // Uploader::Flush();
+    Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
+    Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
+    Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
@@ -124,18 +124,18 @@ void Application::Run()
         
         RHITextureBarrier beginRenderBarrier(swapchainTexture);
         beginRenderBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
-        beginRenderBarrier.DestStage    = RHIPipelineStage::kCopy;
+        beginRenderBarrier.DestStage    = RHIPipelineStage::kColorAttachmentOutput;
         beginRenderBarrier.SourceAccess = RHIResourceAccess::kNone;
-        beginRenderBarrier.DestAccess   = RHIResourceAccess::kTransferWrite;
+        beginRenderBarrier.DestAccess   = RHIResourceAccess::kColorAttachmentWrite;
         beginRenderBarrier.OldLayout    = firstFrame < 3 ? RHIResourceLayout::kUndefined : RHIResourceLayout::kPresent;
-        beginRenderBarrier.NewLayout    = RHIResourceLayout::kTransferDst;
+        beginRenderBarrier.NewLayout    = RHIResourceLayout::kColorAttachment;
 
         RHITextureBarrier endRenderBarrier(swapchainTexture);
-        endRenderBarrier.SourceStage   = RHIPipelineStage::kCopy;
+        endRenderBarrier.SourceStage   = RHIPipelineStage::kColorAttachmentOutput;
         endRenderBarrier.DestStage     = RHIPipelineStage::kBottomOfPipe;
-        endRenderBarrier.SourceAccess  = RHIResourceAccess::kTransferWrite;
+        endRenderBarrier.SourceAccess  = RHIResourceAccess::kColorAttachmentWrite;
         endRenderBarrier.DestAccess    = RHIResourceAccess::kNone;
-        endRenderBarrier.OldLayout     = RHIResourceLayout::kTransferDst;
+        endRenderBarrier.OldLayout     = RHIResourceLayout::kColorAttachment;
         endRenderBarrier.NewLayout     = RHIResourceLayout::kPresent;
 
         RHIRenderAttachment attachment(swapchainTextureView);

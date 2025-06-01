@@ -8,6 +8,7 @@
 #include <Core/Context.h>
 
 #include <Agility/d3d12.h>
+#include <RHI/Sampler.h>
 
 class D3D12Device;
 class D3D12TextureView;
@@ -52,6 +53,10 @@ public:
 public:
     ID3D12DescriptorHeap* GetResourceHeap() { return mResourceHeap; }
     ID3D12DescriptorHeap* GetSamplerHeap() { return mSamplerHeap; }
+
+private:
+    D3D12_TEXTURE_ADDRESS_MODE TranslateD3DAddress(RHISamplerAddress address);
+    D3D12_FILTER TranslateD3DFilter(RHISamplerFilter filter);
 
 private:
     D3D12Device* mParentDevice;

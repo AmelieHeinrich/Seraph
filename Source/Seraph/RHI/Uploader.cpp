@@ -12,6 +12,7 @@ void Uploader::Initialize(IRHIDevice* device, IRHICommandQueue* copyQueue)
     sData = {};
     sData.Device = device;
     sData.CopyQueue = copyQueue;
+    sData.UploadBatchSize = 0;
 
     SERAPH_WHATEVER("Initialized uploader");
 }
@@ -169,7 +170,7 @@ void Uploader::Flush()
     if (sData.Requests.empty())
         return;
 
-    SERAPH_WHATEVER("Flushing uploader, batch size %llu bytes", sData.UploadBatchSize);
+    SERAPH_WHATEVER("Flushing uploader, batch size %d bytes", sData.UploadBatchSize);
 
     sData.CommandBuffer = sData.CopyQueue->CreateCommandBuffer(true);
     sData.CommandBuffer->Begin();
@@ -179,13 +180,13 @@ void Uploader::Flush()
                 RHIBufferDesc dstDesc = request.DstBuffer->GetDesc();
 
                 RHIBufferBarrier dstBarrier(request.DstBuffer);
-                dstBarrier.SourceStage = RHIPipelineStage::kNone;
+                dstBarrier.SourceStage = RHIPipelineStage::kAllCommands;
                 dstBarrier.DestStage = RHIPipelineStage::kCopy;
                 dstBarrier.SourceAccess = RHIResourceAccess::kNone;
                 dstBarrier.DestAccess = RHIResourceAccess::kTransferWrite;
 
                 RHIBufferBarrier stagingBarrier(request.DstBuffer);
-                stagingBarrier.SourceStage = RHIPipelineStage::kNone;
+                stagingBarrier.SourceStage = RHIPipelineStage::kAllCommands;
                 stagingBarrier.DestStage = RHIPipelineStage::kCopy;
                 stagingBarrier.SourceAccess = RHIResourceAccess::kNone;
                 stagingBarrier.DestAccess = RHIResourceAccess::kTransferRead;
@@ -195,10 +196,10 @@ void Uploader::Flush()
 
                 RHIBufferBarrier dstBarrierAfter(request.DstBuffer);
                 dstBarrierAfter.SourceStage = RHIPipelineStage::kCopy;
-                dstBarrierAfter.SourceAccess = RHIResourceAccess::kTransferWrite;        
+                dstBarrierAfter.SourceAccess = RHIResourceAccess::kTransferWrite;
                 if (Any(dstDesc.Usage & RHIBufferUsage::kVertex)) dstBarrierAfter.DestAccess = RHIResourceAccess::kVertexBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kVertexShader;
                 if (Any(dstDesc.Usage & RHIBufferUsage::kIndex)) dstBarrierAfter.DestAccess = RHIResourceAccess::kIndexBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kVertexShader;
-                if (Any(dstDesc.Usage & RHIBufferUsage::kConstant)) dstBarrierAfter.DestAccess = RHIResourceAccess::kConstantBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kAllGraphics;
+                if (Any(dstDesc.Usage & RHIBufferUsage::kConstant)) dstBarrierAfter.DestAccess = RHIResourceAccess::kConstantBufferRead; dstBarrierAfter.DestStage = RHIPipelineStage::kAllCommands;
 
                 sData.CommandBuffer->BarrierGroup(firstGroup);
                 sData.CommandBuffer->CopyBufferToBufferFull(request.DstBuffer, request.StagingBuffer);
@@ -207,7 +208,7 @@ void Uploader::Flush()
             }
             case UploadRequestType::kTextureCPUToGPU: {
                 RHITextureBarrier dstBarrier(request.DstTexture);
-                dstBarrier.SourceStage = RHIPipelineStage::kNone;
+                dstBarrier.SourceStage = RHIPipelineStage::kAllCommands;
                 dstBarrier.DestStage = RHIPipelineStage::kCopy;
                 dstBarrier.SourceAccess = RHIResourceAccess::kNone;
                 dstBarrier.DestAccess = RHIResourceAccess::kTransferWrite;
@@ -215,7 +216,7 @@ void Uploader::Flush()
                 dstBarrier.NewLayout = RHIResourceLayout::kTransferDst;
 
                 RHIBufferBarrier stagingBarrier(request.StagingBuffer);
-                stagingBarrier.SourceStage = RHIPipelineStage::kNone;
+                stagingBarrier.SourceStage = RHIPipelineStage::kAllCommands;
                 stagingBarrier.DestStage = RHIPipelineStage::kCopy;
                 stagingBarrier.SourceAccess = RHIResourceAccess::kNone;
                 stagingBarrier.DestAccess = RHIResourceAccess::kTransferRead;
@@ -277,6 +278,7 @@ void Uploader::Flush()
     }
     sData.CommandBuffer->End();
     sData.CopyQueue->SubmitAndFlushCommandBuffer(sData.CommandBuffer);
+    sData.UploadBatchSize = 0;
 
     for (auto& request : sData.Requests) {
         if (request.StagingBuffer) delete request.StagingBuffer;

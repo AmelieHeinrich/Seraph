@@ -7,10 +7,10 @@
 
 D3D12MeshPipeline::D3D12MeshPipeline(D3D12Device* device, RHIMeshPipelineDesc desc)
 {
-
+    // TODO: mesh pipeline create
 }
 
 D3D12MeshPipeline::~D3D12MeshPipeline()
 {
-    
+    // TODO: mesh pipeline destroy
 }

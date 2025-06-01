@@ -9,6 +9,7 @@
 #include "D3D12Texture.h"
 #include "D3D12Buffer.h"
 #include "D3D12BufferView.h"
+#include "D3D12Sampler.h"
 
 constexpr uint64 MAX_BINDLESS_RESOURCES = 1000000;
 constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
@@ -108,16 +109,12 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteTextureSRV(D3D12TextureView* srv)
         srvDesc.TextureCube.MostDetailedMip = desc.ViewMip == VIEW_ALL_MIPS ? 0 : desc.ViewMip;
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
-    gpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
-    alloc.GPU = gpu;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
 
     mParentDevice->GetDevice()->CreateShaderResourceView(resource, &srvDesc, alloc.CPU);
     return alloc;
@@ -149,16 +146,12 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteTextureUAV(D3D12TextureView* srv)
         uavDesc.Texture2DArray.MipSlice = desc.ViewMip == VIEW_ALL_MIPS ? 0 : desc.ViewMip;
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
-    gpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
-    alloc.GPU = gpu;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
 
     mParentDevice->GetDevice()->CreateUnorderedAccessView(resource, nullptr, &uavDesc, alloc.CPU);
     return alloc;
@@ -179,16 +172,12 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferCBV(D3D12BufferView* cbv)
     cbvd.BufferLocation = cbv->GetDesc().Buffer->GetAddress();
     cbvd.SizeInBytes = cbv->GetDesc().Buffer->GetDesc().Size;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
-    gpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
-    alloc.GPU = gpu;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
 
     mParentDevice->GetDevice()->CreateConstantBufferView(&cbvd, alloc.CPU);
     return alloc;
@@ -216,16 +205,12 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferSRV(D3D12BufferView* cbv)
     srv.Buffer.NumElements = cbv->GetDesc().Buffer->GetDesc().Size / cbv->GetDesc().Buffer->GetDesc().Stride;
     srv.Buffer.StructureByteStride = cbv->GetDesc().Buffer->GetDesc().Stride;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
-    gpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
-    alloc.GPU = gpu;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
 
     mParentDevice->GetDevice()->CreateShaderResourceView(resource, &srv, alloc.CPU);
     return alloc;
@@ -253,16 +238,12 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferUAV(D3D12BufferView* cbv)
     uavd.Buffer.StructureByteStride = 4;
     uavd.Buffer.CounterOffsetInBytes = 0;
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
-    gpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
-    alloc.GPU = gpu;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
 
     mParentDevice->GetDevice()->CreateUnorderedAccessView(resource, nullptr, &uavd, alloc.CPU);
     return alloc;
@@ -270,7 +251,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferUAV(D3D12BufferView* cbv)
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteAS(D3D12TLAS* as)
 {
-    // TODO
+    // TODO: write as
     return {};
 }
 
@@ -281,8 +262,41 @@ void D3D12BindlessManager::FreeCBVSRVUAV(D3D12BindlessAlloc index)
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteSampler(D3D12Sampler* sampler)
 {
-    // TODO
-    return {};
+    RHISamplerDesc desc = sampler->GetDesc();
+
+    D3D12_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.AddressU = TranslateD3DAddress(desc.Address);
+    samplerDesc.AddressV = samplerDesc.AddressU;
+    samplerDesc.AddressW = samplerDesc.AddressV;
+    samplerDesc.Filter = TranslateD3DFilter(desc.Filter);
+    samplerDesc.MaxAnisotropy = 16;
+    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    samplerDesc.MinLOD = 0.0f;
+    samplerDesc.MaxLOD = desc.UseMips ? D3D12_FLOAT32_MAX : 1.0f;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.BorderColor[0] = 1.0f;
+    samplerDesc.BorderColor[1] = 1.0f;
+    samplerDesc.BorderColor[2] = 1.0f;
+    samplerDesc.BorderColor[3] = 1.0f;
+
+    uint availableIndex = 0;
+    for (uint i = 0; i < mSamplerLUT.size(); i++) {
+        if (mSamplerLUT[i] == false) {
+            mSamplerLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    D3D12BindlessAlloc alloc = {};
+    alloc.Index = availableIndex;
+    alloc.CPU = mSamplerHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mSamplerIncrement;
+    alloc.GPU = mSamplerHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.GPU.ptr += availableIndex * mSamplerIncrement;
+
+    mParentDevice->GetDevice()->CreateSampler(&samplerDesc, alloc.CPU);
+    return alloc;
 }
 
 void D3D12BindlessManager::FreeSampler(D3D12BindlessAlloc index)
@@ -310,12 +324,10 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteRTV(D3D12TextureView* rtv)
         desc.Texture2D.PlaneSlice = rtv->GetDesc().ArrayLayer;
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
+    alloc.CPU = mRTVHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mRenderTargetIncrement;
 
     mParentDevice->GetDevice()->CreateRenderTargetView(resource, &desc, alloc.CPU);
     return alloc;
@@ -350,12 +362,11 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteDSV(D3D12TextureView* dsv)
         desc.Texture2DArray.MipSlice = 0;
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
-    cpu.ptr += availableIndex * mResourceIncrement;
-
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
-    alloc.CPU = cpu;
+    alloc.CPU = mDSVHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mDSVHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mDepthStencilIncrement;
 
     mParentDevice->GetDevice()->CreateDepthStencilView(resource, &desc, alloc.CPU);
     return alloc;
@@ -364,4 +375,26 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteDSV(D3D12TextureView* dsv)
 void D3D12BindlessManager::FreeDSV(D3D12BindlessAlloc index)
 {
     mDSVLUT[index.Index] = false;
+}
+
+D3D12_TEXTURE_ADDRESS_MODE D3D12BindlessManager::TranslateD3DAddress(RHISamplerAddress address)
+{
+    switch (address)
+    {
+        case RHISamplerAddress::kWrap:   return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        case RHISamplerAddress::kMirror: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+        case RHISamplerAddress::kClamp:  return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        case RHISamplerAddress::kBorder: return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        default:                         return D3D12_TEXTURE_ADDRESS_MODE_WRAP; // Fallback
+    }
+}
+
+D3D12_FILTER D3D12BindlessManager::TranslateD3DFilter(RHISamplerFilter filter)
+{
+    switch (filter)
+    {
+        case RHISamplerFilter::kLinear:  return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        case RHISamplerFilter::kNearest: return D3D12_FILTER_MIN_MAG_MIP_POINT;
+        default:                         return D3D12_FILTER_MIN_MAG_MIP_LINEAR; // Fallback
+    }
 }

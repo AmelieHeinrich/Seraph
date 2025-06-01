@@ -7,7 +7,10 @@
 #include "D3D12Device.h"
 
 D3D12TextureView::D3D12TextureView(D3D12Device* device, RHITextureViewDesc viewDesc)
+    : mParentDevice(device), mAlloc({})
 {
+    mDesc = viewDesc;
+
     switch (mDesc.Type) {
         case RHITextureViewType::kRenderTarget: {
             mAlloc = mParentDevice->GetBindlessManager()->WriteRTV(this);
