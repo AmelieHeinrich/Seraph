@@ -43,7 +43,7 @@
 
 ## D3D12
 
-- [ ] Device
+- [x] Device
 - [ ] Descriptor Heaps
 - [ ] Memory allocator
 - [ ] Texture

@@ -9,3 +9,4 @@ target("D3D12")
 
     add_headerfiles("Include/Agility/**.h")
     add_includedirs("Include", { public = true })
+    add_syslinks("d3d12", "dxgi", { public = true })

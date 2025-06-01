@@ -7,6 +7,9 @@
 
 #include <RHI/Device.h>
 
+#include <Agility/d3d12.h>
+#include <dxgi1_6.h>
+
 class D3D12Device : public IRHIDevice
 {
 public:
@@ -26,4 +29,16 @@ public:
     IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override;
     IRHITLAS* CreateTLAS() override;
     IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) override;
+
+public:
+    ID3D12Device14* GetDevice() { return mDevice; }
+    IDXGIFactory6* GetFactory() { return mFactory; }
+
+private:
+    IDXGIFactory6* mFactory = nullptr;
+    IDXGIAdapter1* mAdapter = nullptr;
+    ID3D12Device14* mDevice = nullptr;
+    ID3D12Debug1* mDebug = nullptr;
+
+    uint64 CalculateAdapterScore(IDXGIAdapter1* adapter);
 };
