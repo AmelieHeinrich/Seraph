@@ -10,7 +10,7 @@
 D3D12Surface::D3D12Surface(D3D12Device* device, Window* window)
 {
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-        mTextures[i] = new D3D12Texture(device, {});
+        mTextures[i] = new D3D12Texture();
         mTextureViews[i] = new D3D12TextureView(device, {});
     }
 }

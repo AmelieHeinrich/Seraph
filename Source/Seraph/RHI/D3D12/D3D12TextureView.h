@@ -7,7 +7,7 @@
 
 #include <RHI/TextureView.h>
 
-#include <Vk/volk.h>
+#include "D3D12BindlessManager.h"
 
 class D3D12Device;
 
@@ -16,4 +16,9 @@ class D3D12TextureView : public IRHITextureView
 public:
     D3D12TextureView(D3D12Device* device, RHITextureViewDesc viewDesc);
     ~D3D12TextureView();
+
+private:
+    D3D12Device* mParentDevice;
+
+    D3D12BindlessAlloc mAlloc;
 };

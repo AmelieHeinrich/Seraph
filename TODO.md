@@ -46,8 +46,8 @@
 - [x] Device
 - [x] Descriptor Heaps
 - [x] Memory allocator
-- [ ] Texture
-- [ ] Texture views
+- [x] Texture
+- [x] Texture views
 - [ ] Swapchain
 - [ ] Command queues
 - [ ] Command buffers
