@@ -32,6 +32,8 @@ private:
     IRHIGraphicsPipeline* mPipeline;
     IRHIBuffer* mVertexBuffer;
     IRHIBuffer* mIndexBuffer;
+    IRHIBuffer* mTestCBV;
+    IRHIBufferView* mCBV;
     IRHIBLAS* mBLAS;
     IRHITLAS* mTLAS;
     IRHITexture* mTexture;

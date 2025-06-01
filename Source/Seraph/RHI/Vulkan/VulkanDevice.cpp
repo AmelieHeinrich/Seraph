@@ -21,6 +21,7 @@
 #include "VulkanMeshPipeline.h"
 #include "VulkanBLAS.h"
 #include "VulkanTLAS.h"
+#include "VulkanBufferView.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -124,6 +125,11 @@ IRHIBLAS* VulkanDevice::CreateBLAS(RHIBLASDesc desc)
 IRHITLAS* VulkanDevice::CreateTLAS()
 {
     return (new VulkanTLAS(this));
+}
+
+IRHIBufferView* VulkanDevice::CreateBufferView(RHIBufferViewDesc desc)
+{
+    return (new VulkanBufferView(this, desc));
 }
 
 void VulkanDevice::BuildInstance(bool validationLayers)

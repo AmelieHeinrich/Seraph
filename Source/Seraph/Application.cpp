@@ -37,6 +37,8 @@ Application::Application()
 
     mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 6, RHIBufferUsage::kVertex));
     mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
+    mTestCBV = mDevice->CreateBuffer(RHIBufferDesc(256, 0, RHIBufferUsage::kConstant));
+    mCBV = mDevice->CreateBufferView(RHIBufferViewDesc(mTestCBV, RHIBufferViewType::kConstant));
     mBLAS = mDevice->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
     mTLAS = mDevice->CreateTLAS();
     mInstanceBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance) * MAX_TLAS_INSTANCES, 0, RHIBufferUsage::kConstant));
@@ -55,20 +57,34 @@ Application::Application()
     mInstanceBuffer->Unmap();
     
     {
+        int width = 256;
+        int height = 256;
+        int tileSize = 32;
+        uint color1 = 0xFFFFFFFF; // White
+        uint color2 = 0xFF000000; // Black
+
+        Array<uint> pixels(width * height);
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                bool isColor1 = ((x / tileSize) + (y / tileSize)) % 2 == 0;
+                pixels[y * width + x] = isColor1 ? color1 : color2;
+            }
+        }
+
+
         RHITextureDesc desc = {};
         desc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
-        desc.Width = 1;
-        desc.Height = 1;
+        desc.Width = width;
+        desc.Height = height;
         desc.Depth = 1;
         desc.MipLevels = 1;
         desc.Usage = RHITextureUsage::kShaderResource;
         mTexture = mDevice->CreateTexture(desc);
         mTextureSRV = mDevice->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
+
+        Uploader::EnqueueTextureUploadRaw(pixels.data(), pixels.size() * sizeof(uint32_t), mTexture);
     }
 
-    uint color = 0xFF00FFFF;
-
-    Uploader::EnqueueTextureUploadRaw(&color, sizeof(uint), mTexture);
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
     Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
     Uploader::EnqueueBLASBuild(mBLAS);
@@ -79,7 +95,7 @@ Application::Application()
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
     desc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
     desc.ReflectInputLayout = true;
-    desc.PushConstantSize = sizeof(BindlessHandle) * 2;
+    desc.PushConstantSize = sizeof(BindlessHandle) * 3;
     desc.RenderTargetFormats.push_back(mSurface->GetTexture(0)->GetDesc().Format);
 
     mPipeline = mDevice->CreateGraphicsPipeline(desc);
@@ -89,6 +105,8 @@ Application::~Application()
 {
     Uploader::Shutdown();
 
+    delete mTestCBV;
+    delete mCBV;
     delete mInstanceBuffer;
     delete mTLAS;
     delete mBLAS;
@@ -143,12 +161,19 @@ void Application::Run()
         RHIRenderAttachment attachment(swapchainTextureView);
         RHIRenderBegin renderBegin(1280, 720, { RHIRenderAttachment(swapchainTextureView) }, {});
 
+        float testColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+        void* test = mTestCBV->Map();
+        memcpy(test, testColor, sizeof(testColor));
+        mTestCBV->Unmap();
+
         struct PushConstant {
             BindlessHandle Texture;
             BindlessHandle Sampler;
+            BindlessHandle CBV;
         } constant = {
             mTextureSRV->GetBindlessHandle(),
-            mSampler->GetBindlessHandle()
+            mSampler->GetBindlessHandle(),
+            mCBV->GetBindlessHandle()
         };
 
         commandBuffer->PushMarker("My rectangle");

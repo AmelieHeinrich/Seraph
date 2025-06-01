@@ -20,6 +20,7 @@
 #include "MeshPipeline.h"
 #include "BLAS.h"
 #include "TLAS.h"
+#include "BufferView.h"
 
 class IRHIDevice
 {
@@ -40,6 +41,7 @@ public:
     virtual IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) = 0;
     virtual IRHIBLAS* CreateBLAS(RHIBLASDesc desc) = 0;
     virtual IRHITLAS* CreateTLAS() = 0;
+    virtual IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) = 0;
 
 protected:
     IRHIDevice() = default;

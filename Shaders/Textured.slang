@@ -3,7 +3,7 @@
 // > Create Time: 2025-05-31 16:41:37
 //
 
-import Bindless;
+#include "Common/Bindless.slang"
 
 struct VertexInput
 {
@@ -17,10 +17,17 @@ struct VertexOutput
     float2 UV : TEXCOORD;
 };
 
+struct CBVStruct
+{
+    float4 TintColor;
+};
+DEFINE_CBV_ARRAY(CBVStruct);
+
 struct PushConstants
 {
-    BindlessTexture2D<float4> MyTexture;
-    BindlessSampler MySampler;
+    uint MyTexture;
+    uint MySampler;
+    uint MyCBV;
 };
 
 [[vk::push_constant]] ConstantBuffer<PushConstants> Push : register(b0);
@@ -39,8 +46,9 @@ VertexOutput VSMain(VertexInput input)
 [shader("fragment")]
 float4 FSMain(VertexOutput input) : SV_Target
 {
-    Texture2D<float4> texture = Push.MyTexture.Load();
-    SamplerState sampler = Push.MySampler.Load();
+    Texture2D<float4> texture = BindlessTexture2D<float4>.Load(Push.MyTexture);
+    SamplerState sampler = BindlessSampler.Load(Push.MySampler);
+    CBVStruct cbv = BindlessCBV_CBVStruct.Load(Push.MyCBV);
 
-    return texture.Sample(sampler, input.UV);
+    return texture.Sample(sampler, input.UV) * cbv.TintColor;
 }

@@ -8,6 +8,8 @@
 #include "VulkanTextureView.h"
 #include "VulkanSampler.h"
 #include "VulkanTLAS.h"
+#include "VulkanBufferView.h"
+#include "VulkanBuffer.h"
 
 VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     : mParentDevice(device)
@@ -164,6 +166,99 @@ uint VulkanBindlessManager::WriteTextureUAV(VulkanTextureView* srv)
     write.dstBinding = 0;
     write.dstSet = mSet;
     write.pImageInfo = &imageInfo;
+    write.dstArrayElement = availableIndex;
+
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);
+
+    return availableIndex;
+}
+
+uint VulkanBindlessManager::WriteBufferCBV(VulkanBufferView* cbv)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = static_cast<VulkanBuffer*>(cbv->GetDesc().Buffer)->GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = cbv->GetDesc().Buffer->GetDesc().Size;
+    
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.dstBinding = 0;
+    write.dstSet = mSet;
+    write.pImageInfo = nullptr;
+    write.pBufferInfo = &bufferInfo;
+    write.dstArrayElement = availableIndex;
+
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);
+
+    return availableIndex;
+}
+
+uint VulkanBindlessManager::WriteBufferSRV(VulkanBufferView* cbv)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = static_cast<VulkanBuffer*>(cbv->GetDesc().Buffer)->GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = cbv->GetDesc().Buffer->GetDesc().Size;
+    
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write.dstBinding = 0;
+    write.dstSet = mSet;
+    write.pImageInfo = nullptr;
+    write.pBufferInfo = &bufferInfo;
+    write.dstArrayElement = availableIndex;
+
+    vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);
+
+    return availableIndex;
+}
+
+uint VulkanBindlessManager::WriteBufferUAV(VulkanBufferView* cbv)
+{
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = static_cast<VulkanBuffer*>(cbv->GetDesc().Buffer)->GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = cbv->GetDesc().Buffer->GetDesc().Size;
+    
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write.dstBinding = 0;
+    write.dstSet = mSet;
+    write.pImageInfo = nullptr;
+    write.pBufferInfo = &bufferInfo;
     write.dstArrayElement = availableIndex;
 
     vkUpdateDescriptorSets(mParentDevice->Device(), 1, &write, 0, nullptr);

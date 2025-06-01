@@ -17,6 +17,7 @@ class VulkanDevice;
 class VulkanTextureView;
 class VulkanSampler;
 class VulkanTLAS;
+class VulkanBufferView;
 
 class VulkanBindlessManager
 {
@@ -30,6 +31,9 @@ public:
     // ResourceDescriptorHeap[]
     uint WriteTextureSRV(VulkanTextureView* srv);
     uint WriteTextureUAV(VulkanTextureView* srv);
+    uint WriteBufferCBV(VulkanBufferView* cbv);
+    uint WriteBufferSRV(VulkanBufferView* cbv);
+    uint WriteBufferUAV(VulkanBufferView* cbv);
     void FreeCBVSRVUAV(uint index);
 
     // SamplerDescriptorHeap[]

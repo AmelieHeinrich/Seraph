@@ -13,21 +13,19 @@ module Bindless;
 
 #else
 
-RaytracingAccelerationStructure gRaytracingASArray[] : register(b1);
+RaytracingAccelerationStructure gRaytracingASArray[] : register(t1);
 
 #endif
 
 public struct BindlessSampler
 {
-    int Index;
-
-    public SamplerState Load()
+    public static SamplerState Load(uint index)
     {
         SamplerState result;
 #ifdef VULKAN
-        result = gSamplerHandles[Index];
+        result = gSamplerHandles[index];
 #else
-        result = defaultGetDescriptorFromHandle(DescriptorHandle<SamplerState>(uint2(Index, 0)));
+        result = defaultGetDescriptorFromHandle(DescriptorHandle<SamplerState>(uint2(index, 0)));
 #endif
         return result;
     }
@@ -35,15 +33,13 @@ public struct BindlessSampler
 
 public struct BindlessTexture2D<T:ITexelElement>
 {
-    int Index;
-
-    public Texture2D Load()
+    public static Texture2D Load(uint index)
     {
         Texture2D result;
 #ifdef VULKAN
-        result = gTexture2DArray[Index];
+        result = gTexture2DArray[index];
 #else
-        result = defaultGetDescriptorFromHandle(DescriptorHandle<Texture2D>(uint2(Index, 0)));
+        result = defaultGetDescriptorFromHandle(DescriptorHandle<Texture2D>(uint2(index, 0)));
 #endif
         return result;
     }

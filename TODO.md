@@ -36,7 +36,7 @@
 - [x] BLAS
 - [x] TLAS
 - [x] Profiler tools
-- [ ] Buffer views
+- [x] Buffer views
 - [ ] Indirect
 - [ ] Raytracing pipelines
 - [ ] GPU timestamps
