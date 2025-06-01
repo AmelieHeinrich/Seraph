@@ -151,6 +151,7 @@ void Application::Run()
             mSampler->GetBindlessHandle()
         };
 
+        commandBuffer->PushMarker("My rectangle");
         commandBuffer->Barrier(beginRenderBarrier);
         commandBuffer->BeginRendering(renderBegin);
         commandBuffer->SetGraphicsPipeline(mPipeline);
@@ -161,8 +162,9 @@ void Application::Run()
         commandBuffer->DrawIndexed(6, 1, 0, 0, 0);
         commandBuffer->EndRendering();
         commandBuffer->Barrier(endRenderBarrier);
+        commandBuffer->PopMarker();
+        
         commandBuffer->End();
-
         mF2FSync->EndSynchronize(mCommandBuffers[frameIndex]);
         mF2FSync->PresentSurface();
 

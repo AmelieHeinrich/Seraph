@@ -35,7 +35,11 @@
 - [x] Mesh shaders
 - [x] BLAS
 - [x] TLAS
+- [x] Profiler tools
+- [ ] Buffer views
+- [ ] Indirect
 - [ ] Raytracing pipelines
+- [ ] GPU timestamps
 
 ## D3D12
 
@@ -58,7 +62,11 @@
 - [ ] Mesh shaders
 - [ ] BLAS
 - [ ] TLAS
+- [ ] Profiler tools
+- [ ] Buffer views
+- [ ] Indirect
 - [ ] Raytracing pipelines
+- [ ] GPU timestamps
 
 ## RHI
 

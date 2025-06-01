@@ -506,6 +506,20 @@ void VulkanCommandBuffer::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint in
     vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkTlas->mBuildInfo, &range);
 }
 
+void VulkanCommandBuffer::PushMarker(const StringView& name)
+{
+    VkDebugUtilsLabelEXT marker = {};
+    marker.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    marker.pLabelName = name.data();
+
+    vkCmdBeginDebugUtilsLabelEXT(mCmdBuffer, &marker);
+}
+
+void VulkanCommandBuffer::PopMarker()
+{
+    vkCmdEndDebugUtilsLabelEXT(mCmdBuffer);
+}
+
 VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)
 {
     VkPipelineStageFlags2 flags = 0;

@@ -45,6 +45,9 @@ public:
     void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) override;
     void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) override;
     void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) override;
+    
+    void PushMarker(const StringView& name) override;
+    void PopMarker() override;
 public:
     VkCommandBuffer GetCommandBuffer() { return mCmdBuffer; }
 
