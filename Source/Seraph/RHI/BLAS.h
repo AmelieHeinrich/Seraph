@@ -34,6 +34,12 @@ public:
     RHIBLASDesc GetDesc() const { return mDesc; }
     
     virtual uint64 GetAddress() = 0;
+
+    IRHIBuffer* GetMemory() { return mMemory; }
+    IRHIBuffer* GetScratch() { return mScratch; }
 protected:
     RHIBLASDesc mDesc;
+
+    IRHIBuffer* mMemory;
+    IRHIBuffer* mScratch;
 };

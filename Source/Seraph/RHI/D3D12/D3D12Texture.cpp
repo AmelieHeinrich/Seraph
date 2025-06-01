@@ -32,10 +32,10 @@ D3D12Texture::D3D12Texture(D3D12Device* device, RHITextureDesc desc)
     if (Any(desc.Usage & RHITextureUsage::kStorage)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     if (Any(desc.Usage & RHITextureUsage::kDepthTarget)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-    D3D12MA::ALLOCATION_DESC allocationDesc = {};
-    allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+    D3D12_HEAP_PROPERTIES allocationDesc = {};
+    allocationDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
 
-    HRESULT hr = device->GetAllocator()->CreateResource(&allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &mAllocation, IID_PPV_ARGS(&mResource));
+    HRESULT hr = device->GetDevice()->CreateCommittedResource(&allocationDesc, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&mResource));
     ASSERT_EQ(SUCCEEDED(hr), "Failed to create D3D12 texture!");
 
     SERAPH_WHATEVER("Created D3D12 texture");
@@ -43,12 +43,11 @@ D3D12Texture::D3D12Texture(D3D12Device* device, RHITextureDesc desc)
 
 D3D12Texture::~D3D12Texture()
 {
-    if (mAllocation && !mDesc.Reserved) mAllocation->Release();
+    if (mResource && !mDesc.Reserved) mResource->Release();
 }
 
 void D3D12Texture::SetName(const StringView& name)
 {
-    mAllocation->SetName(MULTIBYTE_TO_UNICODE(name.data()));
     mResource->SetName(MULTIBYTE_TO_UNICODE(name.data()));
 }
 

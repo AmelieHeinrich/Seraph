@@ -102,6 +102,8 @@ VulkanSurface::VulkanSurface(IRHIDevice* device, Window* window)
         RHITextureViewDesc viewDesc(mTextures[i], RHITextureViewType::kRenderTarget);
         mTextureViews[i] = mParentDevice->CreateTextureView(viewDesc);
     }
+
+    SERAPH_WHATEVER("Created Vulkan surface");
 }
 
 VulkanSurface::~VulkanSurface()

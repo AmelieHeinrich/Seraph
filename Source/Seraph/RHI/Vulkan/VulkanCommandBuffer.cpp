@@ -24,6 +24,8 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool poo
     
     VkResult result = vkAllocateCommandBuffers(device->Device(), &allocateInfo, &mCmdBuffer);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to allocate command buffer!");
+
+    SERAPH_WHATEVER("Created Vulkan command buffer");
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
@@ -471,11 +473,15 @@ void VulkanCommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
         case RHIASBuildMode::kRebuild: {
             vkBlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
             vkBlas->mBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+            vkBlas->mBuildInfo.dstAccelerationStructure = vkBlas->mHandle;
+            vkBlas->mBuildInfo.scratchData.deviceAddress = vkBlas->mScratch->GetAddress();
             break;
         }
         case RHIASBuildMode::kRefit: {
             vkBlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
             vkBlas->mBuildInfo.srcAccelerationStructure = vkBlas->mHandle;
+            vkBlas->mBuildInfo.dstAccelerationStructure = vkBlas->mHandle;
+            vkBlas->mBuildInfo.scratchData.deviceAddress = vkBlas->mScratch->GetAddress();
             break;
         }
     }
@@ -493,12 +499,14 @@ void VulkanCommandBuffer::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint in
     switch (mode) {
         case RHIASBuildMode::kRebuild: {
             vkTlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-            vkTlas->mBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+            vkTlas->mBuildInfo.srcAccelerationStructure = vkTlas->mHandle;
+            vkTlas->mBuildInfo.dstAccelerationStructure = vkTlas->mHandle;
             break;
         }
         case RHIASBuildMode::kRefit: {
             vkTlas->mBuildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
             vkTlas->mBuildInfo.srcAccelerationStructure = vkTlas->mHandle;
+            vkTlas->mBuildInfo.dstAccelerationStructure = vkTlas->mHandle;
             break;
         }
     }

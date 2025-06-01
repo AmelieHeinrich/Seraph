@@ -20,13 +20,13 @@ static const uint INDICES[] = {
 };
 
 Application::Application()
-    : mBackend(RHIBackend::kVulkan)
+    : mBackend(RHIBackend::kD3D12)
 {
     ShaderCompiler::Initialize(mBackend);
     CompiledShader shader = ShaderCompiler::Compile("Textured", { "VSMain", "FSMain" });
 
     mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
-    mDevice = IRHIDevice::CreateDevice(mBackend, true);
+    mDevice = IRHIDevice::CreateDevice(mBackend, false);
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
     mSurface = mDevice->CreateSurface(mWindow.get(), mGraphicsQueue);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
@@ -40,6 +40,21 @@ Application::Application()
     mTestCBV = mDevice->CreateBuffer(RHIBufferDesc(256, 0, RHIBufferUsage::kConstant));
     mCBV = mDevice->CreateBufferView(RHIBufferViewDesc(mTestCBV, RHIBufferViewType::kConstant));
     mSampler = mDevice->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, false));
+    mBLAS = mDevice->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
+    mTLAS = mDevice->CreateTLAS();
+    mInstanceBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance) * MAX_TLAS_INSTANCES, 0, RHIBufferUsage::kConstant));
+    
+    TLASInstance triangleInstance = {};
+    triangleInstance.Transform[0][0] = 1;
+    triangleInstance.Transform[1][2] = 1;
+    triangleInstance.Transform[2][2] = 1;
+    triangleInstance.AccelerationStructureReference = mBLAS->GetAddress();
+    triangleInstance.Flags = TLAS_INSTANCE_OPAQUE;
+    mInstances.push_back(triangleInstance);
+
+    void* test = mInstanceBuffer->Map();
+    memcpy(test, mInstances.data(), mInstances.size() * sizeof(TLASInstance));
+    mInstanceBuffer->Unmap();
     
     {
         int width = 256;
@@ -72,6 +87,8 @@ Application::Application()
 
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
     Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
+    Uploader::EnqueueBLASBuild(mBLAS);
+    Uploader::EnqueueTLASBuild(mTLAS, mInstanceBuffer, mInstances.size());
     Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};

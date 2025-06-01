@@ -11,6 +11,8 @@
 #include "D3D12Buffer.h"
 #include "D3D12GraphicsPipeline.h"
 #include "D3D12ComputePipeline.h"
+#include "D3D12BLAS.h"
+#include "D3D12TLAS.h"
 
 #include <PIX/pix3.h>
 
@@ -136,7 +138,7 @@ void D3D12CommandBuffer::Barrier(const RHIMemoryBarrier& barrier)
     globalBarrier.SyncAfter = ToD3D12BarrierSync(barrier.DestStage);
 
     D3D12_BARRIER_GROUP group = {};
-    group.Type = D3D12_BARRIER_TYPE_TEXTURE;
+    group.Type = D3D12_BARRIER_TYPE_GLOBAL;
     group.NumBarriers = 1;
     group.pGlobalBarriers = &globalBarrier;
 
@@ -336,12 +338,43 @@ void D3D12CommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
 
 void D3D12CommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
 {
-    // TODO: build blas
+    D3D12BLAS* d3dblas = static_cast<D3D12BLAS*>(blas);
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+    buildDesc.Inputs = d3dblas->mInputs;
+    buildDesc.DestAccelerationStructureData = d3dblas->mMemory->GetAddress();
+    buildDesc.SourceAccelerationStructureData = d3dblas->mMemory->GetAddress();
+    buildDesc.ScratchAccelerationStructureData = d3dblas->mScratch->GetAddress();
+    if (mode == RHIASBuildMode::kRefit) {
+        buildDesc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+        buildDesc.SourceAccelerationStructureData = d3dblas->mMemory->GetAddress();
+    } else {
+        buildDesc.SourceAccelerationStructureData = 0;
+    }
+
+    mList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
-void D3D12CommandBuffer::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
+void D3D12CommandBuffer::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
 {
-    // TODO: build tlas
+    D3D12TLAS* d3dblas = static_cast<D3D12TLAS*>(tlas);
+
+    d3dblas->mInputs.InstanceDescs = buffer->GetAddress();
+    d3dblas->mInputs.NumDescs = instanceCount;
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+    buildDesc.Inputs = d3dblas->mInputs;
+    buildDesc.DestAccelerationStructureData = d3dblas->mMemory->GetAddress();
+    buildDesc.SourceAccelerationStructureData = d3dblas->mMemory->GetAddress();
+    buildDesc.ScratchAccelerationStructureData = d3dblas->mScratch->GetAddress();
+    if (mode == RHIASBuildMode::kRefit) {
+        buildDesc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+        buildDesc.SourceAccelerationStructureData = d3dblas->mMemory->GetAddress();
+    } else {
+        buildDesc.SourceAccelerationStructureData = 0;
+    }
+
+    mList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
 void D3D12CommandBuffer::PushMarker(const StringView& name)

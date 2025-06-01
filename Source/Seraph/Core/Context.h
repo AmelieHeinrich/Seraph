@@ -22,4 +22,9 @@ struct Context
 #define SERAPH_WARN(fmt, ...)         Context::sContext.logger->Warn(__FILE__, __LINE__, fmt, __VA_ARGS__)
 #define SERAPH_ERROR(fmt, ...)        Context::sContext.logger->Error(__FILE__, __LINE__, fmt, __VA_ARGS__)
 #define SERAPH_FATAL(fmt, ...)        Context::sContext.logger->Fatal(__FILE__, __LINE__, fmt, __VA_ARGS__)
-#define SERAPH_WHATEVER(fmt, ...)     Context::sContext.logger->Whatever(__FILE__, __LINE__, fmt, __VA_ARGS__)
+
+#if defined(NDEBUG)
+    #define SERAPH_WHATEVER(fmt, ...) Context::sContext.logger->Whatever(__FILE__, __LINE__, fmt, __VA_ARGS__)
+#else
+    #define SERAPH_WHATEVER(fmt, ...)
+#endif

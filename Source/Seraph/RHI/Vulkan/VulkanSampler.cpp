@@ -63,6 +63,8 @@ VulkanSampler::VulkanSampler(VulkanDevice* device, RHISamplerDesc desc)
 
     // Bindless
     mHandle.Index = mParentDevice->GetBindlessManager()->WriteSampler(this);
+
+    SERAPH_WHATEVER("Created Vulkan sampler");
 }
 
 VulkanSampler::~VulkanSampler()

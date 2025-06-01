@@ -52,6 +52,8 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice* device, RHIComputePip
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan compute pipeline!");
 
     vkDestroyShaderModule(mParentDevice->Device(), computeModule, nullptr);
+
+    SERAPH_WHATEVER("Created Vulkan compute pipeline");
 }
 
 VulkanComputePipeline::~VulkanComputePipeline()

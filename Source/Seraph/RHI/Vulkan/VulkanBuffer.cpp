@@ -31,6 +31,8 @@ VulkanBuffer::VulkanBuffer(VulkanDevice* device, RHIBufferDesc desc)
 
     VkResult result = vmaCreateBuffer(mParentDevice->Allocator(), &bufferInfo, &allocInfo, &mBuffer, &mAllocation, &mAllocationInfo);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to allocate Vulkan buffer!");
+
+    SERAPH_WHATEVER("Created Vulkan buffer");
 }
 
 VulkanBuffer::~VulkanBuffer()

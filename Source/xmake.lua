@@ -18,3 +18,7 @@ target("Seraph")
     before_link(function (target)
         os.cp("Binaries/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
     end)
+
+    if is_mode("debug") or is_mode("releasedbg") then
+        add_defines("NDEBUG")
+    end

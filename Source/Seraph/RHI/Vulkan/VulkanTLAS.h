@@ -24,8 +24,6 @@ private:
 
     VulkanDevice* mParentDevice;
 
-    IRHIBuffer* mMemory;
-    IRHIBuffer* mScratch;
     VkAccelerationStructureKHR mHandle;
     VkAccelerationStructureBuildGeometryInfoKHR mBuildInfo;
     VkAccelerationStructureBuildRangeInfoKHR mRangeInfo;

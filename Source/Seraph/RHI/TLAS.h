@@ -8,6 +8,7 @@
 #include <Core/Context.h>
 
 #include "Bindless.h"
+#include "Buffer.h"
 
 constexpr uint MAX_TLAS_INSTANCES = 8092;
 constexpr uint TLAS_INSTANCE_OPAQUE = 0x00000004;
@@ -29,6 +30,12 @@ public:
     ~IRHITLAS() = default;
 
     BindlessHandle GetBindlessHandle() const { return mBindless; }
+
+    IRHIBuffer* GetMemory() { return mMemory; }
+    IRHIBuffer* GetScratch() { return mScratch; }
 protected:
     BindlessHandle mBindless;
+
+    IRHIBuffer* mMemory;
+    IRHIBuffer* mScratch;
 };

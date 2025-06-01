@@ -256,17 +256,17 @@ void Uploader::Flush()
                 break;
             }
             case UploadRequestType::kBLASBuild: {
-                RHIMemoryBarrier beforeBarrier;
-                beforeBarrier.SourceAccess = RHIResourceAccess::kVertexBufferRead | RHIResourceAccess::kIndexBufferRead;
+                RHIBufferBarrier beforeBarrier(request.BLAS->GetMemory());
+                beforeBarrier.SourceAccess = RHIResourceAccess::kTransferWrite;
                 beforeBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureWrite;
-                beforeBarrier.SourceStage = RHIPipelineStage::kVertexInput;
-                beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite; 
+                beforeBarrier.SourceStage = RHIPipelineStage::kCopy;
+                beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite;
 
-                RHIMemoryBarrier afterBarrier;
+                RHIBufferBarrier afterBarrier(request.BLAS->GetMemory());
                 afterBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureWrite;
                 afterBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureRead;
                 afterBarrier.SourceStage = RHIPipelineStage::kAccelStructureWrite;
-                afterBarrier.DestStage =  RHIPipelineStage::kRayTracingShader;
+                afterBarrier.DestStage = RHIPipelineStage::kRayTracingShader;
 
                 sData.CommandBuffer->Barrier(beforeBarrier);
                 sData.CommandBuffer->BuildBLAS(request.BLAS, RHIASBuildMode::kRebuild);
@@ -274,17 +274,17 @@ void Uploader::Flush()
                 break;
             }
             case UploadRequestType::kTLASBuild: {
-                RHIMemoryBarrier beforeBarrier;
-                beforeBarrier.SourceAccess = RHIResourceAccess::kVertexBufferRead | RHIResourceAccess::kIndexBufferRead;
+                RHIBufferBarrier beforeBarrier(request.TLAS->GetMemory());
+                beforeBarrier.SourceAccess = RHIResourceAccess::kTransferWrite;
                 beforeBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureWrite;
-                beforeBarrier.SourceStage = RHIPipelineStage::kVertexInput;
-                beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite; 
+                beforeBarrier.SourceStage = RHIPipelineStage::kCopy;
+                beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite;
 
-                RHIMemoryBarrier afterBarrier;
+                RHIBufferBarrier afterBarrier(request.TLAS->GetMemory());
                 afterBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureWrite;
                 afterBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureRead;
                 afterBarrier.SourceStage = RHIPipelineStage::kAccelStructureWrite;
-                afterBarrier.DestStage =  RHIPipelineStage::kRayTracingShader;
+                afterBarrier.DestStage = RHIPipelineStage::kRayTracingShader;
 
                 sData.CommandBuffer->Barrier(beforeBarrier);
                 sData.CommandBuffer->BuildTLAS(request.TLAS, RHIASBuildMode::kRebuild, request.InstanceCount, request.InstanceBuffer);

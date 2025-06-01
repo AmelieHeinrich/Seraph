@@ -94,7 +94,8 @@ D3D12Device::D3D12Device(bool validationLayers)
             D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
             D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE,
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
-            D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE
+            D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
+            D3D12_MESSAGE_ID_INCOMPATIBLE_BARRIER_ACCESS
         };
 
         D3D12_INFO_QUEUE_FILTER filter = {0};
@@ -108,13 +109,6 @@ D3D12Device::D3D12Device(bool validationLayers)
     }
 
     mBindlessManager = new D3D12BindlessManager(this);
-
-    D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
-    allocatorDesc.pDevice = mDevice;
-    allocatorDesc.pAdapter = mAdapter;
-
-    result = D3D12MA::CreateAllocator(&allocatorDesc, &mAllocator);
-    ASSERT_EQ(SUCCEEDED(result), "Failed to create D3D12MA allocator!");
 
     SERAPH_INFO("Created D3D12 device!");
 }

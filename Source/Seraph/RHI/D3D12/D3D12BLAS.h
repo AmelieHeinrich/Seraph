@@ -6,6 +6,7 @@
 #pragma once
 
 #include <RHI/BLAS.h>
+#include <RHI/Buffer.h>
 
 #include <Agility/d3d12.h>
 
@@ -18,4 +19,10 @@ public:
     ~D3D12BLAS();
 
     uint64 GetAddress() override;
+
+private:
+    friend class D3D12CommandBuffer;
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS mInputs;
+    D3D12_RAYTRACING_GEOMETRY_DESC mGeometry;
 };

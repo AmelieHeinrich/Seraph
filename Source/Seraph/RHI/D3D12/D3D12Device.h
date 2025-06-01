@@ -37,7 +37,6 @@ public:
     ID3D12Device14* GetDevice() { return mDevice; }
     IDXGIFactory6* GetFactory() { return mFactory; }
     D3D12BindlessManager* GetBindlessManager() { return mBindlessManager; }
-    D3D12MA::Allocator* GetAllocator() { return mAllocator; }
 
 private:
     IDXGIFactory6* mFactory = nullptr;

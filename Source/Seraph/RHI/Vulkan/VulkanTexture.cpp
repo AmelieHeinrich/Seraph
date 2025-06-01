@@ -36,6 +36,8 @@ VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
     
     VkResult result = vmaCreateImage(mParentDevice->Allocator(), &imageInfo, &allocInfo, &mImage, &mAllocation, &mAllocationInfo);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create image!");
+
+    SERAPH_WHATEVER("Created Vulkan texture");
 }
 
 VulkanTexture::~VulkanTexture()

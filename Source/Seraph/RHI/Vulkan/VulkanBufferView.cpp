@@ -26,6 +26,8 @@ VulkanBufferView::VulkanBufferView(VulkanDevice* device, RHIBufferViewDesc desc)
             break;
         }
     }
+
+    SERAPH_WHATEVER("Created Vulkan buffer view");
 }
 
 VulkanBufferView::~VulkanBufferView()

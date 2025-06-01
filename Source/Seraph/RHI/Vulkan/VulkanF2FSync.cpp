@@ -26,6 +26,8 @@ VulkanF2FSync::VulkanF2FSync(VulkanDevice* device, VulkanSurface* surface, Vulka
         result = vkCreateFence(device->Device(), &fenceInfo, nullptr, &mInFlightFences[i]);
         ASSERT_EQ(result == VK_SUCCESS, "Failed to create in flight fence!");
     }
+
+    SERAPH_WHATEVER("Created Vulkan F2F sync");
 }
 
 VulkanF2FSync::~VulkanF2FSync()

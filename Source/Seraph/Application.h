@@ -37,4 +37,9 @@ private:
     IRHITexture* mTexture;
     IRHITextureView* mTextureSRV;
     IRHISampler* mSampler;
+
+    Array<TLASInstance> mInstances;
+    IRHIBLAS* mBLAS;
+    IRHITLAS* mTLAS;
+    IRHIBuffer* mInstanceBuffer;
 };

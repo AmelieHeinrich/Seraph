@@ -10,6 +10,7 @@
 #include "D3D12Buffer.h"
 #include "D3D12BufferView.h"
 #include "D3D12Sampler.h"
+#include "D3D12TLAS.h"
 
 constexpr uint64 MAX_BINDLESS_RESOURCES = 1000000;
 constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
@@ -251,8 +252,30 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferUAV(D3D12BufferView* cbv)
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteAS(D3D12TLAS* as)
 {
-    // TODO: write as
-    return {};
+    uint availableIndex = 0;
+    for (uint i = 0; i < mResourceLUT.size(); i++) {
+        if (mResourceLUT[i] == false) {
+            mResourceLUT[i] = true;
+            availableIndex = i;
+            break;
+        }
+    }
+
+    D3D12BindlessAlloc alloc = {};
+    alloc.Index = availableIndex;
+    alloc.CPU = mResourceHeap->GetCPUDescriptorHandleForHeapStart();
+    alloc.GPU = mResourceHeap->GetGPUDescriptorHandleForHeapStart();
+    alloc.CPU.ptr += availableIndex * mResourceIncrement;
+    alloc.GPU.ptr += availableIndex * mResourceIncrement;
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+    desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+    desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    desc.Format = DXGI_FORMAT_UNKNOWN;
+    desc.RaytracingAccelerationStructure.Location = as->Address();
+
+    mParentDevice->GetDevice()->CreateShaderResourceView(nullptr, &desc, alloc.CPU);
+    return alloc;
 }
 
 void D3D12BindlessManager::FreeCBVSRVUAV(D3D12BindlessAlloc index)

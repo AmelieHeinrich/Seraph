@@ -77,6 +77,8 @@ VulkanTLAS::VulkanTLAS(VulkanDevice* device)
 
     // Descriptor!
     mBindless = mParentDevice->GetBindlessManager()->WriteAS(this);
+
+    SERAPH_WHATEVER("Created Vulkan TLAS");
 }
 
 VulkanTLAS::~VulkanTLAS()

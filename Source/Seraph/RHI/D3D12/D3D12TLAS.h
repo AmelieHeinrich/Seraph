@@ -10,6 +10,8 @@
 
 #include <Agility/d3d12.h>
 
+#include "D3D12BindlessManager.h"
+
 class D3D12Device;
 
 class D3D12TLAS : public IRHITLAS
@@ -17,4 +19,13 @@ class D3D12TLAS : public IRHITLAS
 public:
     D3D12TLAS(D3D12Device* device);
     ~D3D12TLAS();
+
+    uint64 Address() const { return mMemory->GetAddress(); }
+private:
+    friend class D3D12CommandBuffer;
+
+    D3D12Device* mParentDevice;
+
+    D3D12BindlessAlloc mAlloc;
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS mInputs;
 };

@@ -258,6 +258,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     }
 
     mDesc.Bytecode.clear();
+
+    SERAPH_WHATEVER("Created Vulkan graphics pipeline");
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline()

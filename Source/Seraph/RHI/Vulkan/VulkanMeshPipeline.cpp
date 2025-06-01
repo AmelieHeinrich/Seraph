@@ -221,6 +221,8 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     }
 
     mDesc.Bytecode.clear();
+
+    SERAPH_WHATEVER("Created Vulkan mesh pipeline");
 }
 
 VulkanMeshPipeline::~VulkanMeshPipeline()

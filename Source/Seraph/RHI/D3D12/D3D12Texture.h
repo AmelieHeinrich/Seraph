@@ -8,7 +8,6 @@
 #include <RHI/Texture.h>
 
 #include <Agility/d3d12.h>
-#include <D3D12MA/D3D12MemAlloc.h>
 
 class D3D12Device;
 
@@ -28,6 +27,5 @@ public:
 private:
     friend class D3D12Surface;
 
-    D3D12MA::Allocation* mAllocation;
     ID3D12Resource* mResource;
 };

@@ -53,9 +53,9 @@ template<typename K, typename T>
 using UnorderedMap = std::unordered_map<K, T>;
 
 template<typename T>
-constexpr T Align(T value, T alignment)
+constexpr T Align(T s, T a)
 {
-    return (value + alignment - 1) & ~(alignment - 1);
+    return ((s + a - 1) & ~(a - 1));
 }
 
 #define BIT(x) (1 << x)

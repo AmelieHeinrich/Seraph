@@ -27,6 +27,8 @@ VulkanCommandQueue::VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType t
 
     VkResult result = vkCreateCommandPool(mParentDevice->Device(), &poolInfo, nullptr, &mCommandPool);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create command pool!");
+
+    SERAPH_WHATEVER("Created Vulkan command queue");
 }
 
 VulkanCommandQueue::~VulkanCommandQueue()

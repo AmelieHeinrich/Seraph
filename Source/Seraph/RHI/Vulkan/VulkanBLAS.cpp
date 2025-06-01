@@ -81,6 +81,8 @@ VulkanBLAS::VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc)
     // Update build info
     mBuildInfo.dstAccelerationStructure = mHandle;
     mBuildInfo.scratchData.deviceAddress = mScratch->GetAddress();
+
+    SERAPH_WHATEVER("Created Vulkan BLAS");
 }
 
 VulkanBLAS::~VulkanBLAS()

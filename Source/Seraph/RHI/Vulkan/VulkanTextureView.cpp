@@ -45,6 +45,8 @@ VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc view
             break;
         }
     }
+
+    SERAPH_WHATEVER("Created Vulkan texture view");
 }
 
 VulkanTextureView::~VulkanTextureView()

@@ -13,12 +13,6 @@ D3D12Buffer::D3D12Buffer(D3D12Device* device, RHIBufferDesc desc)
 {
     mDesc = desc;
 
-    D3D12MA::ALLOCATION_DESC allocationDesc = {};
-    allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
-    if (Any(desc.Usage & RHIBufferUsage::kReadback)) allocationDesc.HeapType = D3D12_HEAP_TYPE_READBACK;
-    if (Any(desc.Usage & RHIBufferUsage::kStaging)) allocationDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
-    if (Any(desc.Usage & RHIBufferUsage::kConstant)) allocationDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
-
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
@@ -30,10 +24,20 @@ D3D12Buffer::D3D12Buffer(D3D12Device* device, RHIBufferDesc desc)
     resourceDesc.SampleDesc.Count = 1;
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    if (Any(desc.Usage & RHIBufferUsage::kShaderWrite)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    if (Any(desc.Usage & RHIBufferUsage::kAccelerationStructure)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+    if (Any(desc.Usage & RHIBufferUsage::kShaderWrite)) {
+        resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+    if (Any(desc.Usage & RHIBufferUsage::kAccelerationStructure)) {
+        resourceDesc.Flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+    }
 
-    HRESULT hr = device->GetAllocator()->CreateResource(&allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &mAllocation, IID_PPV_ARGS(&mResource));
+    D3D12_HEAP_PROPERTIES allocationDesc = {};
+    allocationDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
+    if (Any(desc.Usage & RHIBufferUsage::kReadback)) allocationDesc.Type = D3D12_HEAP_TYPE_READBACK;
+    if (Any(desc.Usage & RHIBufferUsage::kStaging)) allocationDesc.Type = D3D12_HEAP_TYPE_UPLOAD;
+    if (Any(desc.Usage & RHIBufferUsage::kConstant)) allocationDesc.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+    HRESULT hr = device->GetDevice()->CreateCommittedResource(&allocationDesc, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&mResource));
     ASSERT_EQ(SUCCEEDED(hr), "Failed to create D3D12 texture!");
 
     SERAPH_WHATEVER("Created D3D12 buffer");
@@ -41,12 +45,11 @@ D3D12Buffer::D3D12Buffer(D3D12Device* device, RHIBufferDesc desc)
 
 D3D12Buffer::~D3D12Buffer()
 {
-    if (mAllocation) mAllocation->Release();
+    if (mResource) mResource->Release();
 }
 
 void D3D12Buffer::SetName(const StringView& name)
 {
-    mAllocation->SetName(MULTIBYTE_TO_UNICODE(name.data()));
     mResource->SetName(MULTIBYTE_TO_UNICODE(name.data()));
 }
 
