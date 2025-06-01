@@ -13,17 +13,17 @@ public:
     D3D12Device(bool validationLayers);
     ~D3D12Device();
 
-    IRHISurface* CreateSurface(Window* window) override { return nullptr; }
-    IRHITexture* CreateTexture(RHITextureDesc desc) override { return nullptr; }
-    IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override { return nullptr; }
+    IRHISurface* CreateSurface(Window* window) override;
+    IRHITexture* CreateTexture(RHITextureDesc desc) override;
+    IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override;
     IRHICommandQueue* CreateCommandQueue(RHICommandQueueType type) override;
-    IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override { return nullptr; }
-    IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override { return nullptr; }
-    IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override { return nullptr; }
-    IRHISampler* CreateSampler(RHISamplerDesc desc) override { return nullptr; }
-    IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override { return nullptr; }
-    IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override { return nullptr; }
-    IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override { return nullptr; }
-    IRHITLAS* CreateTLAS() override { return nullptr; }
-    IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) override { return nullptr; }
+    IRHIF2FSync* CreateF2FSync(IRHISurface* surface, IRHICommandQueue* queue) override;
+    IRHIGraphicsPipeline* CreateGraphicsPipeline(RHIGraphicsPipelineDesc desc) override;
+    IRHIBuffer* CreateBuffer(RHIBufferDesc desc) override;
+    IRHISampler* CreateSampler(RHISamplerDesc desc) override;
+    IRHIComputePipeline* CreateComputePipeline(RHIComputePipelineDesc desc) override;
+    IRHIMeshPipeline* CreateMeshPipeline(RHIMeshPipelineDesc desc) override;
+    IRHIBLAS* CreateBLAS(RHIBLASDesc desc) override;
+    IRHITLAS* CreateTLAS() override;
+    IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) override;
 };

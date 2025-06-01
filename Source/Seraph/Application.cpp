@@ -20,7 +20,7 @@ static const uint INDICES[] = {
 };
 
 Application::Application()
-    : mBackend(RHIBackend::kVulkan)
+    : mBackend(RHIBackend::kD3D12)
 {
     ShaderCompiler::Initialize(mBackend);
     CompiledShader shader = ShaderCompiler::Compile("Textured", { "VSMain", "FSMain" });
@@ -143,7 +143,7 @@ void Application::Run()
 
         float testColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
         void* test = mTestCBV->Map();
-        memcpy(test, testColor, sizeof(testColor));
+        SafeMemcpy(test, testColor, sizeof(testColor));
         mTestCBV->Unmap();
 
         struct PushConstant {

@@ -7,12 +7,17 @@
 
 #include <RHI/CommandQueue.h>
 
+class D3D12Device;
+
 class D3D12CommandQueue : public IRHICommandQueue
 {
 public:
-    D3D12CommandQueue() = default;
+    D3D12CommandQueue(D3D12Device* device, RHICommandQueueType type);
+    ~D3D12CommandQueue();
 
-    IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override { return nullptr; }
+    IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
 
-    void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override {}
+    void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override;
+private:
+    D3D12Device* mParentDevice;
 };

@@ -38,21 +38,21 @@ import BindlessTypes;
 #define DEFINE_CBV_ARRAY(type)                                                                              \
     public struct BindlessCBV_##type {                                                                                                       \
         static type Load(uint index) {                                                                                        \
-            return defaultGetDescriptorFromHandle(DescriptorHandle<ConstantBuffer<type>>(uint2(Index, 0)));  \
+            return defaultGetDescriptorFromHandle(DescriptorHandle<ConstantBuffer<type>>(uint2(index, 0)));  \
         }                                                                                                    \
     };
 
 #define DEFINE_SRV_ARRAY(type)                                                                                \
     public struct BindlessCBV_##type {                                                                                                         \
         StructuredBuffer<type> Load(uint index) {                                                                                                     \
-            return defaultGetDescriptorFromHandle(DescriptorHandle<StructuredBuffer<type>>(uint2(Index, 0))); \
+            return defaultGetDescriptorFromHandle(DescriptorHandle<StructuredBuffer<type>>(uint2(index, 0))); \
         }                                                                                                   \
     };
 
 #define DEFINE_UAV_ARRAY(type)                                                                                \
     public struct BindlessUAV_##type {                                                                                                         \
         static type Load(uint index) {                                                                                                     \
-            return defaultGetDescriptorFromHandle(DescriptorHandle<RWStructuredBuffer<type>>(uint2(Index, 0))); \
+            return defaultGetDescriptorFromHandle(DescriptorHandle<RWStructuredBuffer<type>>(uint2(index, 0))); \
         }                                                                                                   \
     };
 

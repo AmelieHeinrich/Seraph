@@ -114,7 +114,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
         if (IRHITexture::IsBlockFormat(desc.Format)) {
             uint blocksHigh = (mipHeight + 3) / 4;
             for (uint by = 0; by < blocksHigh; by++) {
-                memcpy(
+                SafeMemcpy(
                     dstMipRow + by * mipAlignedPitch[mip],
                     srcPtr + by * mipRowSize[mip],
                     mipRowSize[mip]
@@ -124,7 +124,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
             srcPtr += mipRowSize[mip] * blocksHigh;
         } else {
             for (uint y = 0; y < mipHeight; y++) {
-                memcpy(
+                SafeMemcpy(
                     dstMipRow + y * mipAlignedPitch[mip],
                     srcPtr + y * mipRowSize[mip],
                     mipRowSize[mip]
@@ -155,7 +155,7 @@ void Uploader::EnqueueBufferUpload(const void* data, uint64 size, IRHIBuffer* bu
     request.StagingBuffer = sData.Device->CreateBuffer(stagingBufferDesc);
 
     void* ptr = request.StagingBuffer->Map();
-    memcpy(ptr, data, size);
+    SafeMemcpy(ptr, data, size);
     request.StagingBuffer->Unmap();
 
     sData.Requests.push_back(std::move(request));

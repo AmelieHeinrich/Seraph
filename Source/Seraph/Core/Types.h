@@ -83,3 +83,5 @@ inline constexpr bool Any(EnumType value) {                                     
     using T = std::underlying_type_t<EnumType>;                                   \
     return static_cast<T>(value) != 0;                                            \
 }
+
+void SafeMemcpy(void* dst, const void* src, uint64 size);

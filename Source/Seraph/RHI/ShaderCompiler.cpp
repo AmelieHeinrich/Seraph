@@ -94,7 +94,7 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
         ShaderModule shaderModule = {};
         shaderModule.Entry = entryPoints[i];
         shaderModule.Bytecode.resize(kernelBlob->getBufferSize());
-        memcpy(shaderModule.Bytecode.data(), kernelBlob->getBufferPointer(), shaderModule.Bytecode.size());
+        SafeMemcpy(shaderModule.Bytecode.data(), kernelBlob->getBufferPointer(), shaderModule.Bytecode.size());
         result.Entries[entryPoints[i]] = shaderModule;
     }
 
