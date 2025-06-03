@@ -29,8 +29,7 @@ struct PushConstants
     uint MySampler;
     uint MyCBV;
 };
-
-[[vk::push_constant]] ConstantBuffer<PushConstants> Push : register(b0);
+PUSH_CONSTANTS(PushConstants, Push);
 
 [shader("vertex")]
 VertexOutput VSMain(VertexInput input)

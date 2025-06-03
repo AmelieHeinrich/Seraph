@@ -7,6 +7,8 @@ module Bindless;
 
 import BindlessTypes;
 
+#define PUSH_CONSTANTS(Type, Name) [[vk::push_constant]] ConstantBuffer<Type> Name : register(b0)
+
 #ifdef VULKAN
 
 #define DEFINE_CBV_ARRAY(type)                  \
