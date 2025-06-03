@@ -409,7 +409,6 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteDSV(D3D12TextureView* dsv)
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
     alloc.CPU = mDSVHeap->GetCPUDescriptorHandleForHeapStart();
-    alloc.GPU = mDSVHeap->GetGPUDescriptorHandleForHeapStart();
     alloc.CPU.ptr += availableIndex * mDepthStencilIncrement;
 
     mParentDevice->GetDevice()->CreateDepthStencilView(resource, &desc, alloc.CPU);

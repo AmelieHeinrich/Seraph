@@ -58,6 +58,17 @@ Application::Application(const ApplicationSpecs& specs)
     void* test = mInstanceBuffer->Map();
     memcpy(test, mInstances.data(), mInstances.size() * sizeof(TLASInstance));
     mInstanceBuffer->Unmap();
+
+    {
+        RHITextureDesc desc = {};
+        desc.Width = mSpecs.WindowWidth;
+        desc.Height = mSpecs.WindowHeight;
+        desc.Format = RHITextureFormat::kD32_FLOAT;
+        desc.Usage = RHITextureUsage::kDepthTarget;
+
+        mDepthBuffer = mDevice->CreateTexture(desc);
+        mDepthView = mDevice->CreateTextureView(RHITextureViewDesc(mDepthBuffer, RHITextureViewType::kDepthTarget));
+    }
     
     {
         int width = 256;
@@ -100,6 +111,10 @@ Application::Application(const ApplicationSpecs& specs)
     desc.ReflectInputLayout = true;
     desc.PushConstantSize = sizeof(BindlessHandle) * 3;
     desc.RenderTargetFormats.push_back(mSurface->GetTexture(0)->GetDesc().Format);
+    desc.DepthEnabled = true;
+    desc.DepthWrite = true;
+    desc.DepthFormat = RHITextureFormat::kD32_FLOAT;
+    desc.DepthOperation = RHIDepthOperation::kLess;
 
     mPipeline = mDevice->CreateGraphicsPipeline(desc);
 
@@ -125,6 +140,9 @@ Application::~Application()
     delete mIndexBuffer;
     delete mVertexBuffer;
     delete mPipeline;
+
+    delete mDepthView;
+    delete mDepthBuffer;
 
     delete mImGuiContext;
     delete mF2FSync;
@@ -167,8 +185,28 @@ void Application::Run()
         endRenderBarrier.DestAccess    = RHIResourceAccess::kNone;
         endRenderBarrier.NewLayout     = RHIResourceLayout::kPresent;
 
+        RHITextureBarrier beginDepthBarrier(mDepthBuffer);
+        beginDepthBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
+        beginDepthBarrier.DestStage    = RHIPipelineStage::kEarlyFragmentTests;
+        beginDepthBarrier.SourceAccess = RHIResourceAccess::kNone;
+        beginDepthBarrier.DestAccess   = RHIResourceAccess::kDepthStencilWrite;
+        beginDepthBarrier.NewLayout    = RHIResourceLayout::kDepthStencilWrite;
+
+        RHITextureBarrier endDepthBarrier(mDepthBuffer);
+        endDepthBarrier.SourceStage  = RHIPipelineStage::kEarlyFragmentTests;
+        endDepthBarrier.DestStage    = RHIPipelineStage::kBottomOfPipe;
+        endDepthBarrier.SourceAccess = RHIResourceAccess::kDepthStencilWrite;
+        endDepthBarrier.DestAccess   = RHIResourceAccess::kNone;
+        endDepthBarrier.NewLayout    = RHIResourceLayout::kGeneral;
+
+        RHIBarrierGroup beginGroup = {};
+        beginGroup.TextureBarriers = { beginRenderBarrier, beginDepthBarrier };
+
+        RHIBarrierGroup endGroup = {};
+        endGroup.TextureBarriers = { endRenderBarrier, endDepthBarrier };
+
         RHIRenderAttachment attachment(swapchainTextureView);
-        RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(swapchainTextureView) }, {});
+        RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(swapchainTextureView) }, RHIRenderAttachment(mDepthView, true));
 
         float testColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
         void* test = mTestCBV->Map();
@@ -186,7 +224,7 @@ void Application::Run()
         };
 
         commandBuffer->PushMarker("Meow");
-        commandBuffer->Barrier(beginRenderBarrier);
+        commandBuffer->BarrierGroup(beginGroup);
         
         commandBuffer->BeginRendering(renderBegin);
 
@@ -202,7 +240,7 @@ void Application::Run()
 
         commandBuffer->EndRendering();
 
-        commandBuffer->Barrier(endRenderBarrier);
+        commandBuffer->BarrierGroup(endGroup);
         commandBuffer->PopMarker();
         
         commandBuffer->End();

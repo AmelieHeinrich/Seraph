@@ -213,7 +213,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorFormats.size());
     renderingInfo.pColorAttachmentFormats = colorFormats.data();
-    renderingInfo.depthAttachmentFormat = desc.DepthEnabled ? VulkanTexture::RHIToVkFormat(desc.DepthFormat) : VK_FORMAT_UNDEFINED;
+    renderingInfo.depthAttachmentFormat = VulkanTexture::RHIToVkFormat(desc.DepthFormat);
 
     // Pipeline layout (placeholder - assume you have one created)
     VkPushConstantRange pushRange = {};

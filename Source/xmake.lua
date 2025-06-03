@@ -13,6 +13,7 @@ target("Seraph")
     add_headerfiles("Seraph/**.h")
     add_includedirs("Seraph")
     add_syslinks("user32")
+    add_defines("ENABLE_PIX")
     add_deps("SDL3", "Vulkan", "Slang", "DirectX", "PIX", "DXC", "ImGui", "JSON", "STB")
 
     before_link(function (target)

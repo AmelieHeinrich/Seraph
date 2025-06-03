@@ -48,6 +48,9 @@ private:
     IRHITextureView* mTextureSRV;
     IRHISampler* mSampler;
 
+    IRHITexture* mDepthBuffer;
+    IRHITextureView* mDepthView;
+
     IRHIBuffer* mScreenshotBuffer;
     ImageData mScreenshotData;
     bool mScreenshotted = false;

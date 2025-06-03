@@ -37,6 +37,7 @@ VulkanImGuiContext::VulkanImGuiContext(VulkanDevice* device, VulkanCommandQueue*
     initInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
     initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = formats;
+    initInfo.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
     initInfo.Subpass = 0;
     initInfo.MinImageCount = FRAMES_IN_FLIGHT;
     initInfo.ImageCount = FRAMES_IN_FLIGHT;
