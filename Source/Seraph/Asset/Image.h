@@ -18,4 +18,5 @@ class Image
 {
 public:
     static void WriteImageData(const ImageData& data, const StringView& path);
+    static ImageData LoadImageData(const StringView& path);
 };

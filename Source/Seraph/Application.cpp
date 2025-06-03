@@ -71,32 +71,19 @@ Application::Application(const ApplicationSpecs& specs)
     }
     
     {
-        int width = 256;
-        int height = 256;
-        int tileSize = 32;
-        uint color1 = 0xFFFFFFFF; // White
-        uint color2 = 0xFF000000; // Black
-
-        Array<uint> pixels(width * height);
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                bool isColor1 = ((x / tileSize) + (y / tileSize)) % 2 == 0;
-                pixels[y * width + x] = isColor1 ? color1 : color2;
-            }
-        }
-
+        ImageData data = Image::LoadImageData("Data/Textures/Sweet.jpg");
 
         RHITextureDesc desc = {};
         desc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
-        desc.Width = width;
-        desc.Height = height;
+        desc.Width = data.Width;
+        desc.Height = data.Height;
         desc.Depth = 1;
         desc.MipLevels = 1;
         desc.Usage = RHITextureUsage::kShaderResource;
         mTexture = mDevice->CreateTexture(desc);
         mTextureSRV = mDevice->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
 
-        Uploader::EnqueueTextureUploadRaw(pixels.data(), pixels.size() * sizeof(uint32_t), mTexture);
+        Uploader::EnqueueTextureUploadRaw(data.Pixels.data(), data.Pixels.size(), mTexture);
     }
 
     Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
@@ -208,7 +195,7 @@ void Application::Run()
         RHIRenderAttachment attachment(swapchainTextureView);
         RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(swapchainTextureView) }, RHIRenderAttachment(mDepthView, true));
 
-        float testColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+        float testColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
         void* test = mTestCBV->Map();
         SafeMemcpy(test, testColor, sizeof(testColor));
         mTestCBV->Unmap();

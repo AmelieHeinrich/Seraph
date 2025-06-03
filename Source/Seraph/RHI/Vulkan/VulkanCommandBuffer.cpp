@@ -437,17 +437,16 @@ void VulkanCommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src
             imageExtent = { std::max(1u, mipWidth), std::max(1u, mipHeight), 1 };
 
             // bufferImageHeight = 0 is acceptable here since it's same as mipHeight
-        }
-        else {
+        } else {
             rowPitch = Align<uint>(mipWidth * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
-            rowLength = mipWidth;
+            rowLength = rowPitch / bytesPerUnit;
             imageExtent = { mipWidth, mipHeight, 1 };
         }
 
         VkBufferImageCopy copyRegion = {};
         copyRegion.bufferOffset = bufferOffset;
         copyRegion.bufferRowLength = rowLength; // in texels, not bytes
-        copyRegion.bufferImageHeight = mipWidth == 1 ? 0 : rowPitch;       // tightly packed between rows
+        copyRegion.bufferImageHeight = 0;       // tightly packed between rows
         copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copyRegion.imageSubresource.mipLevel = mip;
         copyRegion.imageSubresource.baseArrayLayer = 0;
