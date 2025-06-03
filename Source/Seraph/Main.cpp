@@ -4,15 +4,21 @@
 //
 
 #include "Core/Context.h"
+#include "Core/FileSystem.h"
+
 #include "Application.h"
 
 int main(void)
 {
     Context::Initialize();
+    FileSystem::Initialize();
+    
     {
         Application app;
         app.Run();
     }
+    
+    FileSystem::Shutdown();
     Context::Shutdown();
     return 0;
 }

@@ -20,7 +20,7 @@ static const uint INDICES[] = {
 };
 
 Application::Application()
-    : mBackend(RHIBackend::kVulkan)
+    : mBackend(RHIBackend::kD3D12)
 {
     ShaderCompiler::Initialize(mBackend);
     CompiledShader shader = ShaderCompiler::Compile("Textured", { "VSMain", "FSMain" });

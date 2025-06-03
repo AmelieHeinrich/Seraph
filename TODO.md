@@ -2,7 +2,7 @@
 
 ## Frontburner
 
-- [ ] File system
+- [x] File system
 - [ ] JSON loading/writing
 - [ ] Input management
 - [ ] Texture loading
@@ -10,11 +10,16 @@
 - [ ] Camera controller
 - [ ] ECS
 - [ ] Mesh loading
+- [ ] Forward pass
+- [ ] HDR + Tonemapping
+- [ ] Deferred pass
+- [ ] Render graph
 
 ## Backburner
 
 - [ ] Indirect
 - [ ] Raytracing pipelines
 - [ ] GPU timestamps
+- [ ] GPU readback
+- [ ] Texture write to disk
 - [ ] Test framework using FLIP
-- [ ] Render graph
