@@ -467,6 +467,65 @@ void VulkanCommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src
     }
 }
 
+void VulkanCommandBuffer::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
+{
+    RHITextureDesc textureDesc = src->GetDesc();
+    VkImage image = static_cast<VulkanTexture*>(src)->Image();
+    VkBuffer buffer = static_cast<VulkanBuffer*>(dest)->GetBuffer();
+
+    const bool isBlockCompressed = IRHITexture::IsBlockFormat(textureDesc.Format);
+    const uint bytesPerUnit = IRHITexture::BytesPerPixel(textureDesc.Format); // bytes per pixel or block
+
+    VkDeviceSize bufferOffset = 0;
+
+    for (uint mip = 0; mip < textureDesc.MipLevels; mip++) {
+        uint mipWidth = std::max(1u, textureDesc.Width >> mip);
+        uint mipHeight = std::max(1u, textureDesc.Height >> mip);
+
+        uint rowPitch = 0;
+        uint rowLength = 0;
+        uint imageHeight = 0;
+        VkExtent3D imageExtent = {};
+
+        if (isBlockCompressed) {
+            uint blocksWide = (mipWidth + 3) / 4;
+            uint blocksHigh = (mipHeight + 3) / 4;
+
+            rowPitch = Align<uint>(blocksWide * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
+            rowLength = blocksWide * 4; // in texels
+            imageExtent = { std::max(1u, mipWidth), std::max(1u, mipHeight), 1 };
+        }
+        else {
+            rowPitch = Align<uint>(mipWidth * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
+            rowLength = mipWidth;
+            imageExtent = { mipWidth, mipHeight, 1 };
+        }
+
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset = bufferOffset;
+        copyRegion.bufferRowLength = rowLength;
+        copyRegion.bufferImageHeight = mipWidth == 1 ? 0 : rowPitch;
+        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel = mip;
+        copyRegion.imageSubresource.baseArrayLayer = 0;
+        copyRegion.imageSubresource.layerCount = 1;
+        copyRegion.imageOffset = { 0, 0, 0 };
+        copyRegion.imageExtent = imageExtent;
+
+        vkCmdCopyImageToBuffer(
+            mCmdBuffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            buffer,
+            1,
+            &copyRegion
+        );
+
+        uint mipHeightInBlocks = isBlockCompressed ? (mipHeight + 3) / 4 : mipHeight;
+        bufferOffset += rowPitch * mipHeightInBlocks;
+    }
+}
+
 void VulkanCommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
 {
     VulkanBLAS* vkBlas = static_cast<VulkanBLAS*>(blas);

@@ -51,6 +51,7 @@ public:
 
     void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) override;
     void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) override;
+    void CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src) override;
     void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) override;
     void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) override;
     

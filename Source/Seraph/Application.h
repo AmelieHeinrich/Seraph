@@ -11,6 +11,8 @@
 #include "RHI/ShaderCompiler.h"
 #include "RHI/Uploader.h"
 
+#include "Asset/Image.h"
+
 struct ApplicationSpecs
 {
     RHIBackend Backend;
@@ -26,6 +28,8 @@ public:
 
     void Run();
 private:
+    ApplicationSpecs mSpecs;
+
     SharedPtr<Window> mWindow;
 
     IRHIDevice* mDevice;
@@ -43,6 +47,10 @@ private:
     IRHITexture* mTexture;
     IRHITextureView* mTextureSRV;
     IRHISampler* mSampler;
+
+    IRHIBuffer* mScreenshotBuffer;
+    ImageData mScreenshotData;
+    bool mScreenshotted = false;
 
     Array<TLASInstance> mInstances;
     IRHIBLAS* mBLAS;
