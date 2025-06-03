@@ -3,7 +3,7 @@
 ## Frontburner
 
 - [x] File system
-- [ ] JSON loading/writing
+- [x] JSON loading
 - [ ] Input management
 - [ ] Texture loading
 - [ ] Texture compressor

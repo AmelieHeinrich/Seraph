@@ -11,16 +11,21 @@
 #include "RHI/ShaderCompiler.h"
 #include "RHI/Uploader.h"
 
+struct ApplicationSpecs
+{
+    RHIBackend Backend;
+    int WindowWidth;
+    int WindowHeight;
+};
+
 class Application
 {
 public:
-    Application();
+    Application(const ApplicationSpecs& specs);
     ~Application();
 
     void Run();
 private:
-    RHIBackend mBackend;
-
     SharedPtr<Window> mWindow;
 
     IRHIDevice* mDevice;

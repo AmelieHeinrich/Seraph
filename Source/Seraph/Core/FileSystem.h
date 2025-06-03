@@ -7,11 +7,15 @@
 
 #include "Types.h"
 
+#include <JSON/json.hpp>
+
 class FileSystem
 {
 public:
     static void Initialize();
     static void Shutdown();
+
+    static nlohmann::json ReadJSON(const String& path);
 
     static bool Exists(const String& path);
 private:

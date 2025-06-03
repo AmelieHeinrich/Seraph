@@ -1,5 +1,5 @@
 {
-    "windowWidth": 1280,
-    "windowHeight": 720,
+    "width": 1280,
+    "height": 720,
     "backend": "Vulkan"
 }

@@ -8,13 +8,23 @@
 
 #include "Application.h"
 
+RHIBackend TranslateBackend(const String& data)
+{
+    if (data == "Vulkan") return RHIBackend::kVulkan;
+    if (data == "D3D12") return RHIBackend::kD3D12;
+    return RHIBackend::kD3D12;
+}
+
 int main(void)
 {
     Context::Initialize();
     FileSystem::Initialize();
-    
+
     {
-        Application app;
+        nlohmann::json settings = FileSystem::ReadJSON("Data/Settings.json");
+        
+        ApplicationSpecs specs = { TranslateBackend(settings["backend"]), settings["width"], settings["height"] };
+        Application app(specs);
         app.Run();
     }
     

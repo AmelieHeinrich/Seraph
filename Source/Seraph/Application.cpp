@@ -19,14 +19,13 @@ static const uint INDICES[] = {
     1, 2, 3
 };
 
-Application::Application()
-    : mBackend(RHIBackend::kD3D12)
+Application::Application(const ApplicationSpecs& specs)
 {
-    ShaderCompiler::Initialize(mBackend);
+    ShaderCompiler::Initialize(specs.Backend);
     CompiledShader shader = ShaderCompiler::Compile("Textured", { "VSMain", "FSMain" });
 
-    mWindow = SharedPtr<Window>(new Window(1280, 720, "Seraph"));
-    mDevice = IRHIDevice::CreateDevice(mBackend, false);
+    mWindow = SharedPtr<Window>(new Window(specs.WindowWidth, specs.WindowHeight, "Seraph"));
+    mDevice = IRHIDevice::CreateDevice(specs.Backend, false);
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
     mSurface = mDevice->CreateSurface(mWindow.get(), mGraphicsQueue);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {

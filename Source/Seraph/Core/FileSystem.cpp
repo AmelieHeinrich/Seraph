@@ -27,6 +27,18 @@ void FileSystem::Shutdown()
 
 }
 
+nlohmann::json FileSystem::ReadJSON(const String& path)
+{
+    std::ifstream stream(path);
+    if (!stream.is_open()) {
+        SERAPH_ERROR("Failed to open JSON file {0}", path);
+        return {};
+    }
+    nlohmann::json root = nlohmann::json::parse(stream);
+    stream.close();
+    return root;
+}
+
 bool FileSystem::Exists(const String& path)
 {
     struct stat s;
