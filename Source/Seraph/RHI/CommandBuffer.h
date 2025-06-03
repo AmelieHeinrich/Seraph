@@ -64,26 +64,12 @@ enum class RHIResourceAccess : uint64
 };
 ENUM_CLASS_FLAGS(RHIResourceAccess);
 
-enum class RHIResourceLayout
-{
-    kUndefined,
-    kGeneral,                 // UAV or equivalent
-    kReadOnly,                // SRV/Texture in fragment or compute
-    kColorAttachment,         // RenderTarget
-    kDepthStencilReadOnly,
-    kDepthStencilWrite,
-    kTransferSrc,
-    kTransferDst,
-    kPresent,
-};
-
 struct RHITextureBarrier
 {
     RHIPipelineStage SourceStage;
     RHIPipelineStage DestStage;
     RHIResourceAccess SourceAccess;
     RHIResourceAccess DestAccess;
-    RHIResourceLayout OldLayout;
     RHIResourceLayout NewLayout;
     IRHITexture* Texture;
 

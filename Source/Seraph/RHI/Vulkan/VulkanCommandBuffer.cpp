@@ -124,13 +124,14 @@ void VulkanCommandBuffer::Barrier(const RHITextureBarrier& barrier)
         .srcAccessMask       = TranslateAccessFlagsToVk(barrier.SourceAccess),
         .dstStageMask        = TranslatePipelineStageToVk(barrier.DestStage),
         .dstAccessMask       = TranslateAccessFlagsToVk(barrier.DestAccess),
-        .oldLayout           = TranslateLayoutToVk(barrier.OldLayout),
+        .oldLayout           = TranslateLayoutToVk(barrier.Texture->GetLayout()),
         .newLayout           = TranslateLayoutToVk(barrier.NewLayout),
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image               = vkTexture->Image(),
         .subresourceRange    = range
     };
+    barrier.Texture->SetLayout(barrier.NewLayout);
 
     const VkDependencyInfo dependencyInfo = {
         .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -231,13 +232,14 @@ void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
             .srcAccessMask       = TranslateAccessFlagsToVk(barrier.SourceAccess),
             .dstStageMask        = TranslatePipelineStageToVk(barrier.DestStage),
             .dstAccessMask       = TranslateAccessFlagsToVk(barrier.DestAccess),
-            .oldLayout           = TranslateLayoutToVk(barrier.OldLayout),
+            .oldLayout           = TranslateLayoutToVk(barrier.Texture->GetLayout()),
             .newLayout           = TranslateLayoutToVk(barrier.NewLayout),
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image               = vkTexture->Image(),
             .subresourceRange    = range
         };
+        barrier.Texture->SetLayout(barrier.NewLayout);
     
         imageBarriers.push_back(imageBarrier);
     }

@@ -158,7 +158,6 @@ void Application::Run()
         beginRenderBarrier.DestStage    = RHIPipelineStage::kColorAttachmentOutput;
         beginRenderBarrier.SourceAccess = RHIResourceAccess::kNone;
         beginRenderBarrier.DestAccess   = RHIResourceAccess::kColorAttachmentWrite;
-        beginRenderBarrier.OldLayout    = firstFrame < 3 ? RHIResourceLayout::kUndefined : RHIResourceLayout::kPresent;
         beginRenderBarrier.NewLayout    = RHIResourceLayout::kColorAttachment;
 
         RHITextureBarrier endRenderBarrier(swapchainTexture);
@@ -166,7 +165,6 @@ void Application::Run()
         endRenderBarrier.DestStage     = RHIPipelineStage::kBottomOfPipe;
         endRenderBarrier.SourceAccess  = RHIResourceAccess::kColorAttachmentWrite;
         endRenderBarrier.DestAccess    = RHIResourceAccess::kNone;
-        endRenderBarrier.OldLayout     = RHIResourceLayout::kColorAttachment;
         endRenderBarrier.NewLayout     = RHIResourceLayout::kPresent;
 
         RHIRenderAttachment attachment(swapchainTextureView);
@@ -220,7 +218,6 @@ void Application::Run()
             beginTextureBarrier.DestStage    = RHIPipelineStage::kCopy;
             beginTextureBarrier.SourceAccess = RHIResourceAccess::kNone;
             beginTextureBarrier.DestAccess   = RHIResourceAccess::kMemoryRead;
-            beginTextureBarrier.OldLayout    = RHIResourceLayout::kPresent;
             beginTextureBarrier.NewLayout    = RHIResourceLayout::kTransferSrc;
 
             RHIBufferBarrier beginBufferBarrier(mScreenshotBuffer);
@@ -238,7 +235,6 @@ void Application::Run()
             endTextureBarrier.DestStage     = RHIPipelineStage::kBottomOfPipe;
             endTextureBarrier.SourceAccess  = RHIResourceAccess::kMemoryRead;
             endTextureBarrier.DestAccess    = RHIResourceAccess::kNone;
-            endTextureBarrier.OldLayout     = RHIResourceLayout::kTransferSrc;
             endTextureBarrier.NewLayout     = RHIResourceLayout::kPresent;
 
             RHIBufferBarrier endBufferBarrier(mScreenshotBuffer);
@@ -272,7 +268,5 @@ void Application::Run()
 
             delete tempCmd;
         }
-
-        firstFrame++;
     }
 }

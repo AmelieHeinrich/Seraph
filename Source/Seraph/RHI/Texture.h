@@ -26,6 +26,19 @@ enum class RHITextureUsage : uint
 };
 ENUM_CLASS_FLAGS(RHITextureUsage)
 
+enum class RHIResourceLayout
+{
+    kUndefined,
+    kGeneral,                 // UAV or equivalent
+    kReadOnly,                // SRV/Texture in fragment or compute
+    kColorAttachment,         // RenderTarget
+    kDepthStencilReadOnly,
+    kDepthStencilWrite,
+    kTransferSrc,
+    kTransferDst,
+    kPresent,
+};
+
 struct RHITextureDesc
 {
     uint Width;
@@ -48,10 +61,13 @@ public:
 
     RHITextureDesc GetDesc() const { return mDesc; }
 
+    RHIResourceLayout GetLayout() { return mLayout; }
+    void SetLayout(RHIResourceLayout layout) { mLayout = layout; }
 public:
     static uint32 BytesPerPixel(RHITextureFormat format);
     static bool IsBlockFormat(RHITextureFormat format);
 
 protected:
     RHITextureDesc mDesc;
+    RHIResourceLayout mLayout = RHIResourceLayout::kUndefined;
 };

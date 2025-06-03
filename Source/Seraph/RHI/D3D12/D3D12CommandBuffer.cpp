@@ -96,7 +96,7 @@ void D3D12CommandBuffer::Barrier(const RHITextureBarrier& barrier)
     texBarrier.SyncAfter = ToD3D12BarrierSync(barrier.DestStage);
     texBarrier.AccessBefore = ToD3D12BarrierAccess(barrier.SourceAccess);
     texBarrier.AccessAfter = ToD3D12BarrierAccess(barrier.DestAccess);
-    texBarrier.LayoutBefore = ToD3D12BarrierLayout(barrier.OldLayout);
+    texBarrier.LayoutBefore = ToD3D12BarrierLayout(barrier.Texture->GetLayout());
     texBarrier.LayoutAfter = ToD3D12BarrierLayout(barrier.NewLayout);
     texBarrier.Subresources.IndexOrFirstMipLevel = barrier.BaseMipLevel;
     texBarrier.Subresources.NumMipLevels = barrier.LevelCount;
@@ -104,6 +104,7 @@ void D3D12CommandBuffer::Barrier(const RHITextureBarrier& barrier)
     texBarrier.Subresources.NumArraySlices = barrier.LayerCount;
     texBarrier.Subresources.FirstPlane = 0;
     texBarrier.Subresources.NumPlanes = 1;
+    barrier.Texture->SetLayout(barrier.NewLayout);
 
     D3D12_BARRIER_GROUP group = {};
     group.Type = D3D12_BARRIER_TYPE_TEXTURE;
@@ -164,7 +165,7 @@ void D3D12CommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
         texBarrier.SyncAfter = ToD3D12BarrierSync(barrier.DestStage);
         texBarrier.AccessBefore = ToD3D12BarrierAccess(barrier.SourceAccess);
         texBarrier.AccessAfter = ToD3D12BarrierAccess(barrier.DestAccess);
-        texBarrier.LayoutBefore = ToD3D12BarrierLayout(barrier.OldLayout);
+        texBarrier.LayoutBefore = ToD3D12BarrierLayout(barrier.Texture->GetLayout());
         texBarrier.LayoutAfter = ToD3D12BarrierLayout(barrier.NewLayout);
         texBarrier.Subresources.IndexOrFirstMipLevel = barrier.BaseMipLevel;
         texBarrier.Subresources.NumMipLevels = barrier.LevelCount;
@@ -172,6 +173,7 @@ void D3D12CommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
         texBarrier.Subresources.NumArraySlices = barrier.LayerCount;
         texBarrier.Subresources.FirstPlane = 0;
         texBarrier.Subresources.NumPlanes = 1;
+        barrier.Texture->SetLayout(barrier.NewLayout);
 
         textureBarriers.push_back(texBarrier);
     }

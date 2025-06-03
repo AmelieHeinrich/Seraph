@@ -229,7 +229,6 @@ void Uploader::Flush()
                 dstBarrier.DestStage = RHIPipelineStage::kCopy;
                 dstBarrier.SourceAccess = RHIResourceAccess::kNone;
                 dstBarrier.DestAccess = RHIResourceAccess::kTransferWrite;
-                dstBarrier.OldLayout = RHIResourceLayout::kUndefined;
                 dstBarrier.NewLayout = RHIResourceLayout::kTransferDst;
 
                 RHIBufferBarrier stagingBarrier(request.StagingBuffer);
@@ -247,7 +246,6 @@ void Uploader::Flush()
                 dstBarrierAfter.DestStage = RHIPipelineStage::kAllGraphics;
                 dstBarrierAfter.SourceAccess = RHIResourceAccess::kTransferWrite;
                 dstBarrierAfter.DestAccess = RHIResourceAccess::kShaderRead;
-                dstBarrierAfter.OldLayout = RHIResourceLayout::kTransferDst;
                 dstBarrierAfter.NewLayout = RHIResourceLayout::kReadOnly;
 
                 sData.CommandBuffer->BarrierGroup(firstGroup);
