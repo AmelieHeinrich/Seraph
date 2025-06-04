@@ -49,8 +49,6 @@ ImageData Image::LoadImageData(const StringView& path)
 {
     ImageData result = {};
 
-    stbi_set_flip_vertically_on_load(true);
-
     int channels;
     uint8* data = stbi_load(path.data(), &result.Width, &result.Height, &channels, STBI_rgb_alpha);
     result.Pixels.resize(result.Width * result.Height * 4);

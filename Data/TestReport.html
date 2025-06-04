@@ -68,6 +68,10 @@
                 <p><strong>Status:</strong> ${info.result ? '✅ Pass' : '❌ Fail'}</p>
                 <div class="images">
                   <div>
+                    <p>Golden</p>
+                    <img src="../${info.goldenPath}" alt="${testName} Magma" />
+                  </div>
+                  <div>
                     <p>D3D12</p>
                     <img src="../${info.d3dPath}" alt="${testName} D3D12" />
                   </div>
@@ -76,8 +80,12 @@
                     <img src="../${info.vkPath}" alt="${testName} Vulkan" />
                   </div>
                   <div>
-                    <p>D3D12</p>
-                    <img src="../${info.magmaPath}" alt="${testName} Magma" />
+                    <p>Magma Vulkan</p>
+                    <img src="../${info.magmaVkPath}" alt="${testName} Magma" />
+                  </div>
+                  <div>
+                    <p>Magma D3D12</p>
+                    <img src="../${info.magmaD3D12Path}" alt="${testName} Magma" />
                   </div>
                 </div>
               `;
