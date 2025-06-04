@@ -16,6 +16,7 @@ public:
     static void Shutdown();
 
     static nlohmann::json ReadJSON(const String& path);
+    static void WriteJSON(nlohmann::json json, const String& path);
 
     static bool Exists(const String& path);
 private:

@@ -143,7 +143,7 @@ void VulkanDevice::BuildInstance(bool validationLayers)
     uint32 instanceLayerCount = 1;
     const char* instanceLayers[] = { "VK_LAYER_KHRONOS_validation" };
 
-    uint32 sdlExtensionCount = 0;
+    uint32 sdlExtensionCount = 2;
     const char* sdlInstanceExtensions[] = { "VK_KHR_win32_surface", "VK_KHR_surface" };
     Array<const char*> extensions(sdlInstanceExtensions, sdlInstanceExtensions + sdlExtensionCount);
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

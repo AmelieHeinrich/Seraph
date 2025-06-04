@@ -39,6 +39,16 @@ nlohmann::json FileSystem::ReadJSON(const String& path)
     return root;
 }
 
+void FileSystem::WriteJSON(nlohmann::json json, const String& path)
+{
+    std::ofstream stream(path);
+    if (!stream.is_open()) {
+        SERAPH_ERROR("Failed to open JSON file {0} for writing!", path);
+    }
+    stream << json.dump(4) << std::endl;
+    stream.close();
+}
+
 bool FileSystem::Exists(const String& path)
 {
     struct stat s;

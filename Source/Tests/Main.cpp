@@ -36,10 +36,15 @@ int main(void)
     Context::Initialize();
 
     auto& tests = GetTests();
-    int totalPassed = 0;
+    nlohmann::json json;
 
-    Array<String> passed;
-    Array<String> failed;
+    auto StripDataPrefix = [](const std::string& path) -> std::string {
+        const std::string prefix = "Data/";
+        if (path.rfind(prefix, 0) == 0) { // starts with "Data/"
+            return path.substr(prefix.length());
+        }
+        return path;
+    };
 
     for (auto* test : tests) {
         TestResult vulkanData = test->Run(RHIBackend::kVulkan);
@@ -64,23 +69,16 @@ int main(void)
         FLIP::evaluate(linearVulkan, linearD3D, TEST_WIDTH, TEST_HEIGHT, false, parameters, true, true, meanError, &outMagma);
         Image::WriteImageRGB(outMagma, TEST_WIDTH, TEST_HEIGHT, magmaPath);
 
-        if (meanError > 0.02f) {
-            failed.push_back(String(test->Name()));
-        } else {
-            passed.push_back(String(test->Name()));
-            totalPassed++;
-        }
+        json[test->Name()]["vkPath"] = StripDataPrefix(vulkanPath);
+        json[test->Name()]["d3dPath"] = StripDataPrefix(d3dPath);
+        json[test->Name()]["magmaPath"] = StripDataPrefix(magmaPath);
+        json[test->Name()]["result"] = meanError < 0.02f;
+
         delete outMagma;
         delete[] linearVulkan;
         delete[] linearD3D;
     }
 
-    for (auto& pass : passed) {
-        SERAPH_INFO("%s PASSED", pass.c_str());
-    }
-    for (auto& fail : failed) {
-        SERAPH_ERROR("%s FAILED", fail.c_str());
-    }
-    SERAPH_INFO("Total Passed: %d/%d", totalPassed, tests.size());
+    FileSystem::WriteJSON(json, "Data/TestReport.json");
     Context::Shutdown();
 }

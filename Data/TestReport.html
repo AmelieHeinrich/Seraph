@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RHI Test Report</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      margin: 2em;
+    }
+    h1 {
+      text-align: center;
+    }
+    .test {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      background: white;
+      padding: 1em;
+      margin-bottom: 1.5em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .test.pass {
+      border-left: 10px solid #4CAF50;
+    }
+    .test.fail {
+      border-left: 10px solid #F44336;
+    }
+    .test h2 {
+      margin-top: 0;
+    }
+    .images {
+      display: flex;
+      gap: 1em;
+      margin-top: 1em;
+    }
+    .images img {
+      max-width: 300px;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+    }
+    .images div {
+      text-align: center;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>RHI Test Results</h1>
+  <div id="results"></div>
+
+    <script>
+        fetch("TestReport.json")
+          .then(response => {
+            if (!response.ok) throw new Error("Failed to load TestReport.json");
+            return response.json();
+          })
+          .then(data => {
+            const resultsDiv = document.getElementById('results');
+
+            Object.entries(data).forEach(([testName, info]) => {
+              const testDiv = document.createElement('div');
+              testDiv.className = `test ${info.result ? 'pass' : 'fail'}`;
+            
+              testDiv.innerHTML = `
+                <h2>${testName}</h2>
+                <p><strong>Status:</strong> ${info.result ? '✅ Pass' : '❌ Fail'}</p>
+                <div class="images">
+                  <div>
+                    <p>D3D12</p>
+                    <img src="../${info.d3dPath}" alt="${testName} D3D12" />
+                  </div>
+                  <div>
+                    <p>Vulkan</p>
+                    <img src="../${info.vkPath}" alt="${testName} Vulkan" />
+                  </div>
+                  <div>
+                    <p>D3D12</p>
+                    <img src="../${info.magmaPath}" alt="${testName} Magma" />
+                  </div>
+                </div>
+              `;
+            
+              resultsDiv.appendChild(testDiv);
+            });
+          })
+          .catch(error => {
+            document.getElementById('results').innerHTML = `<p style="color:red;">Error loading test report: ${error}</p>`;
+        });
+    </script>
+</body>
+</html>

@@ -12,3 +12,4 @@ imgui.ini
 
 # Tests
 Data/Tests/*.png
+Data/TestReport.json
