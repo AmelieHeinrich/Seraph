@@ -2,19 +2,17 @@
 
 ## Frontburner
 
-- Texture loading
+- Test framework using FLIP
+- Render graph
+- HDR + Tonemapping
 - Texture compressor
 - Camera controller
+- Model loading
 - ECS
-- Mesh loading
-- Forward pass
-- HDR + Tonemapping
-- Deferred pass
-- Render graph
+- Deferred rendering
 
 ## Backburner
 
 - Indirect
 - Raytracing pipelines
 - GPU timestamps
-- Test framework using FLIP

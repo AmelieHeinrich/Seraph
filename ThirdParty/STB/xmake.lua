@@ -5,7 +5,7 @@
 
 target("STB")
     set_kind("static")
-    set_group("dependencies")
+    set_group("Dependencies")
 
     add_files("Source/stb.c")
     add_headerfiles("Include/*.h")

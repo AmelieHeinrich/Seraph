@@ -5,13 +5,7 @@
 
 #pragma once
 
-#include "Core/Window.h"
-
-#include "RHI/Device.h"
-#include "RHI/ShaderCompiler.h"
-#include "RHI/Uploader.h"
-
-#include "Asset/Image.h"
+#include <Seraph/Seraph.h>
 
 struct ApplicationSpecs
 {

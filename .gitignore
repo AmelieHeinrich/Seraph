@@ -9,3 +9,6 @@ build
 # Log stuff
 seraph.log
 imgui.ini
+
+# Tests
+Data/Tests/*.png
