@@ -28,6 +28,10 @@ struct PushConstants
     uint MyTexture;
     uint MySampler;
     uint MyCBV;
+    uint Pad;
+
+    column_major float4x4 View;
+    column_major float4x4 Projection;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -36,7 +40,7 @@ VertexOutput VSMain(VertexInput input)
 {
     VertexOutput output = {};
 
-    output.Position = float4(input.Position, 1.0f);
+    output.Position = mul(Push.Projection, mul(Push.View, float4(input.Position, 1.0f)));
     output.UV = input.UV;
 
     return output;

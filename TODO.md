@@ -2,7 +2,6 @@
 
 ## Frontburner
 
-- Test framework using FLIP
 - Render graph
 - HDR + Tonemapping
 - Texture compressor

@@ -6,12 +6,13 @@
 #include "Application.h"
 
 #include <imgui/imgui.h>
+#include <chrono>
 
 static const float VERTICES[] = {
-     0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-     0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-    -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+     0.5f,  0.5f, 0.0f, 1.0f, -1.0f,
+     0.5f, -0.5f, 0.0f, 1.0f,  0.0f,
+    -0.5f, -0.5f, 0.0f, 0.0f,  0.0f,
+    -0.5f,  0.5f, 0.0f, 0.0f, -1.0f
 };
 
 static const uint INDICES[] = {
@@ -96,7 +97,7 @@ Application::Application(const ApplicationSpecs& specs)
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
     desc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
     desc.ReflectInputLayout = true;
-    desc.PushConstantSize = sizeof(BindlessHandle) * 3;
+    desc.PushConstantSize = sizeof(BindlessHandle) * 4 + sizeof(glm::mat4) * 2;
     desc.RenderTargetFormats.push_back(mSurface->GetTexture(0)->GetDesc().Format);
     desc.DepthEnabled = true;
     desc.DepthWrite = true;
@@ -145,10 +146,15 @@ Application::~Application()
 
 void Application::Run()
 {
-    int firstFrame = 0;
+    auto lastFrame = std::chrono::high_resolution_clock::now();
 
     while (mWindow->IsOpen()) {
+        auto time = std::chrono::high_resolution_clock::now();
+        float delta = (std::chrono::duration<float>(lastFrame - time).count());
+        lastFrame = time;
+
         mWindow->PollEvents();
+        mCamera.Begin();
 
         uint frameIndex = mF2FSync->BeginSynchronize();
         IRHICommandBuffer* commandBuffer = mCommandBuffers[frameIndex];
@@ -158,37 +164,12 @@ void Application::Run()
         commandBuffer->Reset();
         commandBuffer->Begin();
         
-        RHITextureBarrier beginRenderBarrier(swapchainTexture);
-        beginRenderBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
-        beginRenderBarrier.DestStage    = RHIPipelineStage::kColorAttachmentOutput;
-        beginRenderBarrier.SourceAccess = RHIResourceAccess::kNone;
-        beginRenderBarrier.DestAccess   = RHIResourceAccess::kColorAttachmentWrite;
-        beginRenderBarrier.NewLayout    = RHIResourceLayout::kColorAttachment;
-
-        RHITextureBarrier endRenderBarrier(swapchainTexture);
-        endRenderBarrier.SourceStage   = RHIPipelineStage::kColorAttachmentOutput;
-        endRenderBarrier.DestStage     = RHIPipelineStage::kBottomOfPipe;
-        endRenderBarrier.SourceAccess  = RHIResourceAccess::kColorAttachmentWrite;
-        endRenderBarrier.DestAccess    = RHIResourceAccess::kNone;
-        endRenderBarrier.NewLayout     = RHIResourceLayout::kPresent;
-
-        RHITextureBarrier beginDepthBarrier(mDepthBuffer);
-        beginDepthBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
-        beginDepthBarrier.DestStage    = RHIPipelineStage::kEarlyFragmentTests;
-        beginDepthBarrier.SourceAccess = RHIResourceAccess::kNone;
-        beginDepthBarrier.DestAccess   = RHIResourceAccess::kDepthStencilWrite;
-        beginDepthBarrier.NewLayout    = RHIResourceLayout::kDepthStencilWrite;
-
-        RHITextureBarrier endDepthBarrier(mDepthBuffer);
-        endDepthBarrier.SourceStage  = RHIPipelineStage::kEarlyFragmentTests;
-        endDepthBarrier.DestStage    = RHIPipelineStage::kBottomOfPipe;
-        endDepthBarrier.SourceAccess = RHIResourceAccess::kDepthStencilWrite;
-        endDepthBarrier.DestAccess   = RHIResourceAccess::kNone;
-        endDepthBarrier.NewLayout    = RHIResourceLayout::kGeneral;
-
+        RHITextureBarrier beginRenderBarrier(swapchainTexture, RHIResourceAccess::kNone, RHIResourceAccess::kColorAttachmentWrite, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kColorAttachmentOutput, RHIResourceLayout::kColorAttachment);
+        RHITextureBarrier beginDepthBarrier(mDepthBuffer, RHIResourceAccess::kNone, RHIResourceAccess::kDepthStencilWrite, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kEarlyFragmentTests, RHIResourceLayout::kDepthStencilWrite);
+        RHITextureBarrier endRenderBarrier(swapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kNone, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kPresent);
+        RHITextureBarrier endDepthBarrier(mDepthBuffer, RHIResourceAccess::kDepthStencilWrite, RHIResourceAccess::kNone, RHIPipelineStage::kEarlyFragmentTests, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kGeneral);
         RHIBarrierGroup beginGroup = {};
         beginGroup.TextureBarriers = { beginRenderBarrier, beginDepthBarrier };
-
         RHIBarrierGroup endGroup = {};
         endGroup.TextureBarriers = { endRenderBarrier, endDepthBarrier };
 
@@ -204,10 +185,18 @@ void Application::Run()
             BindlessHandle Texture;
             BindlessHandle Sampler;
             BindlessHandle CBV;
+            BindlessHandle Pad;
+
+            glm::mat4 View;
+            glm::mat4 Projection;
         } constant = {
             mTextureSRV->GetBindlessHandle(),
             mSampler->GetBindlessHandle(),
-            mCBV->GetBindlessHandle()
+            mCBV->GetBindlessHandle(),
+            {},
+
+            mCamera.View(),
+            mCamera.Projection()
         };
 
         commandBuffer->PushMarker("Meow");
@@ -238,36 +227,14 @@ void Application::Run()
             auto tempCmd = mGraphicsQueue->CreateCommandBuffer(true);
             tempCmd->Begin();
 
-            RHITextureBarrier beginTextureBarrier(swapchainTexture);
-            beginTextureBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
-            beginTextureBarrier.DestStage    = RHIPipelineStage::kCopy;
-            beginTextureBarrier.SourceAccess = RHIResourceAccess::kNone;
-            beginTextureBarrier.DestAccess   = RHIResourceAccess::kMemoryRead;
-            beginTextureBarrier.NewLayout    = RHIResourceLayout::kTransferSrc;
-
-            RHIBufferBarrier beginBufferBarrier(mScreenshotBuffer);
-            beginBufferBarrier.SourceAccess = RHIResourceAccess::kMemoryRead;
-            beginBufferBarrier.DestAccess = RHIResourceAccess::kMemoryWrite;
-            beginBufferBarrier.SourceStage = RHIPipelineStage::kAllCommands;
-            beginBufferBarrier.DestStage = RHIPipelineStage::kCopy;
-
+            RHITextureBarrier beginTextureBarrier(swapchainTexture, RHIResourceAccess::kNone, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kCopy, RHIResourceLayout::kTransferSrc);
+            RHIBufferBarrier beginBufferBarrier(mScreenshotBuffer, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kMemoryWrite, RHIPipelineStage::kAllCommands, RHIPipelineStage::kCopy);
             RHIBarrierGroup beginGroup = {};
             beginGroup.BufferBarriers = { beginBufferBarrier };
             beginGroup.TextureBarriers = { beginTextureBarrier };
 
-            RHITextureBarrier endTextureBarrier(swapchainTexture);
-            endTextureBarrier.SourceStage   = RHIPipelineStage::kCopy;
-            endTextureBarrier.DestStage     = RHIPipelineStage::kBottomOfPipe;
-            endTextureBarrier.SourceAccess  = RHIResourceAccess::kMemoryRead;
-            endTextureBarrier.DestAccess    = RHIResourceAccess::kNone;
-            endTextureBarrier.NewLayout     = RHIResourceLayout::kPresent;
-
-            RHIBufferBarrier endBufferBarrier(mScreenshotBuffer);
-            endBufferBarrier.SourceAccess = RHIResourceAccess::kMemoryWrite;
-            endBufferBarrier.DestAccess = RHIResourceAccess::kMemoryRead;
-            endBufferBarrier.SourceStage = RHIPipelineStage::kCopy;
-            endBufferBarrier.DestStage = RHIPipelineStage::kAllCommands;
-
+            RHITextureBarrier endTextureBarrier(swapchainTexture, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kNone, RHIPipelineStage::kCopy, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kPresent);
+            RHIBufferBarrier endBufferBarrier(mScreenshotBuffer, RHIResourceAccess::kMemoryWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kCopy, RHIPipelineStage::kAllCommands);
             RHIBarrierGroup endGroup = {};
             endGroup.BufferBarriers = { endBufferBarrier };
             endGroup.TextureBarriers = { endTextureBarrier };
@@ -293,5 +260,7 @@ void Application::Run()
 
             delete tempCmd;
         }
+
+        mCamera.Update(delta, 16, 9);
     }
 }

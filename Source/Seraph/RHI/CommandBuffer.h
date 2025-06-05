@@ -81,6 +81,8 @@ struct RHITextureBarrier
     RHITextureBarrier() = default;
     RHITextureBarrier(IRHITexture* texture)
         : Texture(texture) {}
+    RHITextureBarrier(IRHITexture* texture, RHIResourceAccess srcAccess, RHIResourceAccess dstAccess, RHIPipelineStage srcStage, RHIPipelineStage dstStage, RHIResourceLayout layout)
+        : Texture(texture), SourceAccess(srcAccess), DestAccess(dstAccess), SourceStage(srcStage), DestStage(dstStage), NewLayout(layout) {}
 };
 
 struct RHIBufferBarrier
@@ -94,6 +96,8 @@ struct RHIBufferBarrier
     RHIBufferBarrier() = default;
     RHIBufferBarrier(IRHIBuffer* buffer)
         : Buffer(buffer) {}
+    RHIBufferBarrier(IRHIBuffer* buffer, RHIResourceAccess srcAccess, RHIResourceAccess dstAccess, RHIPipelineStage srcStage, RHIPipelineStage dstStage)
+        : Buffer(buffer), SourceAccess(srcAccess), DestAccess(dstAccess), SourceStage(srcStage), DestStage(dstStage) {}
 };
 
 struct RHIMemoryBarrier
@@ -104,6 +108,9 @@ struct RHIMemoryBarrier
     RHIPipelineStage DestStage;
 
     RHIMemoryBarrier() = default;
+    RHIMemoryBarrier(RHIResourceAccess srcAccess, RHIResourceAccess dstAccess, RHIPipelineStage srcStage, RHIPipelineStage dstStage)
+        : SourceAccess(srcAccess), DestAccess(dstAccess), SourceStage(srcStage), DestStage(dstStage)
+    {}
 };
 
 struct RHIBarrierGroup

@@ -7,6 +7,8 @@
 
 #include <Seraph/Seraph.h>
 
+#include "Camera.h"
+
 struct ApplicationSpecs
 {
     RHIBackend Backend;
@@ -23,6 +25,7 @@ public:
     void Run();
 private:
     ApplicationSpecs mSpecs;
+    Camera mCamera;
 
     SharedPtr<Window> mWindow;
 

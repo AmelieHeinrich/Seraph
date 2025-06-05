@@ -11,6 +11,7 @@ constexpr uint64 TEXTURE_ROW_PITCH_ALIGNMENT = 256;
 
 enum class RHITextureFormat
 {
+    kUndefined,
     kR8G8B8A8_UNORM,
     kR8G8B8A8_sRGB,
     kB8G8R8A8_UNORM,
