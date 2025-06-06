@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Asset/Image.h"
+#include "Asset/Model.h"
 
 #include "Core/Assert.h"
 #include "Core/Context.h"

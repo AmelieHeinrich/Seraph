@@ -45,6 +45,11 @@ void Image::WriteImageRGB(const float* data, int width, int height, const String
     delete temp;
 }
 
+void Image::ShouldFlipImage(bool flip)
+{
+    stbi_set_flip_vertically_on_load(flip);
+}
+
 ImageData Image::LoadImageData(const StringView& path)
 {
     ImageData result = {};

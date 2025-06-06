@@ -2,7 +2,7 @@
 
 ## Frontburner
 
-- Render graph
+- Model loading
 - HDR + Tonemapping
 - Texture compressor
 - Camera controller

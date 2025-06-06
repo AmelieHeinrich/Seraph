@@ -8,12 +8,14 @@
 struct VertexInput
 {
     float3 Position : POSITION;
+    float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
 };
 
 struct VertexOutput
 {
     float4 Position : SV_Position;
+    float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
 };
 
@@ -41,6 +43,7 @@ VertexOutput VSMain(VertexInput input)
     VertexOutput output = {};
 
     output.Position = mul(Push.Projection, mul(Push.View, float4(input.Position, 1.0f)));
+    output.Normal = input.Normal;
     output.UV = input.UV;
 
     return output;

@@ -19,6 +19,8 @@ class Image
 public:
     static void WriteImageData(const ImageData& data, const StringView& path);
     static void WriteImageRGB(const float* data, int width, int height, const StringView& path);
+
+    static void ShouldFlipImage(bool flip);
     static ImageData LoadImageData(const StringView& path);
     static ImageData LoadOnlyRGB(const StringView& path);
 };

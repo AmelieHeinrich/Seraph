@@ -37,28 +37,9 @@ Application::Application(const ApplicationSpecs& specs)
     Uploader::Initialize(mDevice, mGraphicsQueue);
     mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());
 
-    mVertexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(VERTICES), sizeof(float) * 5, RHIBufferUsage::kVertex));
-    mIndexBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(INDICES), sizeof(uint), RHIBufferUsage::kIndex));
-
     mTestCBV = mDevice->CreateBuffer(RHIBufferDesc(256, 0, RHIBufferUsage::kConstant));
     mCBV = mDevice->CreateBufferView(RHIBufferViewDesc(mTestCBV, RHIBufferViewType::kConstant));
     mSampler = mDevice->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, false));
-    
-    mBLAS = mDevice->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
-    mTLAS = mDevice->CreateTLAS();
-    mInstanceBuffer = mDevice->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance) * MAX_TLAS_INSTANCES, 0, RHIBufferUsage::kConstant));
-    
-    TLASInstance triangleInstance = {};
-    triangleInstance.Transform[0][0] = 1;
-    triangleInstance.Transform[1][2] = 1;
-    triangleInstance.Transform[2][2] = 1;
-    triangleInstance.AccelerationStructureReference = mBLAS->GetAddress();
-    triangleInstance.Flags = TLAS_INSTANCE_OPAQUE;
-    mInstances.push_back(triangleInstance);
-
-    void* test = mInstanceBuffer->Map();
-    memcpy(test, mInstances.data(), mInstances.size() * sizeof(TLASInstance));
-    mInstanceBuffer->Unmap();
 
     {
         RHITextureDesc desc = {};
@@ -70,28 +51,6 @@ Application::Application(const ApplicationSpecs& specs)
         mDepthBuffer = mDevice->CreateTexture(desc);
         mDepthView = mDevice->CreateTextureView(RHITextureViewDesc(mDepthBuffer, RHITextureViewType::kDepthTarget));
     }
-    
-    {
-        ImageData data = Image::LoadImageData("Data/Textures/Sweet.jpg");
-
-        RHITextureDesc desc = {};
-        desc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
-        desc.Width = data.Width;
-        desc.Height = data.Height;
-        desc.Depth = 1;
-        desc.MipLevels = 1;
-        desc.Usage = RHITextureUsage::kShaderResource;
-        mTexture = mDevice->CreateTexture(desc);
-        mTextureSRV = mDevice->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
-
-        Uploader::EnqueueTextureUploadRaw(data.Pixels.data(), data.Pixels.size(), mTexture);
-    }
-
-    Uploader::EnqueueBufferUpload(VERTICES, sizeof(VERTICES), mVertexBuffer);
-    Uploader::EnqueueBufferUpload(INDICES, sizeof(INDICES), mIndexBuffer);
-    Uploader::EnqueueBLASBuild(mBLAS);
-    Uploader::EnqueueTLASBuild(mTLAS, mInstanceBuffer, mInstances.size());
-    Uploader::Flush();
 
     RHIGraphicsPipelineDesc desc = {};
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
@@ -110,23 +69,22 @@ Application::Application(const ApplicationSpecs& specs)
     mScreenshotData.Width = mSpecs.WindowWidth;
     mScreenshotData.Height = mSpecs.WindowHeight;
     mScreenshotData.Pixels.resize(mScreenshotData.Width * mScreenshotData.Height * 4);
+
+    mModel = new Model(mDevice, "Data/Models/Sponza/Sponza.gltf");
+    Uploader::Flush();
 }
 
 Application::~Application()
 {
     Uploader::Shutdown();
 
+    delete mModel;
+
     delete mScreenshotBuffer;
 
     delete mTestCBV;
     delete mCBV;
-    
-    delete mTextureSRV;
-    delete mTexture;
     delete mSampler;
-    
-    delete mIndexBuffer;
-    delete mVertexBuffer;
     delete mPipeline;
 
     delete mDepthView;
@@ -181,24 +139,6 @@ void Application::Run()
         SafeMemcpy(test, testColor, sizeof(testColor));
         mTestCBV->Unmap();
 
-        struct PushConstant {
-            BindlessHandle Texture;
-            BindlessHandle Sampler;
-            BindlessHandle CBV;
-            BindlessHandle Pad;
-
-            glm::mat4 View;
-            glm::mat4 Projection;
-        } constant = {
-            mTextureSRV->GetBindlessHandle(),
-            mSampler->GetBindlessHandle(),
-            mCBV->GetBindlessHandle(),
-            {},
-
-            mCamera.View(),
-            mCamera.Projection()
-        };
-
         commandBuffer->PushMarker("Meow");
         commandBuffer->BarrierGroup(beginGroup);
         
@@ -206,10 +146,35 @@ void Application::Run()
 
         commandBuffer->SetGraphicsPipeline(mPipeline);
         commandBuffer->SetViewport(renderBegin.Width, renderBegin.Height, 0, 0);
-        commandBuffer->SetVertexBuffer(mVertexBuffer);
-        commandBuffer->SetIndexBuffer(mIndexBuffer);
-        commandBuffer->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
-        commandBuffer->DrawIndexed(6, 1, 0, 0, 0);
+        for (auto& node : mModel->GetNodes()) {
+            for (auto& primitive : node.Primitives) {
+                ModelMaterial material = mModel->GetMaterials()[primitive.MaterialIndex];
+
+                struct PushConstant {
+                    BindlessHandle Texture;
+                    BindlessHandle Sampler;
+                    BindlessHandle CBV;
+                    BindlessHandle Pad;
+
+                    glm::mat4 View;
+                    glm::mat4 Projection;
+                } constant = {
+                    material.TextureRead->GetBindlessHandle(),
+                    mSampler->GetBindlessHandle(),
+                    mCBV->GetBindlessHandle(),
+                    {},
+                
+                    mCamera.View(),
+                    mCamera.Projection()
+                };
+
+                commandBuffer->SetVertexBuffer(primitive.VertexBuffer);
+                commandBuffer->SetIndexBuffer(primitive.IndexBuffer);
+                commandBuffer->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
+                commandBuffer->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);
+            }
+        }
+
         commandBuffer->BeginImGui();
         ImGui::ShowDemoWindow(nullptr);
         commandBuffer->EndImGui();

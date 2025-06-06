@@ -28,6 +28,7 @@ private:
     Camera mCamera;
 
     SharedPtr<Window> mWindow;
+    Model* mModel;
 
     IRHIDevice* mDevice;
     IRHICommandQueue* mGraphicsQueue;
@@ -37,12 +38,8 @@ private:
     IRHIImGuiContext* mImGuiContext;
     
     IRHIGraphicsPipeline* mPipeline;
-    IRHIBuffer* mVertexBuffer;
-    IRHIBuffer* mIndexBuffer;
     IRHIBuffer* mTestCBV;
     IRHIBufferView* mCBV;
-    IRHITexture* mTexture;
-    IRHITextureView* mTextureSRV;
     IRHISampler* mSampler;
 
     IRHITexture* mDepthBuffer;
@@ -51,9 +48,4 @@ private:
     IRHIBuffer* mScreenshotBuffer;
     ImageData mScreenshotData;
     bool mScreenshotted = false;
-
-    Array<TLASInstance> mInstances;
-    IRHIBLAS* mBLAS;
-    IRHITLAS* mTLAS;
-    IRHIBuffer* mInstanceBuffer;
 };
