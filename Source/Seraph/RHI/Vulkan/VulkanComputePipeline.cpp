@@ -26,7 +26,7 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice* device, RHIComputePip
     VkPushConstantRange pushRange = {};
     pushRange.offset = 0;
     pushRange.size = desc.PushConstantSize;
-    pushRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+    pushRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
     VkDescriptorSetLayout bindlessLayout = mParentDevice->GetBindlessManager()->GetLayout();
 

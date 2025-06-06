@@ -18,9 +18,9 @@ void ILogger::Log(LogLevel level, const char* file, int line, const char* fmt, v
     vsnprintf(buffer, sizeof(buffer), fmt, args);  // Format the log message
 
     std::ostringstream stream;
-    stream << "[" << GetTimeString() << "] "
+    stream << "[" << LevelToString(level) << "] "
+           << "[" << GetTimeString() << "] "
            << "[" << file << ":" << line << "] "
-           << "[" << LevelToString(level) << "] "
            << buffer;
     
     Output(level, stream.str());  // Output the formatted message

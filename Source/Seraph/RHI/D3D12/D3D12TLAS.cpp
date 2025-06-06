@@ -28,6 +28,8 @@ D3D12TLAS::D3D12TLAS(D3D12Device* device)
 
     mAlloc = device->GetBindlessManager()->WriteAS(this);
     mBindless.Index = mAlloc.Index;
+
+    SERAPH_WHATEVER("Created D3D12 TLAS");
 }
 
 D3D12TLAS::~D3D12TLAS()

@@ -47,9 +47,9 @@ int main(void)
     };
 
     for (auto* test : tests) {
+        std::string goldenPath = "Data/Tests/Golden/" + std::string(test->Name()) + "Golden" + ".png";
         std::string magmaVulkanPath = "Data/Tests/" + std::string(test->Name()) + "MagmaVulkan" + ".png";
         std::string magmaD3DPath = "Data/Tests/" + std::string(test->Name()) + "MagmaD3D12" + ".png";
-        std::string goldenPath = "Data/Tests/" + std::string(test->Name()) + "Golden" + ".png";
         std::string vulkanPath = "Data/Tests/" + std::string(test->Name()) + std::string("Vulkan") + ".png";
         std::string d3dPath = "Data/Tests/" + std::string(test->Name()) + std::string("D3D12") + ".png";
 

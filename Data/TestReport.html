@@ -13,7 +13,7 @@
     h1 {
       text-align: center;
     }
-    .test {
+    details.test {
       border: 2px solid #ccc;
       border-radius: 10px;
       background: white;
@@ -21,19 +21,24 @@
       margin-bottom: 1.5em;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    .test.pass {
+    details.test.pass {
       border-left: 10px solid #4CAF50;
     }
-    .test.fail {
+    details.test.fail {
       border-left: 10px solid #F44336;
     }
-    .test h2 {
-      margin-top: 0;
+    summary {
+      font-size: 1.2em;
+      font-weight: bold;
+      cursor: pointer;
+      list-style: none;
+      outline: none;
     }
     .images {
       display: flex;
       gap: 1em;
       margin-top: 1em;
+      flex-wrap: wrap;
     }
     .images img {
       max-width: 300px;
@@ -50,52 +55,49 @@
   <h1>RHI Test Results</h1>
   <div id="results"></div>
 
-    <script>
-        fetch("TestReport.json")
-          .then(response => {
-            if (!response.ok) throw new Error("Failed to load TestReport.json");
-            return response.json();
-          })
-          .then(data => {
-            const resultsDiv = document.getElementById('results');
+  <script>
+    fetch("TestReport.json")
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to load TestReport.json");
+        return response.json();
+      })
+      .then(data => {
+        const resultsDiv = document.getElementById('results');
 
-            Object.entries(data).forEach(([testName, info]) => {
-              const testDiv = document.createElement('div');
-              testDiv.className = `test ${info.result ? 'pass' : 'fail'}`;
-            
-              testDiv.innerHTML = `
-                <h2>${testName}</h2>
-                <p><strong>Status:</strong> ${info.result ? '✅ Pass' : '❌ Fail'}</p>
-                <div class="images">
-                  <div>
-                    <p>Golden</p>
-                    <img src="../${info.goldenPath}" alt="${testName} Magma" />
-                  </div>
-                  <div>
-                    <p>D3D12</p>
-                    <img src="../${info.d3dPath}" alt="${testName} D3D12" />
-                  </div>
-                  <div>
-                    <p>Vulkan</p>
-                    <img src="../${info.vkPath}" alt="${testName} Vulkan" />
-                  </div>
-                  <div>
-                    <p>Magma Vulkan</p>
-                    <img src="../${info.magmaVkPath}" alt="${testName} Magma" />
-                  </div>
-                  <div>
-                    <p>Magma D3D12</p>
-                    <img src="../${info.magmaD3D12Path}" alt="${testName} Magma" />
-                  </div>
-                </div>
-              `;
-            
-              resultsDiv.appendChild(testDiv);
-            });
-          })
-          .catch(error => {
-            document.getElementById('results').innerHTML = `<p style="color:red;">Error loading test report: ${error}</p>`;
+        Object.entries(data).forEach(([testName, info]) => {
+          const testDetails = document.createElement('details');
+          testDetails.className = `test ${info.result ? 'pass' : 'fail'}`;
+          testDetails.innerHTML = `
+            <summary>> ${testName} - ${info.result ? '✅ Pass' : '❌ Fail'}</summary>
+            <div class="images">
+              <div>
+                <p>Golden</p>
+                <img src="../${info.goldenPath}" alt="${testName} Golden" />
+              </div>
+              <div>
+                <p>D3D12</p>
+                <img src="../${info.d3dPath}" alt="${testName} D3D12" />
+              </div>
+              <div>
+                <p>Vulkan</p>
+                <img src="../${info.vkPath}" alt="${testName} Vulkan" />
+              </div>
+              <div>
+                <p>Magma Vulkan</p>
+                <img src="../${info.magmaVkPath}" alt="${testName} Magma Vulkan" />
+              </div>
+              <div>
+                <p>Magma D3D12</p>
+                <img src="../${info.magmaD3D12Path}" alt="${testName} Magma D3D12" />
+              </div>
+            </div>
+          `;
+          resultsDiv.appendChild(testDetails);
         });
-    </script>
+      })
+      .catch(error => {
+        document.getElementById('results').innerHTML = `<p style="color:red;">Error loading test report: ${error}</p>`;
+      });
+  </script>
 </body>
 </html>

@@ -44,6 +44,8 @@ D3D12BLAS::D3D12BLAS(D3D12Device* device, RHIBLASDesc desc)
     uint64 scratchSize = std::max(prebuildInfo.ScratchDataSizeInBytes, prebuildInfo.UpdateScratchDataSizeInBytes);
     mScratch = device->CreateBuffer(RHIBufferDesc(Align<uint>(scratchSize, 256), 0, RHIBufferUsage::kShaderWrite));
     mScratch->SetName("BLAS Scratch");
+
+    SERAPH_WHATEVER("Created D3D12 BLAS");
 }
 
 D3D12BLAS::~D3D12BLAS() 
