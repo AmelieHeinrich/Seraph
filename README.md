@@ -9,3 +9,11 @@ The Vulkan backend requires VK_EXT_mutable_descriptor.
 
 - Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders
 - Test Suite for RHI -- Generates JSON report used to render results in simple web page
+
+## Screenshots
+
+### Most recent screenshot of the demo app
+![](.github/recent.png)
+
+### Test suite
+![](.github/tests.png)
