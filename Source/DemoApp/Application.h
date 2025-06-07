@@ -38,8 +38,4 @@ private:
     IRHIImGuiContext* mImGuiContext;
 
     Renderer* mRenderer;
-
-    IRHIBuffer* mScreenshotBuffer;
-    ImageData mScreenshotData;
-    bool mScreenshotted = false;
 };

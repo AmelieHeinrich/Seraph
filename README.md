@@ -10,9 +10,8 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 
 ## Notable Features
 
-- Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders
+- Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders, GPU readback
 - Test Suite for RHI -- Generates JSON report used to render results in simple web page
-- Screenshot capture with GPU readback
 
 ## Screenshots
 

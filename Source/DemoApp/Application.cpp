@@ -36,11 +36,6 @@ Application::Application(const ApplicationSpecs& specs)
     Uploader::Initialize(mDevice, mGraphicsQueue);
     mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());
 
-    mScreenshotBuffer = mDevice->CreateBuffer(RHIBufferDesc(specs.WindowWidth * specs.WindowHeight * 4, 0, RHIBufferUsage::kReadback));
-    mScreenshotData.Width = mSpecs.WindowWidth;
-    mScreenshotData.Height = mSpecs.WindowHeight;
-    mScreenshotData.Pixels.resize(mScreenshotData.Width * mScreenshotData.Height * 4);
-
     mRenderer = new Renderer(mDevice, mSpecs.WindowWidth, mSpecs.WindowHeight);
     
     Uploader::Flush();
@@ -51,7 +46,6 @@ Application::~Application()
     Uploader::Shutdown();
 
     delete mRenderer;
-    delete mScreenshotBuffer;
     delete mImGuiContext;
     delete mF2FSync;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
@@ -109,45 +103,6 @@ void Application::Run()
         begin.CommandList->End();
         mF2FSync->EndSynchronize(mCommandBuffers[begin.FrameIndex]);
         mF2FSync->PresentSurface();
-
-        // Take screenshot?
-        if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
-            auto tempCmd = mGraphicsQueue->CreateCommandBuffer(true);
-            tempCmd->Begin();
-
-            RHITextureBarrier beginTextureBarrier(begin.SwapchainTexture, RHIResourceAccess::kNone, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kCopy, RHIResourceLayout::kTransferSrc);
-            RHIBufferBarrier beginBufferBarrier(mScreenshotBuffer, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kMemoryWrite, RHIPipelineStage::kAllCommands, RHIPipelineStage::kCopy);
-            RHIBarrierGroup beginGroup = {};
-            beginGroup.BufferBarriers = { beginBufferBarrier };
-            beginGroup.TextureBarriers = { beginTextureBarrier };
-
-            RHITextureBarrier endTextureBarrier(begin.SwapchainTexture, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kNone, RHIPipelineStage::kCopy, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kPresent);
-            RHIBufferBarrier endBufferBarrier(mScreenshotBuffer, RHIResourceAccess::kMemoryWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kCopy, RHIPipelineStage::kAllCommands);
-            RHIBarrierGroup endGroup = {};
-            endGroup.BufferBarriers = { endBufferBarrier };
-            endGroup.TextureBarriers = { endTextureBarrier };
-            
-            tempCmd->BarrierGroup(beginGroup);
-            tempCmd->CopyTextureToBuffer(mScreenshotBuffer, begin.SwapchainTexture);
-            tempCmd->BarrierGroup(endGroup);
-            tempCmd->End();
-            mGraphicsQueue->SubmitAndFlushCommandBuffer(tempCmd);
-
-            uint8* pixels = (uint8*)mScreenshotBuffer->Map();
-            if (mSpecs.Backend == RHIBackend::kVulkan) {
-                size_t pixelCount = mSpecs.WindowWidth * mSpecs.WindowHeight;
-                for (size_t i = 0; i < pixelCount; ++i) {
-                    size_t offset = i * 4;
-                    std::swap(pixels[offset + 0], pixels[offset + 2]); // B <-> R
-                }
-            }
-
-            memcpy(mScreenshotData.Pixels.data(), pixels, mSpecs.WindowWidth * mSpecs.WindowHeight * 4);
-            mScreenshotBuffer->Unmap();
-            Image::WriteImageData(mScreenshotData, "Data/Screenshot.png");
-
-            delete tempCmd;
-        }
 
         // Update camera
         mCamera.Update(delta, 16, 9);
