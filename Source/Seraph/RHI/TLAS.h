@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Core/Context.h>
+#include <glm/glm.hpp>
 
 #include "Bindless.h"
 #include "Buffer.h"
@@ -16,7 +17,7 @@ constexpr uint TLAS_INSTANCE_NON_OPAQUE = 0x00000008;
 
 struct TLASInstance
 {
-    float Transform[3][4];
+    glm::mat3x4 Transform;
     uint InstanceCustomIndex:24;
     uint Mask:8;
     uint InstanceShaderBindingTableRecordOffset:24;

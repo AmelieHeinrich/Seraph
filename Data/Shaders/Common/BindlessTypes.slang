@@ -55,3 +55,17 @@ public struct BindlessRWTexture2D<T : ITexelElement>
         return result;
     }
 };
+
+public struct BindlessAccelerationStructure
+{
+    public static RaytracingAccelerationStructure Load(uint index)
+    {
+        RaytracingAccelerationStructure result;
+#ifdef VULKAN
+        result = gRaytracingASArray[index];
+#else
+        result = defaultGetDescriptorFromHandle(DescriptorHandle<RaytracingAccelerationStructure>(uint2(index, 0)));
+#endif
+        return result;
+    }
+};

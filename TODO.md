@@ -18,12 +18,7 @@
 
 ## Tests
 
-- Ray query triangle
 - Textured test
-- Input layout test
 - Texture blending
 - Viewport & Scissor
-- Raytraced shadows
 - Skybox
-- Raytraced reflections
-- Deferred rendering
