@@ -33,6 +33,6 @@ public:
 private:
     static struct Data {
         IRHIDevice* Device;
-        UnorderedMap<String, RendererResource> Resources;
+        UnorderedMap<String, RendererResource*> Resources;
     } sData;
 };

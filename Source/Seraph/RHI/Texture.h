@@ -15,6 +15,8 @@ enum class RHITextureFormat
     kR8G8B8A8_UNORM,
     kR8G8B8A8_sRGB,
     kB8G8R8A8_UNORM,
+    kR16G16B16A16_FLOAT,
+    kR32_FLOAT,
     kD32_FLOAT
 };
 

@@ -185,6 +185,7 @@ public:
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
     virtual void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) = 0;
     virtual void CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src) = 0;
+    virtual void CopyTextureToTexture(IRHITexture* dst, IRHITexture* src) = 0;
     virtual void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) = 0;
     virtual void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) = 0;
 

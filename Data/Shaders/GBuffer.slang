@@ -1,6 +1,6 @@
 //
 // > Notice: Amélie Heinrich @ 2025
-// > Create Time: 2025-05-31 16:41:37
+// > Create Time: 2025-06-07 15:05:29
 //
 
 #include "Common/Bindless.slang"
@@ -19,18 +19,17 @@ struct VertexOutput
     float2 UV : TEXCOORD;
 };
 
-struct CBVStruct
+struct FragmentOutput
 {
-    float4 TintColor;
+    float4 Normal : SV_Target0;
+    float4 Albedo : SV_Target1;
 };
-DEFINE_CBV_ARRAY(CBVStruct);
 
 struct PushConstants
 {
     uint MyTexture;
     uint MySampler;
-    uint MyCBV;
-    uint Pad;
+    uint2 Pad;
 
     column_major float4x4 View;
     column_major float4x4 Projection;
@@ -50,11 +49,15 @@ VertexOutput VSMain(VertexInput input)
 }
 
 [shader("fragment")]
-float4 FSMain(VertexOutput input) : SV_Target
+FragmentOutput FSMain(VertexOutput input)
 {
-    Texture2D<float4> texture = BindlessTexture2D<float4>.Load(Push.MyTexture);
+    Texture2D<float4> texture = BindlessTexture2DFloat4.Load(Push.MyTexture);
     SamplerState sampler = BindlessSampler.Load(Push.MySampler);
-    CBVStruct cbv = BindlessCBV_CBVStruct.Load(Push.MyCBV);
 
-    return texture.Sample(sampler, input.UV) * cbv.TintColor;
+    FragmentOutput output = {};
+    output.Normal = float4(input.Normal, 1.0);
+    output.Albedo = texture.Sample(sampler, input.UV);
+    if (output.Albedo.a < 0.25)
+        discard;
+    return output;
 }

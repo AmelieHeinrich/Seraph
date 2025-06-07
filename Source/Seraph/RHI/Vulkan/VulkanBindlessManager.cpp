@@ -60,10 +60,21 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     asBinding.pImmutableSamplers = nullptr;
 
     Array<VkDescriptorSetLayoutBinding> bindings = { cbvSrvUavBinding, samplerBinding, asBinding };
+    Array<VkDescriptorBindingFlags> flagBits = {
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+    };
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingCreateInfo = {};
+    bindingCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    bindingCreateInfo.bindingCount = 3;
+    bindingCreateInfo.pBindingFlags = flagBits.data();
+    bindingCreateInfo.pNext = &mutableTypeInfo;
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.pNext = &mutableTypeInfo;
+    layoutInfo.pNext = &bindingCreateInfo;
     layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
     layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();

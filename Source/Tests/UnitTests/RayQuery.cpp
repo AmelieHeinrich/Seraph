@@ -50,7 +50,7 @@ DEFINE_RHI_TEST(RayQuery) {
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 2;
+    desc.PushConstantSize = sizeof(uint) * 4;
     IRHIComputePipeline* pipeline = starters.Device->CreateComputePipeline(desc);
 
     cmdBuf->Begin();
@@ -72,9 +72,13 @@ DEFINE_RHI_TEST(RayQuery) {
         struct PushConstants {
             BindlessHandle handle;
             BindlessHandle tlas;
+            uint width;
+            uint height;
         } handle = {
             view->GetBindlessHandle(),
-            tlas->GetBindlessHandle()
+            tlas->GetBindlessHandle(),
+            TEST_WIDTH,
+            TEST_HEIGHT
         };
 
         cmdBuf->Barrier(beginRenderBarrier);

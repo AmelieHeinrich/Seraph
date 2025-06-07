@@ -2,13 +2,8 @@
 
 ## Frontburner
 
-- Simple renderer tools and state tracking
-- HDR + Tonemapping
 - Texture compressor
-- Camera controller
-- Model loading
 - ECS
-- Deferred rendering
 
 ## Backburner
 

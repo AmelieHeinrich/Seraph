@@ -36,6 +36,7 @@ public:
     IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) override;
     IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
+    RHITextureFormat GetSurfaceFormat() override { return RHITextureFormat::kB8G8R8A8_UNORM; }
 public:
     VkInstance Instance() const { return mInstance; }
     VkPhysicalDevice GPU() const { return mPhysicalDevice; }

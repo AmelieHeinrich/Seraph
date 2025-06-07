@@ -34,6 +34,7 @@ public:
     IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) override;
     IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
+    RHITextureFormat GetSurfaceFormat() { return RHITextureFormat::kR8G8B8A8_UNORM; }
 public:
     ID3D12Device14* GetDevice() { return mDevice; }
     IDXGIFactory6* GetFactory() { return mFactory; }

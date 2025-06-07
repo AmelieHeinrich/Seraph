@@ -15,12 +15,15 @@ VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc view
     VulkanTexture* vkTexture = static_cast<VulkanTexture*>(viewDesc.Texture);
     RHITextureDesc desc = vkTexture->GetDesc();
 
+    VkFormat format = VulkanTexture::RHIToVkFormat(viewDesc.ViewFormat);
+    if (Any(desc.Usage & RHITextureUsage::kDepthTarget)) format = VulkanTexture::RHIToVkFormat(desc.Format);
+
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.image = vkTexture->Image();
-    createInfo.format = VulkanTexture::RHIToVkFormat(viewDesc.ViewFormat);
+    createInfo.format = format;
     createInfo.viewType = RHIToVkImageViewType(viewDesc.Dimension);
-    createInfo.subresourceRange.aspectMask = viewDesc.Type == RHITextureViewType::kDepthTarget ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+    createInfo.subresourceRange.aspectMask = Any(desc.Usage & RHITextureUsage::kDepthTarget) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
     if (viewDesc.ViewMip == VIEW_ALL_MIPS) {
         createInfo.subresourceRange.baseMipLevel = 0;
         createInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;

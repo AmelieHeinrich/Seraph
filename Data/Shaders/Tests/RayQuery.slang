@@ -9,6 +9,8 @@ struct PushConstants
 {
     uint Output;
     uint AccelerationStructure;
+    uint Width;
+    uint Height;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -16,14 +18,12 @@ PUSH_CONSTANTS(PushConstants, Push);
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid : SV_DispatchThreadID)
 {
-    RWTexture2D<float4> output = BindlessRWTexture2D<float4>.Load(Push.Output);
+    RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.Output);
     RaytracingAccelerationStructure accelerationStructure = BindlessAccelerationStructure.Load(Push.AccelerationStructure);
 
-    uint width, height;
-    output.GetDimensions(width, height);
-    if (tid.x >= width || tid.y >= height) return;
+    if (tid.x >= Push.Width || tid.y >= Push.Height) return;
 
-    float2 lerpValues = (float2)tid.xy / float2(width, height);
+    float2 lerpValues = (float2)tid.xy / float2(Push.Width, Push.Height);
     float3 rayDir = float3(0, 0, 1);
     float3 rayOrigin = float3(
         lerp(-1.0f, 1.0f, lerpValues.x),

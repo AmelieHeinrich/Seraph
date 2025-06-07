@@ -24,7 +24,6 @@ Application::Application(const ApplicationSpecs& specs)
     : mSpecs(specs)
 {
     ShaderCompiler::Initialize(specs.Backend);
-    CompiledShader shader = ShaderCompiler::Compile("Textured", { "VSMain", "FSMain" });
 
     mWindow = SharedPtr<Window>(new Window(specs.WindowWidth, specs.WindowHeight, "Seraph"));
     mDevice = IRHIDevice::CreateDevice(specs.Backend, true);
@@ -37,40 +36,13 @@ Application::Application(const ApplicationSpecs& specs)
     Uploader::Initialize(mDevice, mGraphicsQueue);
     mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());
 
-    mTestCBV = mDevice->CreateBuffer(RHIBufferDesc(256, 0, RHIBufferUsage::kConstant));
-    mCBV = mDevice->CreateBufferView(RHIBufferViewDesc(mTestCBV, RHIBufferViewType::kConstant));
-    mSampler = mDevice->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, false));
-
-    {
-        RHITextureDesc desc = {};
-        desc.Width = mSpecs.WindowWidth;
-        desc.Height = mSpecs.WindowHeight;
-        desc.Format = RHITextureFormat::kD32_FLOAT;
-        desc.Usage = RHITextureUsage::kDepthTarget;
-
-        mDepthBuffer = mDevice->CreateTexture(desc);
-        mDepthView = mDevice->CreateTextureView(RHITextureViewDesc(mDepthBuffer, RHITextureViewType::kDepthTarget));
-    }
-
-    RHIGraphicsPipelineDesc desc = {};
-    desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
-    desc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
-    desc.ReflectInputLayout = true;
-    desc.PushConstantSize = sizeof(BindlessHandle) * 4 + sizeof(glm::mat4) * 2;
-    desc.RenderTargetFormats.push_back(mSurface->GetTexture(0)->GetDesc().Format);
-    desc.DepthEnabled = true;
-    desc.DepthWrite = true;
-    desc.DepthFormat = RHITextureFormat::kD32_FLOAT;
-    desc.DepthOperation = RHIDepthOperation::kLess;
-
-    mPipeline = mDevice->CreateGraphicsPipeline(desc);
-
     mScreenshotBuffer = mDevice->CreateBuffer(RHIBufferDesc(specs.WindowWidth * specs.WindowHeight * 4, 0, RHIBufferUsage::kReadback));
     mScreenshotData.Width = mSpecs.WindowWidth;
     mScreenshotData.Height = mSpecs.WindowHeight;
     mScreenshotData.Pixels.resize(mScreenshotData.Width * mScreenshotData.Height * 4);
 
-    mModel = new Model(mDevice, "Data/Models/Sponza/Sponza.gltf");
+    mRenderer = new Renderer(mDevice, mSpecs.WindowWidth, mSpecs.WindowHeight);
+    
     Uploader::Flush();
 }
 
@@ -78,18 +50,8 @@ Application::~Application()
 {
     Uploader::Shutdown();
 
-    delete mModel;
-
+    delete mRenderer;
     delete mScreenshotBuffer;
-
-    delete mTestCBV;
-    delete mCBV;
-    delete mSampler;
-    delete mPipeline;
-
-    delete mDepthView;
-    delete mDepthBuffer;
-
     delete mImGuiContext;
     delete mF2FSync;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
@@ -107,105 +69,66 @@ void Application::Run()
     auto lastFrame = std::chrono::high_resolution_clock::now();
 
     while (mWindow->IsOpen()) {
+        // Start Frame
+        mWindow->PollEvents();
+        mCamera.Begin();
+
+        // Calculate DT
         auto time = std::chrono::high_resolution_clock::now();
         float delta = (std::chrono::duration<float>(lastFrame - time).count());
         lastFrame = time;
 
-        mWindow->PollEvents();
-        mCamera.Begin();
+        // Begin fill info
+        RenderPassBegin begin;
+        begin.FrameIndex = mF2FSync->BeginSynchronize();
+        begin.CommandList = mCommandBuffers[begin.FrameIndex];
+        begin.SwapchainTexture = mSurface->GetTexture(begin.FrameIndex);
+        begin.SwapchainTextureView = mSurface->GetTextureView(begin.FrameIndex);
+        begin.Projection = mCamera.Projection();
+        begin.View = mCamera.View();
 
-        uint frameIndex = mF2FSync->BeginSynchronize();
-        IRHICommandList* commandBuffer = mCommandBuffers[frameIndex];
-        IRHITexture* swapchainTexture = mSurface->GetTexture(frameIndex);
-        IRHITextureView* swapchainTextureView = mSurface->GetTextureView(frameIndex);
+        // Record command list
+        RHITextureBarrier endGuiBarrier(begin.SwapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kAllCommands, RHIResourceLayout::kPresent);
+        RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(begin.SwapchainTextureView, false) }, {});
 
-        commandBuffer->Reset();
-        commandBuffer->Begin();
+        begin.CommandList->Reset();
+        begin.CommandList->Begin();
+
+        // Render
+        mRenderer->Render(RenderPath::kBasic, begin);
         
-        RHITextureBarrier beginRenderBarrier(swapchainTexture, RHIResourceAccess::kNone, RHIResourceAccess::kColorAttachmentWrite, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kColorAttachmentOutput, RHIResourceLayout::kColorAttachment);
-        RHITextureBarrier beginDepthBarrier(mDepthBuffer, RHIResourceAccess::kNone, RHIResourceAccess::kDepthStencilWrite, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kEarlyFragmentTests, RHIResourceLayout::kDepthStencilWrite);
-        RHITextureBarrier endRenderBarrier(swapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kNone, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kPresent);
-        RHITextureBarrier endDepthBarrier(mDepthBuffer, RHIResourceAccess::kDepthStencilWrite, RHIResourceAccess::kNone, RHIPipelineStage::kEarlyFragmentTests, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kGeneral);
-        RHIBarrierGroup beginGroup = {};
-        beginGroup.TextureBarriers = { beginRenderBarrier, beginDepthBarrier };
-        RHIBarrierGroup endGroup = {};
-        endGroup.TextureBarriers = { endRenderBarrier, endDepthBarrier };
-
-        RHIRenderAttachment attachment(swapchainTextureView);
-        RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(swapchainTextureView) }, RHIRenderAttachment(mDepthView, true));
-
-        float testColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        void* test = mTestCBV->Map();
-        SafeMemcpy(test, testColor, sizeof(testColor));
-        mTestCBV->Unmap();
-
-        commandBuffer->PushMarker("Meow");
-        commandBuffer->BarrierGroup(beginGroup);
+        // ImGui
+        begin.CommandList->BeginRendering(renderBegin);
+        begin.CommandList->BeginImGui();
+        ImGui::ShowDemoWindow();
+        begin.CommandList->EndImGui();
+        begin.CommandList->EndRendering();
+        begin.CommandList->Barrier(endGuiBarrier);
         
-        commandBuffer->BeginRendering(renderBegin);
-
-        commandBuffer->SetGraphicsPipeline(mPipeline);
-        commandBuffer->SetViewport(renderBegin.Width, renderBegin.Height, 0, 0);
-        for (auto& node : mModel->GetNodes()) {
-            for (auto& primitive : node.Primitives) {
-                ModelMaterial material = mModel->GetMaterials()[primitive.MaterialIndex];
-
-                struct PushConstant {
-                    BindlessHandle Texture;
-                    BindlessHandle Sampler;
-                    BindlessHandle CBV;
-                    BindlessHandle Pad;
-
-                    glm::mat4 View;
-                    glm::mat4 Projection;
-                } constant = {
-                    material.TextureRead->GetBindlessHandle(),
-                    mSampler->GetBindlessHandle(),
-                    mCBV->GetBindlessHandle(),
-                    {},
-                
-                    mCamera.View(),
-                    mCamera.Projection()
-                };
-
-                commandBuffer->SetVertexBuffer(primitive.VertexBuffer);
-                commandBuffer->SetIndexBuffer(primitive.IndexBuffer);
-                commandBuffer->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
-                commandBuffer->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);
-            }
-        }
-
-        commandBuffer->BeginImGui();
-        ImGui::ShowDemoWindow(nullptr);
-        commandBuffer->EndImGui();
-
-        commandBuffer->EndRendering();
-
-        commandBuffer->BarrierGroup(endGroup);
-        commandBuffer->PopMarker();
-        
-        commandBuffer->End();
-        mF2FSync->EndSynchronize(mCommandBuffers[frameIndex]);
+        // Synchronize frame
+        begin.CommandList->End();
+        mF2FSync->EndSynchronize(mCommandBuffers[begin.FrameIndex]);
         mF2FSync->PresentSurface();
 
+        // Take screenshot?
         if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
             auto tempCmd = mGraphicsQueue->CreateCommandBuffer(true);
             tempCmd->Begin();
 
-            RHITextureBarrier beginTextureBarrier(swapchainTexture, RHIResourceAccess::kNone, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kCopy, RHIResourceLayout::kTransferSrc);
+            RHITextureBarrier beginTextureBarrier(begin.SwapchainTexture, RHIResourceAccess::kNone, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kCopy, RHIResourceLayout::kTransferSrc);
             RHIBufferBarrier beginBufferBarrier(mScreenshotBuffer, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kMemoryWrite, RHIPipelineStage::kAllCommands, RHIPipelineStage::kCopy);
             RHIBarrierGroup beginGroup = {};
             beginGroup.BufferBarriers = { beginBufferBarrier };
             beginGroup.TextureBarriers = { beginTextureBarrier };
 
-            RHITextureBarrier endTextureBarrier(swapchainTexture, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kNone, RHIPipelineStage::kCopy, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kPresent);
+            RHITextureBarrier endTextureBarrier(begin.SwapchainTexture, RHIResourceAccess::kMemoryRead, RHIResourceAccess::kNone, RHIPipelineStage::kCopy, RHIPipelineStage::kBottomOfPipe, RHIResourceLayout::kPresent);
             RHIBufferBarrier endBufferBarrier(mScreenshotBuffer, RHIResourceAccess::kMemoryWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kCopy, RHIPipelineStage::kAllCommands);
             RHIBarrierGroup endGroup = {};
             endGroup.BufferBarriers = { endBufferBarrier };
             endGroup.TextureBarriers = { endTextureBarrier };
             
             tempCmd->BarrierGroup(beginGroup);
-            tempCmd->CopyTextureToBuffer(mScreenshotBuffer, swapchainTexture);
+            tempCmd->CopyTextureToBuffer(mScreenshotBuffer, begin.SwapchainTexture);
             tempCmd->BarrierGroup(endGroup);
             tempCmd->End();
             mGraphicsQueue->SubmitAndFlushCommandBuffer(tempCmd);
@@ -226,6 +149,7 @@ void Application::Run()
             delete tempCmd;
         }
 
+        // Update camera
         mCamera.Update(delta, 16, 9);
     }
 }

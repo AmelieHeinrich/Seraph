@@ -8,6 +8,7 @@
 #include <Seraph/Seraph.h>
 
 #include "Camera.h"
+#include "Renderer/Renderer.h"
 
 struct ApplicationSpecs
 {
@@ -28,7 +29,6 @@ private:
     Camera mCamera;
 
     SharedPtr<Window> mWindow;
-    Model* mModel;
 
     IRHIDevice* mDevice;
     IRHICommandQueue* mGraphicsQueue;
@@ -36,14 +36,8 @@ private:
     StaticArray<IRHICommandList*, FRAMES_IN_FLIGHT> mCommandBuffers;
     IRHIF2FSync* mF2FSync;
     IRHIImGuiContext* mImGuiContext;
-    
-    IRHIGraphicsPipeline* mPipeline;
-    IRHIBuffer* mTestCBV;
-    IRHIBufferView* mCBV;
-    IRHISampler* mSampler;
 
-    IRHITexture* mDepthBuffer;
-    IRHITextureView* mDepthView;
+    Renderer* mRenderer;
 
     IRHIBuffer* mScreenshotBuffer;
     ImageData mScreenshotData;

@@ -45,6 +45,7 @@ public:
     virtual IRHIBufferView* CreateBufferView(RHIBufferViewDesc desc) = 0;
     virtual IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) = 0;
 
+    virtual RHITextureFormat GetSurfaceFormat() = 0;
 protected:
     IRHIDevice() = default;
 };

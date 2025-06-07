@@ -19,14 +19,14 @@ struct RendererResource
 {
     RendererResourceType Type;
 
-    IRHIBuffer* Buffer;
-    IRHIBuffer* RingBuffer[FRAMES_IN_FLIGHT];
-    IRHIBufferView* RingBufferViews[FRAMES_IN_FLIGHT];
-    IRHITexture* Texture;
-    IRHISampler* Sampler;
+    IRHIBuffer* Buffer = nullptr;
+    StaticArray<IRHIBuffer*, FRAMES_IN_FLIGHT> RingBuffer;
+    StaticArray<IRHIBufferView*, FRAMES_IN_FLIGHT> RingBufferViews;
+    IRHITexture* Texture = nullptr;
+    IRHISampler* Sampler = nullptr;
 
-    RHIResourceAccess LastAccess;
-    RHIPipelineStage LastStage;
+    RHIResourceAccess LastAccess = RHIResourceAccess::kNone;
+    RHIPipelineStage LastStage = RHIPipelineStage::kNone;
 
     ~RendererResource();
 };

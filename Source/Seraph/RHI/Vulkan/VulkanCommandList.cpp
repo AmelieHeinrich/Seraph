@@ -527,6 +527,42 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     }
 }
 
+void VulkanCommandList::CopyTextureToTexture(IRHITexture* dst, IRHITexture* src)
+{
+    RHITextureDesc srcDesc = src->GetDesc();
+    RHITextureDesc dstDesc = dst->GetDesc();
+
+    VkImage srcImage = static_cast<VulkanTexture*>(src)->Image();
+    VkImage dstImage = static_cast<VulkanTexture*>(dst)->Image();
+
+    VkImageCopy copyRegion = {};
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.srcSubresource.mipLevel = 0;
+    copyRegion.srcSubresource.baseArrayLayer = 0;
+    copyRegion.srcSubresource.layerCount = 1;
+    copyRegion.srcOffset = { 0, 0, 0 };
+
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.dstSubresource.mipLevel = 0;
+    copyRegion.dstSubresource.baseArrayLayer = 0;
+    copyRegion.dstSubresource.layerCount = 1;
+    copyRegion.dstOffset = { 0, 0, 0 };
+
+    copyRegion.extent.width = std::min(srcDesc.Width, dstDesc.Width);
+    copyRegion.extent.height = std::min(srcDesc.Height, dstDesc.Height);
+    copyRegion.extent.depth = 1; // assuming 2D textures
+
+    vkCmdCopyImage(
+        mCmdBuffer,
+        srcImage,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        dstImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &copyRegion
+    );
+}
+
 void VulkanCommandList::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
 {
     VulkanBLAS* vkBlas = static_cast<VulkanBLAS*>(blas);

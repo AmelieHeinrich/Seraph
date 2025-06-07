@@ -96,7 +96,9 @@ D3D12Device::D3D12Device(bool validationLayers)
             D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE,
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
             D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
-            D3D12_MESSAGE_ID_INCOMPATIBLE_BARRIER_ACCESS
+            // You might be asking, Amélie, why the fuck would you do that? Well Enhanced Barriers errors are very broken that's about it lol
+            D3D12_MESSAGE_ID_INCOMPATIBLE_BARRIER_ACCESS,
+            D3D12_MESSAGE_ID_INVALID_BARRIER_ACCESS
         };
 
         D3D12_INFO_QUEUE_FILTER filter = {0};

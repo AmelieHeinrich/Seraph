@@ -44,6 +44,11 @@ struct RHITextureViewDesc
         RHITextureDesc desc = texture->GetDesc();
         ViewFormat = desc.Format;
     }
+
+    RHITextureViewDesc(IRHITexture* texture, RHITextureViewType type, RHITextureFormat format)
+        : Texture(texture), Type(type), Dimension(RHITextureViewDimension::kTexture2D), ViewFormat(format)
+    {
+    }
 };
 
 class IRHIDevice;

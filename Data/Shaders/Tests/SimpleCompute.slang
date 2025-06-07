@@ -15,7 +15,7 @@ PUSH_CONSTANTS(PushConstants, Push);
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid : SV_DispatchThreadID)
 {
-    RWTexture2D<float4> output = BindlessRWTexture2D<float4>.Load(Push.OutputIndex);
+    RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.OutputIndex);
 
     uint width, height;
     output.GetDimensions(width, height);

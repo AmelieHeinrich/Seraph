@@ -34,6 +34,7 @@ target("DemoApp")
     add_headerfiles("DemoApp/**.h")
     add_includedirs(".", "Seraph")
     add_deps("Seraph")
+    add_defines("ENABLE_PIX")
 
 target("Tests")
     set_group("Executables")

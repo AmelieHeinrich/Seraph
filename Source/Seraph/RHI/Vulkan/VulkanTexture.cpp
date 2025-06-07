@@ -11,6 +11,7 @@ VulkanTexture::VulkanTexture(IRHIDevice* device, RHITextureDesc desc)
 {
     mDesc = desc;
 
+    // Very special use-case
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -64,6 +65,8 @@ VkFormat VulkanTexture::RHIToVkFormat(RHITextureFormat format)
         case RHITextureFormat::kR8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM;
         case RHITextureFormat::kB8G8R8A8_UNORM: return VK_FORMAT_B8G8R8A8_UNORM;
         case RHITextureFormat::kD32_FLOAT: return VK_FORMAT_D32_SFLOAT;
+        case RHITextureFormat::kR16G16B16A16_FLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case RHITextureFormat::kR32_FLOAT: return VK_FORMAT_R32_SFLOAT;
     }
     return VK_FORMAT_UNDEFINED;
 }

@@ -379,6 +379,14 @@ void D3D12CommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     }
 }
 
+void D3D12CommandList::CopyTextureToTexture(IRHITexture* dst, IRHITexture* src)
+{
+    ID3D12Resource* dstResource = static_cast<D3D12Texture*>(dst)->GetResource();
+    ID3D12Resource* srcResource = static_cast<D3D12Texture*>(src)->GetResource();
+
+    mList->CopyResource(dstResource, srcResource);
+}
+
 void D3D12CommandList::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
 {
     D3D12BLAS* d3dblas = static_cast<D3D12BLAS*>(blas);
@@ -463,6 +471,7 @@ D3D12_BARRIER_SYNC D3D12CommandList::ToD3D12BarrierSync(RHIPipelineStage stage)
     if (Any(stage & kResolve)) sync |= D3D12_BARRIER_SYNC_RESOLVE;
     if (Any(stage & kCopy)) sync |= D3D12_BARRIER_SYNC_COPY;
     if (Any(stage & kAccelStructureWrite)) sync |= D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
+    if (Any(stage & kBottomOfPipe)) sync |= D3D12_BARRIER_SYNC_ALL_SHADING;
 
     return sync;
 }

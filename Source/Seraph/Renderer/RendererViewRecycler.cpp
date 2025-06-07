@@ -9,7 +9,7 @@ RendererViewRecycler::Data RendererViewRecycler::sData;
 
 void RendererViewRecycler::Initialize(IRHIDevice* device)
 {
-    sData.ParentDevice;
+    sData.ParentDevice = device;
 }
 
 void RendererViewRecycler::Shutdown()
