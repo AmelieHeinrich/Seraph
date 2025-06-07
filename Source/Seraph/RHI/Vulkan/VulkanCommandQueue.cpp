@@ -5,7 +5,7 @@
 
 #include "VulkanCommandQueue.h"
 #include "VulkanDevice.h"
-#include "VulkanCommandBuffer.h"
+#include "VulkanCommandList.h"
 
 VulkanCommandQueue::VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType type)
     : mParentDevice(static_cast<VulkanDevice*>(device))
@@ -36,14 +36,14 @@ VulkanCommandQueue::~VulkanCommandQueue()
     if (mCommandPool) vkDestroyCommandPool(mParentDevice->Device(), mCommandPool, nullptr);
 }
 
-IRHICommandBuffer* VulkanCommandQueue::CreateCommandBuffer(bool singleTime)
+IRHICommandList* VulkanCommandQueue::CreateCommandBuffer(bool singleTime)
 {
-    return new VulkanCommandBuffer(mParentDevice, mCommandPool, singleTime);
+    return new VulkanCommandList(mParentDevice, mCommandPool, singleTime);
 }
 
-void VulkanCommandQueue::SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer)
+void VulkanCommandQueue::SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer)
 {
-    VulkanCommandBuffer* vkCmdBuffer = static_cast<VulkanCommandBuffer*>(cmdBuffer);
+    VulkanCommandList* vkCmdBuffer = static_cast<VulkanCommandList*>(cmdBuffer);
     VkCommandBuffer vkCmd = vkCmdBuffer->GetCommandBuffer();
 
     VkSubmitInfo submitInfo = {};

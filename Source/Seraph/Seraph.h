@@ -16,12 +16,16 @@
 #include "Core/Types.h"
 #include "Core/Window.h"
 
+#include "Renderer/RendererResource.h"
+#include "Renderer/RendererResourceManager.h"
+#include "Renderer/RendererViewRecycler.h"
+
 #include "RHI/Backend.h"
 #include "RHI/Bindless.h"
 #include "RHI/BLAS.h"
 #include "RHI/Buffer.h"
 #include "RHI/BufferView.h"
-#include "RHI/CommandBuffer.h"
+#include "RHI/CommandList.h"
 #include "RHI/CommandQueue.h"
 #include "RHI/ComputePipeline.h"
 #include "RHI/Device.h"

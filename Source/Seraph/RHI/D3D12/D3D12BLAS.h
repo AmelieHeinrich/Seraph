@@ -21,7 +21,7 @@ public:
     uint64 GetAddress() override;
 
 private:
-    friend class D3D12CommandBuffer;
+    friend class D3D12CommandList;
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS mInputs;
     D3D12_RAYTRACING_GEOMETRY_DESC mGeometry;

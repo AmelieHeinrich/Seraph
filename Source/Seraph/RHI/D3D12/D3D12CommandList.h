@@ -10,18 +10,18 @@
 
 #pragma once
 
-#include <RHI/CommandBuffer.h>
+#include <RHI/CommandList.h>
 
 #include <Agility/d3d12.h>
 
 class D3D12Device;
 class D3D12CommandQueue;
 
-class D3D12CommandBuffer : public IRHICommandBuffer
+class D3D12CommandList : public IRHICommandList
 {
 public:
-    D3D12CommandBuffer(D3D12Device* device, D3D12CommandQueue* queue, bool singleTime);
-    ~D3D12CommandBuffer();
+    D3D12CommandList(D3D12Device* device, D3D12CommandQueue* queue, bool singleTime);
+    ~D3D12CommandList();
 
     void Reset() override;
     void Begin() override;

@@ -115,7 +115,7 @@ void Application::Run()
         mCamera.Begin();
 
         uint frameIndex = mF2FSync->BeginSynchronize();
-        IRHICommandBuffer* commandBuffer = mCommandBuffers[frameIndex];
+        IRHICommandList* commandBuffer = mCommandBuffers[frameIndex];
         IRHITexture* swapchainTexture = mSurface->GetTexture(frameIndex);
         IRHITextureView* swapchainTextureView = mSurface->GetTextureView(frameIndex);
 

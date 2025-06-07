@@ -17,7 +17,7 @@ public:
     ~D3D12F2FSync();
 
     uint BeginSynchronize() override;
-    void EndSynchronize(IRHICommandBuffer* submitBuffer) override;
+    void EndSynchronize(IRHICommandList* submitBuffer) override;
     void PresentSurface() override;
 private:
     D3D12Device* mParentDevice;

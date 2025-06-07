@@ -44,7 +44,7 @@ DEFINE_RHI_TEST(RayQuery) {
     Uploader::Flush();
     
     IRHITextureView* view = starters.Device->CreateTextureView(RHITextureViewDesc(starters.RenderTexture, RHITextureViewType::kShaderWrite));
-    IRHICommandBuffer* cmdBuf = starters.Queue->CreateCommandBuffer(true);
+    IRHICommandList* cmdBuf = starters.Queue->CreateCommandBuffer(true);
     
     CompiledShader shader = ShaderCompiler::Compile("Tests/RayQuery.slang", { "CSMain" });
 

@@ -9,7 +9,7 @@ DEFINE_RHI_TEST(ClearScreen) {
     TestStarters starters = ITest::CreateStarters(backend);
     
     IRHITextureView* view = starters.Device->CreateTextureView(RHITextureViewDesc(starters.RenderTexture, RHITextureViewType::kRenderTarget));
-    IRHICommandBuffer* cmdBuf = starters.Queue->CreateCommandBuffer(true);
+    IRHICommandList* cmdBuf = starters.Queue->CreateCommandBuffer(true);
 
     cmdBuf->Begin();
     {

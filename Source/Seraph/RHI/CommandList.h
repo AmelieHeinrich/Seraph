@@ -148,10 +148,10 @@ enum class RHIASBuildMode
     kRefit
 };
 
-class IRHICommandBuffer
+class IRHICommandList
 {
 public:
-    ~IRHICommandBuffer() = default;
+    ~IRHICommandList() = default;
 
     virtual void Reset() = 0;
 

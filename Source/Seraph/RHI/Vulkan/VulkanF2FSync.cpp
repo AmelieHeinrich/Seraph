@@ -51,9 +51,9 @@ uint VulkanF2FSync::BeginSynchronize()
     return mCurrentFrame;
 }
 
-void VulkanF2FSync::EndSynchronize(IRHICommandBuffer* submitBuffer)
+void VulkanF2FSync::EndSynchronize(IRHICommandList* submitBuffer)
 {
-    VulkanCommandBuffer* vkBuffer = static_cast<VulkanCommandBuffer*>(submitBuffer);
+    VulkanCommandList* vkBuffer = static_cast<VulkanCommandList*>(submitBuffer);
     VkCommandBuffer cmdBuffer = vkBuffer->GetCommandBuffer();
 
     VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore[mCurrentFrame] };

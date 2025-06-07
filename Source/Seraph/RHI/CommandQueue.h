@@ -15,7 +15,7 @@ enum class RHICommandQueueType
 };
 
 class IRHIDevice;
-class IRHICommandBuffer;
+class IRHICommandList;
 
 class IRHICommandQueue
 {
@@ -24,9 +24,9 @@ public:
 
     RHICommandQueueType GetType() const { return mType; }
 
-    virtual IRHICommandBuffer* CreateCommandBuffer(bool singleTime) = 0;
+    virtual IRHICommandList* CreateCommandBuffer(bool singleTime) = 0;
 
-    virtual void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) = 0;
+    virtual void SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer) = 0;
 protected:
     RHICommandQueueType mType;
 };

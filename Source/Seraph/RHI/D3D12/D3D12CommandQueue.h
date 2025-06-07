@@ -17,9 +17,9 @@ public:
     D3D12CommandQueue(D3D12Device* device, RHICommandQueueType type);
     ~D3D12CommandQueue();
 
-    IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
+    IRHICommandList* CreateCommandBuffer(bool singleTime) override;
 
-    void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override;
+    void SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer) override;
 
 public:
     static D3D12_COMMAND_LIST_TYPE TranslateToD3D12List(RHICommandQueueType type);

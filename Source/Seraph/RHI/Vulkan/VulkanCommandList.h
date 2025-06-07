@@ -5,15 +5,15 @@
 
 #pragma once
 
-#include <RHI/CommandBuffer.h>
+#include <RHI/CommandList.h>
 
 #include "VulkanCommandQueue.h"
 
-class VulkanCommandBuffer : public IRHICommandBuffer
+class VulkanCommandList : public IRHICommandList
 {
 public:
-    VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime);
-    ~VulkanCommandBuffer();
+    VulkanCommandList(VulkanDevice* device, VkCommandPool pool, bool singleTime);
+    ~VulkanCommandList();
 
     void Reset() override;
     void Begin() override;

@@ -52,6 +52,9 @@ using SharedPtr = std::shared_ptr<T>;
 template<typename K, typename T>
 using UnorderedMap = std::unordered_map<K, T>;
 
+template<typename F, typename S>
+using Pair = std::pair<F, S>;
+
 template<typename T>
 constexpr T Align(T s, T a)
 {

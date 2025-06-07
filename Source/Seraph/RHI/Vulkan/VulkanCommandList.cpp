@@ -3,7 +3,7 @@
 // > Create Time: 2025-05-29 18:22:00
 //
 
-#include "VulkanCommandBuffer.h"
+#include "VulkanCommandList.h"
 #include "VulkanDevice.h"
 #include "VulkanTexture.h"
 #include "VulkanTextureView.h"
@@ -17,7 +17,7 @@
 #include <ImGui/imgui_impl_sdl3.h>
 #include <ImGui/imgui_impl_vulkan.h>
 
-VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, bool singleTime)
+VulkanCommandList::VulkanCommandList(VulkanDevice* device, VkCommandPool pool, bool singleTime)
     : mParentDevice(device), mParentPool(pool), mSingleTime(singleTime)
 {
     VkCommandBufferAllocateInfo allocateInfo = {};
@@ -32,17 +32,17 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool poo
     SERAPH_WHATEVER("Created Vulkan command buffer");
 }
 
-VulkanCommandBuffer::~VulkanCommandBuffer()
+VulkanCommandList::~VulkanCommandList()
 {
     if (mCmdBuffer) vkFreeCommandBuffers(mParentDevice->Device(), mParentPool, 1, &mCmdBuffer);
 }
 
-void VulkanCommandBuffer::Reset()
+void VulkanCommandList::Reset()
 {
     vkResetCommandBuffer(mCmdBuffer, 0);
 }
 
-void VulkanCommandBuffer::Begin()
+void VulkanCommandList::Begin()
 {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -52,13 +52,13 @@ void VulkanCommandBuffer::Begin()
     ASSERT_EQ(result == VK_SUCCESS, "Failed to begin command buffer!");
 }
 
-void VulkanCommandBuffer::End()
+void VulkanCommandList::End()
 {
     VkResult result = vkEndCommandBuffer(mCmdBuffer);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to end command buffer!");
 }
 
-void VulkanCommandBuffer::BeginRendering(const RHIRenderBegin& begin)
+void VulkanCommandList::BeginRendering(const RHIRenderBegin& begin)
 {
     Array<VkRenderingAttachmentInfo> colorAttachments;
     colorAttachments.reserve(begin.RenderTargets.size());
@@ -99,12 +99,12 @@ void VulkanCommandBuffer::BeginRendering(const RHIRenderBegin& begin)
     vkCmdBeginRendering(mCmdBuffer, &renderingInfo);
 }
 
-void VulkanCommandBuffer::EndRendering()
+void VulkanCommandList::EndRendering()
 {
     vkCmdEndRendering(mCmdBuffer);
 }
 
-void VulkanCommandBuffer::Barrier(const RHITextureBarrier& barrier)
+void VulkanCommandList::Barrier(const RHITextureBarrier& barrier)
 {
     RHITextureDesc desc = barrier.Texture->GetDesc();
     VulkanTexture* vkTexture = static_cast<VulkanTexture*>(barrier.Texture);
@@ -148,7 +148,7 @@ void VulkanCommandBuffer::Barrier(const RHITextureBarrier& barrier)
     vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
 }
 
-void VulkanCommandBuffer::Barrier(const RHIBufferBarrier& barrier)
+void VulkanCommandList::Barrier(const RHIBufferBarrier& barrier)
 {
     RHIBufferDesc desc = barrier.Buffer->GetDesc();
     VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(barrier.Buffer);
@@ -182,7 +182,7 @@ void VulkanCommandBuffer::Barrier(const RHIBufferBarrier& barrier)
     vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
 }
 
-void VulkanCommandBuffer::Barrier(const RHIMemoryBarrier& barrier)
+void VulkanCommandList::Barrier(const RHIMemoryBarrier& barrier)
 {
     VkMemoryBarrier2 memoryBarrier = {
         .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
@@ -208,7 +208,7 @@ void VulkanCommandBuffer::Barrier(const RHIMemoryBarrier& barrier)
     vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
 }
 
-void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
+void VulkanCommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 {
     Array<VkImageMemoryBarrier2> imageBarriers;
     Array<VkBufferMemoryBarrier2> bufferBarriers;
@@ -291,7 +291,7 @@ void VulkanCommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
     vkCmdPipelineBarrier2(mCmdBuffer, &dependencyInfo);
 }
 
-void VulkanCommandBuffer::ClearColor(IRHITextureView* view, float r, float g, float b)
+void VulkanCommandList::ClearColor(IRHITextureView* view, float r, float g, float b)
 {
     VulkanTexture* texture = static_cast<VulkanTexture*>(view->GetDesc().Texture);
 
@@ -312,7 +312,7 @@ void VulkanCommandBuffer::ClearColor(IRHITextureView* view, float r, float g, fl
     vkCmdClearColorImage(mCmdBuffer, texture->Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor, 1, &range);
 }
 
-void VulkanCommandBuffer::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
+void VulkanCommandList::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
 {
     VkDescriptorSet set = mParentDevice->GetBindlessManager()->GetSet();
     VulkanGraphicsPipeline* vkPipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
@@ -321,7 +321,7 @@ void VulkanCommandBuffer::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
     vkCmdBindDescriptorSets(mCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetLayout(), 0, 1, &set, 0, nullptr);
 }
 
-void VulkanCommandBuffer::SetViewport(float width, float height, float x, float y)
+void VulkanCommandList::SetViewport(float width, float height, float x, float y)
 {
     VkViewport viewport = {};
     viewport.width = width;
@@ -341,7 +341,7 @@ void VulkanCommandBuffer::SetViewport(float width, float height, float x, float 
     vkCmdSetScissor(mCmdBuffer, 0, 1, &scissorRect);
 }
 
-void VulkanCommandBuffer::SetVertexBuffer(IRHIBuffer* buffer)
+void VulkanCommandList::SetVertexBuffer(IRHIBuffer* buffer)
 {
     VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer);
     VkBuffer buf = vkBuffer->GetBuffer();
@@ -351,21 +351,21 @@ void VulkanCommandBuffer::SetVertexBuffer(IRHIBuffer* buffer)
     vkCmdBindVertexBuffers(mCmdBuffer, 0, 1, &buf, offsets);
 }
 
-void VulkanCommandBuffer::SetIndexBuffer(IRHIBuffer* buffer)
+void VulkanCommandList::SetIndexBuffer(IRHIBuffer* buffer)
 {
     VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer);
 
     vkCmdBindIndexBuffer(mCmdBuffer, vkBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 }
 
-void VulkanCommandBuffer::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size)
+void VulkanCommandList::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size)
 {
     VulkanGraphicsPipeline* vkPipeline = static_cast<VulkanGraphicsPipeline*>(pipeline);
 
     vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, 0, size, data);
 }
 
-void VulkanCommandBuffer::SetComputePipeline(IRHIComputePipeline* pipeline)
+void VulkanCommandList::SetComputePipeline(IRHIComputePipeline* pipeline)
 {
     VkDescriptorSet set = mParentDevice->GetBindlessManager()->GetSet();
     VulkanComputePipeline* vkPipeline = static_cast<VulkanComputePipeline*>(pipeline);
@@ -374,29 +374,29 @@ void VulkanCommandBuffer::SetComputePipeline(IRHIComputePipeline* pipeline)
     vkCmdBindDescriptorSets(mCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetLayout(), 0, 1, &set, 0, nullptr);
 }
 
-void VulkanCommandBuffer::SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size)
+void VulkanCommandList::SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size)
 {
     VulkanComputePipeline* vkPipeline = static_cast<VulkanComputePipeline*>(pipeline);
 
     vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, size, data);
 }
 
-void VulkanCommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
+void VulkanCommandList::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void VulkanCommandBuffer::DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance)
+void VulkanCommandList::DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance)
 {
     vkCmdDrawIndexed(mCmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void VulkanCommandBuffer::Dispatch(uint x, uint y, uint z)
+void VulkanCommandList::Dispatch(uint x, uint y, uint z)
 {
     vkCmdDispatch(mCmdBuffer, x, y, z);
 }
 
-void VulkanCommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
+void VulkanCommandList::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
 {
     VulkanBuffer* vkDest = static_cast<VulkanBuffer*>(dest);
     VulkanBuffer* vkSrc = static_cast<VulkanBuffer*>(src);
@@ -407,7 +407,7 @@ void VulkanCommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* s
     vkCmdCopyBuffer(mCmdBuffer, vkSrc->GetBuffer(), vkDest->GetBuffer(), 1, &copyRegion);
 }
 
-void VulkanCommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
+void VulkanCommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
 {
     RHITextureDesc textureDesc = dest->GetDesc();
     VkImage image = static_cast<VulkanTexture*>(dest)->Image();
@@ -468,7 +468,7 @@ void VulkanCommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src
     }
 }
 
-void VulkanCommandBuffer::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
+void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
 {
     RHITextureDesc textureDesc = src->GetDesc();
     VkImage image = static_cast<VulkanTexture*>(src)->Image();
@@ -527,7 +527,7 @@ void VulkanCommandBuffer::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src
     }
 }
 
-void VulkanCommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
+void VulkanCommandList::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
 {
     VulkanBLAS* vkBlas = static_cast<VulkanBLAS*>(blas);
 
@@ -553,7 +553,7 @@ void VulkanCommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
     vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkBlas->mBuildInfo, &range);
 }
 
-void VulkanCommandBuffer::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
+void VulkanCommandList::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
 {
     VulkanTLAS* vkTlas = static_cast<VulkanTLAS*>(blas);
     vkTlas->mGeometry.geometry.instances.data.deviceAddress = buffer->GetAddress();
@@ -578,7 +578,7 @@ void VulkanCommandBuffer::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint in
     vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkTlas->mBuildInfo, &range);
 }
 
-void VulkanCommandBuffer::PushMarker(const StringView& name)
+void VulkanCommandList::PushMarker(const StringView& name)
 {
     VkDebugUtilsLabelEXT marker = {};
     marker.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
@@ -587,25 +587,25 @@ void VulkanCommandBuffer::PushMarker(const StringView& name)
     vkCmdBeginDebugUtilsLabelEXT(mCmdBuffer, &marker);
 }
 
-void VulkanCommandBuffer::PopMarker()
+void VulkanCommandList::PopMarker()
 {
     vkCmdEndDebugUtilsLabelEXT(mCmdBuffer);
 }
 
-void VulkanCommandBuffer::BeginImGui()
+void VulkanCommandList::BeginImGui()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 }
 
-void VulkanCommandBuffer::EndImGui()
+void VulkanCommandList::EndImGui()
 {
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mCmdBuffer);
 }
 
-VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelineStage stage)
+VkPipelineStageFlags2 VulkanCommandList::TranslatePipelineStageToVk(RHIPipelineStage stage)
 {
     VkPipelineStageFlags2 flags = 0;
 
@@ -633,7 +633,7 @@ VkPipelineStageFlags2 VulkanCommandBuffer::TranslatePipelineStageToVk(RHIPipelin
     return flags;
 }
 
-VkAccessFlags2 VulkanCommandBuffer::TranslateAccessFlagsToVk(RHIResourceAccess access)
+VkAccessFlags2 VulkanCommandList::TranslateAccessFlagsToVk(RHIResourceAccess access)
 {
     VkAccessFlags2 flags = 0;
 
@@ -659,7 +659,7 @@ VkAccessFlags2 VulkanCommandBuffer::TranslateAccessFlagsToVk(RHIResourceAccess a
     return flags;
 }
 
-VkImageLayout VulkanCommandBuffer::TranslateLayoutToVk(RHIResourceLayout layout)
+VkImageLayout VulkanCommandList::TranslateLayoutToVk(RHIResourceLayout layout)
 {
     switch (layout) {
         case RHIResourceLayout::kUndefined:             return VK_IMAGE_LAYOUT_UNDEFINED;

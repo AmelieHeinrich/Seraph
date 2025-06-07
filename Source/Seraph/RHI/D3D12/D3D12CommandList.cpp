@@ -3,7 +3,7 @@
 // > Create Time: 2025-06-01 14:15:07
 //
 
-#include "D3D12CommandBuffer.h"
+#include "D3D12CommandList.h"
 #include "D3D12Device.h"
 #include "D3D12CommandQueue.h"
 #include "D3D12TextureView.h"
@@ -20,7 +20,7 @@
 
 #include <PIX/pix3.h>
 
-D3D12CommandBuffer::D3D12CommandBuffer(D3D12Device* device, D3D12CommandQueue* queue, bool singleTime)
+D3D12CommandList::D3D12CommandList(D3D12Device* device, D3D12CommandQueue* queue, bool singleTime)
     : mSingleTime(singleTime), mParentDevice(device)
 {
     HRESULT result = device->GetDevice()->CreateCommandAllocator(D3D12CommandQueue::TranslateToD3D12List(queue->GetType()), IID_PPV_ARGS(&mAllocator));
@@ -36,19 +36,19 @@ D3D12CommandBuffer::D3D12CommandBuffer(D3D12Device* device, D3D12CommandQueue* q
     SERAPH_WHATEVER("Created D3D12 command buffer!");
 }
 
-D3D12CommandBuffer::~D3D12CommandBuffer()
+D3D12CommandList::~D3D12CommandList()
 {
     if (mAllocator) mAllocator->Release();
     if (mList) mList->Release();
 }
 
-void D3D12CommandBuffer::Reset()
+void D3D12CommandList::Reset()
 {
     mAllocator->Reset();
     mList->Reset(mAllocator, nullptr);
 }
 
-void D3D12CommandBuffer::Begin()
+void D3D12CommandList::Begin()
 {
     ID3D12DescriptorHeap* heaps[] = {
         mParentDevice->GetBindlessManager()->GetResourceHeap(),
@@ -57,12 +57,12 @@ void D3D12CommandBuffer::Begin()
     mList->SetDescriptorHeaps(2, heaps);
 }
 
-void D3D12CommandBuffer::End()
+void D3D12CommandList::End()
 {
     mList->Close();
 }
 
-void D3D12CommandBuffer::BeginRendering(const RHIRenderBegin& begin)
+void D3D12CommandList::BeginRendering(const RHIRenderBegin& begin)
 {
     Array<D3D12_CPU_DESCRIPTOR_HANDLE> cpus;
     for (auto& target : begin.RenderTargets) {
@@ -82,12 +82,12 @@ void D3D12CommandBuffer::BeginRendering(const RHIRenderBegin& begin)
     mList->OMSetRenderTargets(cpus.size(), cpus.data(), false, begin.DepthTarget.View ? &depth_cpu : nullptr);
 }
 
-void D3D12CommandBuffer::EndRendering()
+void D3D12CommandList::EndRendering()
 {
     // Nothing
 }
 
-void D3D12CommandBuffer::Barrier(const RHITextureBarrier& barrier)
+void D3D12CommandList::Barrier(const RHITextureBarrier& barrier)
 {
     D3D12_TEXTURE_BARRIER texBarrier = {};
     texBarrier.pResource = static_cast<D3D12Texture*>(barrier.Texture)->GetResource();
@@ -115,7 +115,7 @@ void D3D12CommandBuffer::Barrier(const RHITextureBarrier& barrier)
 }
 
 
-void D3D12CommandBuffer::Barrier(const RHIBufferBarrier& barrier)
+void D3D12CommandList::Barrier(const RHIBufferBarrier& barrier)
 {
     D3D12_BUFFER_BARRIER bufBarrier = {};
     bufBarrier.pResource = static_cast<D3D12Buffer*>(barrier.Buffer)->GetResource();
@@ -134,7 +134,7 @@ void D3D12CommandBuffer::Barrier(const RHIBufferBarrier& barrier)
     mList->Barrier(1, &group);
 }
 
-void D3D12CommandBuffer::Barrier(const RHIMemoryBarrier& barrier)
+void D3D12CommandList::Barrier(const RHIMemoryBarrier& barrier)
 {
     D3D12_GLOBAL_BARRIER globalBarrier = {};
     globalBarrier.AccessBefore = ToD3D12BarrierAccess(barrier.SourceAccess);
@@ -150,7 +150,7 @@ void D3D12CommandBuffer::Barrier(const RHIMemoryBarrier& barrier)
     mList->Barrier(1, &group);
 }
 
-void D3D12CommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
+void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 {
     Array<D3D12_TEXTURE_BARRIER> textureBarriers;
     Array<D3D12_BUFFER_BARRIER> bufferBarriers;
@@ -220,13 +220,13 @@ void D3D12CommandBuffer::BarrierGroup(const RHIBarrierGroup& barrierGroup)
     mList->Barrier(barriers.size(), barriers.data());
 }
 
-void D3D12CommandBuffer::ClearColor(IRHITextureView* view, float r, float g, float b)
+void D3D12CommandList::ClearColor(IRHITextureView* view, float r, float g, float b)
 {
     float color[] = { r, g, b, 1.0f };
     mList->ClearRenderTargetView(static_cast<D3D12TextureView*>(view)->GetAlloc().CPU, color, 0, nullptr);
 }
 
-void D3D12CommandBuffer::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
+void D3D12CommandList::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
 {
     mList->SetPipelineState(static_cast<D3D12GraphicsPipeline*>(pipeline)->GetPipelineState());
     mList->SetGraphicsRootSignature(static_cast<D3D12GraphicsPipeline*>(pipeline)->GetRootSignature());
@@ -238,7 +238,7 @@ void D3D12CommandBuffer::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
     }
 }
 
-void D3D12CommandBuffer::SetViewport(float width, float height, float x, float y)
+void D3D12CommandList::SetViewport(float width, float height, float x, float y)
 {
     D3D12_VIEWPORT viewport = {};
     viewport.Width = width;
@@ -258,7 +258,7 @@ void D3D12CommandBuffer::SetViewport(float width, float height, float x, float y
     mList->RSSetViewports(1, &viewport);
 }
 
-void D3D12CommandBuffer::SetVertexBuffer(IRHIBuffer* buffer)
+void D3D12CommandList::SetVertexBuffer(IRHIBuffer* buffer)
 {
     D3D12_VERTEX_BUFFER_VIEW view = {};
     view.SizeInBytes = buffer->GetDesc().Size;
@@ -268,7 +268,7 @@ void D3D12CommandBuffer::SetVertexBuffer(IRHIBuffer* buffer)
     mList->IASetVertexBuffers(0, 1, &view);
 }
 
-void D3D12CommandBuffer::SetIndexBuffer(IRHIBuffer* buffer)
+void D3D12CommandList::SetIndexBuffer(IRHIBuffer* buffer)
 {
     D3D12_INDEX_BUFFER_VIEW view = {};
     view.BufferLocation = buffer->GetAddress();
@@ -278,43 +278,43 @@ void D3D12CommandBuffer::SetIndexBuffer(IRHIBuffer* buffer)
     mList->IASetIndexBuffer(&view);
 }
 
-void D3D12CommandBuffer::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size)
+void D3D12CommandList::SetGraphicsConstants(IRHIGraphicsPipeline* pipeline, const void* data, uint64 size)
 {
     mList->SetGraphicsRoot32BitConstants(0, size / 4, data, 0);
 }
 
-void D3D12CommandBuffer::SetComputePipeline(IRHIComputePipeline* pipeline)
+void D3D12CommandList::SetComputePipeline(IRHIComputePipeline* pipeline)
 {
     mList->SetPipelineState(static_cast<D3D12ComputePipeline*>(pipeline)->GetPipelineState());
     mList->SetComputeRootSignature(static_cast<D3D12ComputePipeline*>(pipeline)->GetRootSignature());
 }
 
-void D3D12CommandBuffer::SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size)
+void D3D12CommandList::SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size)
 {
     mList->SetComputeRoot32BitConstants(0, size / 4, data, 0);
 }
 
-void D3D12CommandBuffer::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
+void D3D12CommandList::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     mList->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void D3D12CommandBuffer::DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance)
+void D3D12CommandList::DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance)
 {
     mList->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void D3D12CommandBuffer::Dispatch(uint x, uint y, uint z)
+void D3D12CommandList::Dispatch(uint x, uint y, uint z)
 {
     mList->Dispatch(x, y, z);
 }
 
-void D3D12CommandBuffer::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
+void D3D12CommandList::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
 {
     mList->CopyResource(static_cast<D3D12Buffer*>(dest)->GetResource(), static_cast<D3D12Buffer*>(src)->GetResource());
 }
 
-void D3D12CommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
+void D3D12CommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
 {
     ID3D12Resource* srcResource = static_cast<D3D12Buffer*>(src)->GetResource();
     ID3D12Resource* dstResource = static_cast<D3D12Texture*>(dest)->GetResource();
@@ -342,7 +342,7 @@ void D3D12CommandBuffer::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
     }
 }
 
-void D3D12CommandBuffer::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
+void D3D12CommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
 {
     ID3D12Resource* dstResource = static_cast<D3D12Buffer*>(dest)->GetResource();
     ID3D12Resource* srcResource = static_cast<D3D12Texture*>(src)->GetResource();
@@ -379,7 +379,7 @@ void D3D12CommandBuffer::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     }
 }
 
-void D3D12CommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
+void D3D12CommandList::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
 {
     D3D12BLAS* d3dblas = static_cast<D3D12BLAS*>(blas);
 
@@ -398,7 +398,7 @@ void D3D12CommandBuffer::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
     mList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
-void D3D12CommandBuffer::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
+void D3D12CommandList::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer)
 {
     D3D12TLAS* d3dblas = static_cast<D3D12TLAS*>(tlas);
 
@@ -420,30 +420,30 @@ void D3D12CommandBuffer::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint ins
     mList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
-void D3D12CommandBuffer::PushMarker(const StringView& name)
+void D3D12CommandList::PushMarker(const StringView& name)
 {
     PIXBeginEvent(mList, PIX_COLOR_DEFAULT, name.data());
 }
 
-void D3D12CommandBuffer::PopMarker()
+void D3D12CommandList::PopMarker()
 {
     PIXEndEvent(mList);
 }
 
-void D3D12CommandBuffer::BeginImGui()
+void D3D12CommandList::BeginImGui()
 {
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 }
 
-void D3D12CommandBuffer::EndImGui()
+void D3D12CommandList::EndImGui()
 {
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mList);
 }
 
-D3D12_BARRIER_SYNC D3D12CommandBuffer::ToD3D12BarrierSync(RHIPipelineStage stage)
+D3D12_BARRIER_SYNC D3D12CommandList::ToD3D12BarrierSync(RHIPipelineStage stage)
 {
     using enum RHIPipelineStage;
     D3D12_BARRIER_SYNC sync = D3D12_BARRIER_SYNC_NONE;
@@ -467,7 +467,7 @@ D3D12_BARRIER_SYNC D3D12CommandBuffer::ToD3D12BarrierSync(RHIPipelineStage stage
     return sync;
 }
 
-D3D12_BARRIER_ACCESS D3D12CommandBuffer::ToD3D12BarrierAccess(RHIResourceAccess access)
+D3D12_BARRIER_ACCESS D3D12CommandList::ToD3D12BarrierAccess(RHIResourceAccess access)
 {
     using enum RHIResourceAccess;
     D3D12_BARRIER_ACCESS flags = D3D12_BARRIER_ACCESS_NO_ACCESS;
@@ -493,7 +493,7 @@ D3D12_BARRIER_ACCESS D3D12CommandBuffer::ToD3D12BarrierAccess(RHIResourceAccess 
     return flags;
 }
 
-D3D12_BARRIER_LAYOUT D3D12CommandBuffer::ToD3D12BarrierLayout(RHIResourceLayout layout)
+D3D12_BARRIER_LAYOUT D3D12CommandList::ToD3D12BarrierLayout(RHIResourceLayout layout)
 {
     switch (layout)
     {

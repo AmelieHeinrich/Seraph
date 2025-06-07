@@ -17,9 +17,9 @@ public:
     VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType type);
     ~VulkanCommandQueue();
 
-    IRHICommandBuffer* CreateCommandBuffer(bool singleTime) override;
+    IRHICommandList* CreateCommandBuffer(bool singleTime) override;
 
-    void SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer) override;
+    void SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer) override;
 public:
     VkQueue GetQueue() { return mQueue; }
 

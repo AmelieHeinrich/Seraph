@@ -20,7 +20,7 @@ public:
 
     VkAccelerationStructureKHR GetHandle() const { return mHandle; }
 private:
-    friend class VulkanCommandBuffer;
+    friend class VulkanCommandList;
 
     VulkanDevice* mParentDevice;
 

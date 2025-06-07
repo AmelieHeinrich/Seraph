@@ -17,7 +17,7 @@
 
 #include <Core/Context.h>
 
-#include "CommandBuffer.h"
+#include "CommandList.h"
 
 class IRHIDevice;
 
@@ -27,6 +27,6 @@ public:
     ~IRHIF2FSync() = default;
 
     virtual uint BeginSynchronize() = 0;
-    virtual void EndSynchronize(IRHICommandBuffer* submitBuffer) = 0;
+    virtual void EndSynchronize(IRHICommandList* submitBuffer) = 0;
     virtual void PresentSurface() = 0;
 };

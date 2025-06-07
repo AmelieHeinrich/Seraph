@@ -4,7 +4,7 @@
 //
 
 #include "D3D12CommandQueue.h"
-#include "D3D12CommandBuffer.h"
+#include "D3D12CommandList.h"
 #include "D3D12Device.h"
 
 DWORD AwaitFence(ID3D12Fence* fence, uint64 val, uint64 timeout)
@@ -53,9 +53,9 @@ D3D12CommandQueue::~D3D12CommandQueue()
     if (mQueue) mQueue->Release();
 }
 
-void D3D12CommandQueue::SubmitAndFlushCommandBuffer(IRHICommandBuffer* cmdBuffer)
+void D3D12CommandQueue::SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer)
 {
-    ID3D12CommandList* lists[] = { static_cast<D3D12CommandBuffer*>(cmdBuffer)->GetList() };
+    ID3D12CommandList* lists[] = { static_cast<D3D12CommandList*>(cmdBuffer)->GetList() };
     mQueue->ExecuteCommandLists(1, lists);
 
     AwaitQueue(mParentDevice->GetDevice(), mQueue, UINT64_MAX);
@@ -72,7 +72,7 @@ D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::TranslateToD3D12List(RHICommandQueueT
     return D3D12_COMMAND_LIST_TYPE_DIRECT;
 }
 
-IRHICommandBuffer* D3D12CommandQueue::CreateCommandBuffer(bool singleTime)
+IRHICommandList* D3D12CommandQueue::CreateCommandBuffer(bool singleTime)
 {
-    return (new D3D12CommandBuffer(mParentDevice, this, singleTime));
+    return (new D3D12CommandList(mParentDevice, this, singleTime));
 }

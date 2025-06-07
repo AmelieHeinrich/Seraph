@@ -33,7 +33,7 @@ private:
     IRHIDevice* mDevice;
     IRHICommandQueue* mGraphicsQueue;
     IRHISurface* mSurface;
-    StaticArray<IRHICommandBuffer*, FRAMES_IN_FLIGHT> mCommandBuffers;
+    StaticArray<IRHICommandList*, FRAMES_IN_FLIGHT> mCommandBuffers;
     IRHIF2FSync* mF2FSync;
     IRHIImGuiContext* mImGuiContext;
     

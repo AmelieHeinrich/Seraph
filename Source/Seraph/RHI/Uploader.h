@@ -52,7 +52,7 @@ private:
         IRHIDevice* Device;
         IRHICommandQueue* CopyQueue;
         
-        IRHICommandBuffer* CommandBuffer;
+        IRHICommandList* CommandBuffer;
         Array<UploadRequest> Requests;
 
         int BufferRequests;

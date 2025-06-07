@@ -19,7 +19,7 @@ public:
 
     uint64 GetAddress() override;
 private:
-    friend class VulkanCommandBuffer;
+    friend class VulkanCommandList;
 
     VulkanDevice* mParentDevice;
 

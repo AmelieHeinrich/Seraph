@@ -6,7 +6,7 @@
 #include "D3D12F2FSync.h"
 #include "D3D12Device.h"
 #include "D3D12CommandQueue.h"
-#include "D3D12CommandBuffer.h"
+#include "D3D12CommandList.h"
 
 D3D12F2FSync::D3D12F2FSync(D3D12Device* device, D3D12Surface* surface, D3D12CommandQueue* queue)
     : mParentDevice(device), mSurface(surface), mCommandQueue(queue)
@@ -28,9 +28,9 @@ uint D3D12F2FSync::BeginSynchronize()
     return mFrameIndex;
 }
 
-void D3D12F2FSync::EndSynchronize(IRHICommandBuffer* submitBuffer)
+void D3D12F2FSync::EndSynchronize(IRHICommandList* submitBuffer)
 {
-    ID3D12CommandList* lists[] = { static_cast<D3D12CommandBuffer*>(submitBuffer)->GetList() };
+    ID3D12CommandList* lists[] = { static_cast<D3D12CommandList*>(submitBuffer)->GetList() };
     mCommandQueue->GetQueue()->ExecuteCommandLists(1, lists);
 
     uint64 fenceValue = mFrameValues[mFrameIndex];

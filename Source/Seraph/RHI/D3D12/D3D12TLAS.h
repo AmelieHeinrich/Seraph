@@ -22,7 +22,7 @@ public:
 
     uint64 Address() const { return mMemory->GetAddress(); }
 private:
-    friend class D3D12CommandBuffer;
+    friend class D3D12CommandList;
 
     D3D12Device* mParentDevice;
 

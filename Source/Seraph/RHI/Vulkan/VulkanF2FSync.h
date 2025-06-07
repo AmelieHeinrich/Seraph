@@ -9,7 +9,7 @@
 
 #include "VulkanSurface.h"
 #include "VulkanCommandQueue.h"
-#include "VulkanCommandBuffer.h"
+#include "VulkanCommandList.h"
 
 class VulkanF2FSync : public IRHIF2FSync
 {
@@ -18,7 +18,7 @@ public:
     ~VulkanF2FSync();
 
     uint BeginSynchronize() override;
-    void EndSynchronize(IRHICommandBuffer* submitBuffer) override;
+    void EndSynchronize(IRHICommandList* submitBuffer) override;
     void PresentSurface() override;
 private:
     VulkanDevice* mParentDevice;
