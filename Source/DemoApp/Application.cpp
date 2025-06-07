@@ -8,21 +8,12 @@
 #include <imgui/imgui.h>
 #include <chrono>
 
-static const float VERTICES[] = {
-     0.5f,  0.5f, 0.0f, 1.0f, -1.0f,
-     0.5f, -0.5f, 0.0f, 1.0f,  0.0f,
-    -0.5f, -0.5f, 0.0f, 0.0f,  0.0f,
-    -0.5f,  0.5f, 0.0f, 0.0f, -1.0f
-};
-
-static const uint INDICES[] = {
-    0, 1, 3,
-    1, 2, 3
-};
-
 Application::Application(const ApplicationSpecs& specs)
     : mSpecs(specs)
 {
+    Compressor compressor;
+    compressor.RecurseFolder("Data/");
+
     ShaderCompiler::Initialize(specs.Backend);
 
     mWindow = SharedPtr<Window>(new Window(specs.WindowWidth, specs.WindowHeight, "Seraph"));

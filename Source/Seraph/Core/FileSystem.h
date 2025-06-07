@@ -19,6 +19,7 @@ public:
     static void WriteJSON(nlohmann::json json, const String& path);
 
     static bool Exists(const String& path);
+    static uint GetFileSize(const String& path);    
 private:
     static struct Data {
         String WorkingDirectory;

@@ -61,6 +61,7 @@ DXGI_FORMAT D3D12Texture::TranslateToDXGIFormat(RHITextureFormat format)
         case RHITextureFormat::kR8G8B8A8_UNORM: return DXGI_FORMAT_R8G8B8A8_UNORM;
         case RHITextureFormat::kR16G16B16A16_FLOAT: return DXGI_FORMAT_R16G16B16A16_FLOAT;
         case RHITextureFormat::kR32_FLOAT: return DXGI_FORMAT_R32_FLOAT;
+        case RHITextureFormat::kBC7_UNORM: return DXGI_FORMAT_BC7_UNORM;
     }
     return DXGI_FORMAT_UNKNOWN;
 }

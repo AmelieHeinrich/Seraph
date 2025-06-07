@@ -237,3 +237,31 @@ IRHIImGuiContext* D3D12Device::CreateImGuiContext(IRHICommandQueue* mainQueue, W
 {
     return (new D3D12ImGuiContext(this, static_cast<D3D12CommandQueue*>(mainQueue), window));
 }
+
+void D3D12Device::GetTextureFootprints(
+    IRHITexture* texture,
+    uint firstSubresource,
+    uint numSubresources,
+    uint64 baseOffset,
+    RHITextureFootprint* footprints,
+    uint* numRows,
+    uint64* rowSizeInBytes,
+    uint64* totalBytes
+)
+{
+    D3D12Texture* d3d12Tex = static_cast<D3D12Texture*>(texture);
+    D3D12_RESOURCE_DESC desc = d3d12Tex->GetResource()->GetDesc();
+
+    Array<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> d3d12Footprints(numSubresources);
+
+    mDevice->GetCopyableFootprints(
+        &desc, firstSubresource, numSubresources, baseOffset,
+        d3d12Footprints.data(), numRows, rowSizeInBytes, totalBytes
+    );
+
+    for (uint i = 0; i < numSubresources; i++) {
+        footprints[i].Offset = d3d12Footprints[i].Offset;
+        footprints[i].RowPitch = d3d12Footprints[i].Footprint.RowPitch;
+        footprints[i].SlicePitch = d3d12Footprints[i].Footprint.RowPitch * d3d12Footprints[i].Footprint.Height;
+    }
+}

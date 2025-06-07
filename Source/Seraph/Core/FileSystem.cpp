@@ -56,3 +56,11 @@ bool FileSystem::Exists(const String& path)
         return false;
     return true;   
 }
+
+uint FileSystem::GetFileSize(const String& path)
+{
+    struct stat s;
+    if (stat(path.c_str(), &s) == -1)
+        return 0;
+    return s.st_size;  
+}

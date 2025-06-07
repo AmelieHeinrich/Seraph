@@ -17,7 +17,8 @@ enum class RHITextureFormat
     kB8G8R8A8_UNORM,
     kR16G16B16A16_FLOAT,
     kR32_FLOAT,
-    kD32_FLOAT
+    kD32_FLOAT,
+    kBC7_UNORM
 };
 
 enum class RHITextureUsage : uint

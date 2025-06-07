@@ -67,6 +67,7 @@ VkFormat VulkanTexture::RHIToVkFormat(RHITextureFormat format)
         case RHITextureFormat::kD32_FLOAT: return VK_FORMAT_D32_SFLOAT;
         case RHITextureFormat::kR16G16B16A16_FLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
         case RHITextureFormat::kR32_FLOAT: return VK_FORMAT_R32_SFLOAT;
+        case RHITextureFormat::kBC7_UNORM: return VK_FORMAT_BC7_UNORM_BLOCK;
     }
     return VK_FORMAT_UNDEFINED;
 }

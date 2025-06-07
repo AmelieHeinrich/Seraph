@@ -5,6 +5,8 @@
 
 #include "Model.h"
 #include "Image.h"
+#include "Compressor.h"
+#include "Texture.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -161,12 +163,14 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
         if (material->pbr_metallic_roughness.base_color_texture.texture) {
             String path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.base_color_texture.texture->image->uri);
     
-            ImageData data = Image::LoadImageData(path);
+            TextureAsset data;
+            data.Load(Compressor::ToCachedPath(path));
 
             RHITextureDesc desc = {};
-            desc.Width = data.Width;
-            desc.Height = data.Height;
-            desc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
+            desc.Width = data.Header.Width;
+            desc.Height = data.Header.Height;
+            desc.MipLevels = data.Header.Mips - 2;
+            desc.Format = data.Header.Format;
             desc.Usage = RHITextureUsage::kShaderResource;
 
             modelMaterial.Texture = mParentDevice->CreateTexture(desc);

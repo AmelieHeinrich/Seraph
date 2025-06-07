@@ -138,6 +138,91 @@ IRHIImGuiContext* VulkanDevice::CreateImGuiContext(IRHICommandQueue* mainQueue, 
     return (new VulkanImGuiContext(this, static_cast<VulkanCommandQueue*>(mainQueue), window));
 }
 
+void VulkanDevice::GetTextureFootprints(
+    IRHITexture* texture,
+    uint firstSubresource,
+    uint numSubresources,
+    uint64 baseOffset,
+    RHITextureFootprint* footprints,
+    uint* numRows,
+    uint64* rowSizeInBytes,
+    uint64* totalBytes
+) {
+    VulkanTexture* vulkanTex = static_cast<VulkanTexture*>(texture);
+    RHITextureDesc desc = vulkanTex->GetDesc();
+    
+    uint64 currentOffset = baseOffset;
+    uint64 totalSize = 0;
+    
+    // Get device limits for proper alignment
+    uint32 bufferImageGranularity = mBufferImageGranularity;
+    const uint64 minAlignment = 4; // Minimum required alignment in Vulkan
+    
+    for (uint i = 0; i < numSubresources; i++) {
+        uint subresourceIndex = firstSubresource + i;
+        uint mipLevel = subresourceIndex % desc.MipLevels;
+        uint arraySlice = subresourceIndex / desc.MipLevels;
+        
+        uint mipWidth = std::max(1u, desc.Width >> mipLevel);
+        uint mipHeight = std::max(1u, desc.Height >> mipLevel);
+        uint mipDepth = std::max(1u, desc.Depth >> mipLevel);
+        
+        uint64 unalignedRowSize;
+        uint rows;
+        uint64 alignedRowPitch;
+        
+        if (IRHITexture::IsBlockFormat(desc.Format)) {
+            uint blocksWide = std::max(1u, (mipWidth + 4 - 1) / 4);
+            uint blocksHigh = std::max(1u, (mipHeight + 4 - 1) / 4);
+            uint bytesPerBlock = 16;
+            
+            unalignedRowSize = blocksWide * bytesPerBlock;
+            rows = blocksHigh;
+            
+            // For block formats, row pitch should be aligned to block size
+            alignedRowPitch = Align<uint64>(unalignedRowSize, std::max(16u, bufferImageGranularity));
+        } else {
+            // Uncompressed formats
+            uint bpp = IRHITexture::BytesPerPixel(desc.Format);
+            unalignedRowSize = mipWidth * bpp;
+            rows = mipHeight;
+            
+            // Row pitch alignment for uncompressed formats
+            // Use the larger of pixel alignment or buffer-image granularity
+            alignedRowPitch = Align<uint64>(unalignedRowSize, std::max(bpp, bufferImageGranularity));
+        }
+        
+        // Ensure minimum alignment requirements are met
+        alignedRowPitch = Align<uint64>(alignedRowPitch, minAlignment);
+        
+        // Calculate slice size (for 2D textures, mipDepth will be 1)
+        uint64 sliceSize = alignedRowPitch * rows;
+        
+        // Align the entire subresource size to buffer-image granularity
+        uint64 subresourceSize = Align<uint64>(sliceSize * mipDepth, bufferImageGranularity);
+        
+        // Store footprint info
+        footprints[i].Offset = currentOffset;
+        footprints[i].RowPitch = alignedRowPitch;
+        footprints[i].SlicePitch = sliceSize;
+        
+        if (numRows) {
+            numRows[i] = rows;
+        }
+        
+        if (rowSizeInBytes) {
+            rowSizeInBytes[i] = unalignedRowSize;
+        }
+        
+        currentOffset += subresourceSize;
+        totalSize = currentOffset - baseOffset;
+    }
+    
+    if (totalBytes) {
+        *totalBytes = totalSize;
+    }
+}
+
 void VulkanDevice::BuildInstance(bool validationLayers)
 {
     uint32 instanceLayerCount = 1;
@@ -216,6 +301,7 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
 
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);   
+    mBufferImageGranularity = deviceProperties.limits.bufferImageGranularity;
     
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
@@ -416,4 +502,21 @@ void VulkanDevice::BuildAllocator()
 
     VkResult result = vmaCreateAllocator(&allocatorInfo, &mAllocator);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create VMA allocator!");
+}
+
+uint VulkanDevice::GetTexelBlockSize(RHITextureFormat format)
+{
+    switch (format) {
+    case RHITextureFormat::kBC7_UNORM:
+        return 16; // 16 bytes per 4x4 block
+    case RHITextureFormat::kR8G8B8A8_UNORM:
+    case RHITextureFormat::kR8G8B8A8_sRGB:
+    case RHITextureFormat::kB8G8R8A8_UNORM:
+        return 4;
+    case RHITextureFormat::kR16G16B16A16_FLOAT:
+        return 8;
+    default:
+        return 1; // Safe fallback
+    }
+    return 1;
 }

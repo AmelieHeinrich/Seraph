@@ -35,6 +35,16 @@ public:
     IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
     RHITextureFormat GetSurfaceFormat() { return RHITextureFormat::kR8G8B8A8_UNORM; }
+    void GetTextureFootprints(
+        IRHITexture* texture,
+        uint firstSubresource,
+        uint numSubresources,
+        uint64 baseOffset,
+        RHITextureFootprint* footprints,
+        uint* numRows,
+        uint64* rowSizeInBytes,
+        uint64* totalBytes
+    ) override;
 public:
     ID3D12Device14* GetDevice() { return mDevice; }
     IDXGIFactory6* GetFactory() { return mFactory; }

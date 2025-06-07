@@ -59,45 +59,16 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     uint baseWidth = desc.Width;
     uint baseHeight = desc.Height;
 
-    Array<uint64> mipRowSize(mipLevels);
-    Array<uint64> mipAlignedPitch(mipLevels);
-    Array<uint64> mipOffset(mipLevels);
-
+    // Get the actual footprint requirements from the RHI layer
+    // This should internally use GetCopyableFootprints on D3D12
+    Array<RHITextureFootprint> footprints(mipLevels);
     uint64 totalStagingSize = 0;
-    const uint8* srcPtr = reinterpret_cast<const uint8*>(data);
 
-    for (uint mip = 0; mip < mipLevels; mip++) {
-        uint mipWidth = std::max(1u, baseWidth >> mip);
-        uint mipHeight = std::max(1u, baseHeight >> mip);
-
-        if (IRHITexture::IsBlockFormat(desc.Format)) {
-            uint blocksWide = (mipWidth + 3) / 4;
-            uint blocksHigh = (mipHeight + 3) / 4;
-            uint bytesPerBlock = IRHITexture::BytesPerPixel(desc.Format);
-
-            uint64 rowSize = blocksWide * bytesPerBlock;
-            mipRowSize[mip] = rowSize;
-
-            uint64 alignedPitch = Align<uint64>(rowSize, TEXTURE_ROW_PITCH_ALIGNMENT);
-            mipAlignedPitch[mip] = alignedPitch;
-
-            mipOffset[mip] = totalStagingSize;
-            totalStagingSize += alignedPitch * blocksHigh;
-        } else {
-            uint bpp = IRHITexture::BytesPerPixel(desc.Format);
-            uint64 rowSize = mipWidth * bpp;
-            mipRowSize[mip] = rowSize;
-
-            uint64 alignedPitch = Align<uint64>(rowSize, TEXTURE_ROW_PITCH_ALIGNMENT);
-            mipAlignedPitch[mip] = alignedPitch;
-
-            mipOffset[mip] = totalStagingSize;
-            totalStagingSize += alignedPitch * mipHeight;
-        }
-    }
+    // Query actual footprint requirements from the RHI
+    sData.Device->GetTextureFootprints(texture, 0, mipLevels, 0, footprints.data(), nullptr, nullptr, &totalStagingSize);
 
     RHIBufferDesc stagingDesc = {};
-    stagingDesc.Size  = totalStagingSize;
+    stagingDesc.Size = totalStagingSize;
     stagingDesc.Usage = RHIBufferUsage::kStaging;
 
     UploadRequest request = {};
@@ -106,37 +77,49 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     request.StagingBuffer = sData.Device->CreateBuffer(stagingDesc);
 
     void* mappedVoid = request.StagingBuffer->Map();
-    uint8* dstBase = reinterpret_cast<uint8_t*>(mappedVoid);
+    uint8* dstBase = reinterpret_cast<uint8*>(mappedVoid);
+    const uint8* srcPtr = reinterpret_cast<const uint8*>(data);
+
     for (uint mip = 0; mip < mipLevels; mip++) {
         uint mipWidth = std::max(1u, baseWidth >> mip);
         uint mipHeight = std::max(1u, baseHeight >> mip);
-        uint8* dstMipRow = dstBase + mipOffset[mip];
+
+        const RHITextureFootprint& footprint = footprints[mip];
+        uint8* dstMipStart = dstBase + footprint.Offset;
 
         if (IRHITexture::IsBlockFormat(desc.Format)) {
-            uint blocksHigh = (mipHeight + 3) / 4;
+            uint blocksWide = std::max(1u, (mipWidth + 3) / 4);
+            uint blocksHigh = std::max(1u, (mipHeight + 3) / 4);
+            uint bytesPerBlock = IRHITexture::BytesPerPixel(desc.Format);
+            uint64 srcRowSize = blocksWide * bytesPerBlock;
+
             for (uint by = 0; by < blocksHigh; by++) {
                 SafeMemcpy(
-                    dstMipRow + by * mipAlignedPitch[mip],
-                    srcPtr + by * mipRowSize[mip],
-                    mipRowSize[mip]
+                    dstMipStart + by * footprint.RowPitch,
+                    srcPtr + by * srcRowSize,
+                    srcRowSize
                 );
             }
+            srcPtr += srcRowSize * blocksHigh;
+        }
+        else {
+            uint bpp = IRHITexture::BytesPerPixel(desc.Format);
+            uint64 srcRowSize = mipWidth * bpp;
 
-            srcPtr += mipRowSize[mip] * blocksHigh;
-        } else {
             for (uint y = 0; y < mipHeight; y++) {
                 SafeMemcpy(
-                    dstMipRow + y * mipAlignedPitch[mip],
-                    srcPtr + y * mipRowSize[mip],
-                    mipRowSize[mip]
+                    dstMipStart + y * footprint.RowPitch,
+                    srcPtr + y * srcRowSize,
+                    srcRowSize
                 );
             }
-            srcPtr += mipRowSize[mip] * mipHeight;
+            srcPtr += srcRowSize * mipHeight;
         }
     }
-    request.StagingBuffer->Unmap();
 
+    request.StagingBuffer->Unmap();
     sData.Requests.push_back(std::move(request));
+
     sData.UploadBatchSize += totalStagingSize;
     if (sData.UploadBatchSize >= MAX_BATCH_SIZE)
         Flush();
@@ -230,6 +213,8 @@ void Uploader::Flush()
                 dstBarrier.SourceAccess = RHIResourceAccess::kNone;
                 dstBarrier.DestAccess = RHIResourceAccess::kTransferWrite;
                 dstBarrier.NewLayout = RHIResourceLayout::kTransferDst;
+                dstBarrier.BaseMipLevel = 0;
+                dstBarrier.LevelCount = request.DstTexture->GetDesc().MipLevels;
 
                 RHIBufferBarrier stagingBarrier(request.StagingBuffer);
                 stagingBarrier.SourceStage = RHIPipelineStage::kAllCommands;
@@ -247,6 +232,8 @@ void Uploader::Flush()
                 dstBarrierAfter.SourceAccess = RHIResourceAccess::kTransferWrite;
                 dstBarrierAfter.DestAccess = RHIResourceAccess::kShaderRead;
                 dstBarrierAfter.NewLayout = RHIResourceLayout::kReadOnly;
+                dstBarrierAfter.BaseMipLevel = 0;
+                dstBarrierAfter.LevelCount = request.DstTexture->GetDesc().MipLevels;
 
                 sData.CommandBuffer->BarrierGroup(firstGroup);
                 sData.CommandBuffer->CopyBufferToTexture(request.DstTexture, request.StagingBuffer);

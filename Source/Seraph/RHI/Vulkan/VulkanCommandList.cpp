@@ -474,56 +474,60 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     VkImage image = static_cast<VulkanTexture*>(src)->Image();
     VkBuffer buffer = static_cast<VulkanBuffer*>(dest)->GetBuffer();
 
-    const bool isBlockCompressed = IRHITexture::IsBlockFormat(textureDesc.Format);
-    const uint bytesPerUnit = IRHITexture::BytesPerPixel(textureDesc.Format); // bytes per pixel or block
+    uint numSubresources = textureDesc.MipLevels * textureDesc.Depth;
+    Array<RHITextureFootprint> footprints(numSubresources);
+    Array<uint> numRows(numSubresources);
+    Array<uint64> rowSizeInBytes(numSubresources);
+    uint64 totalBytes = 0;
 
-    VkDeviceSize bufferOffset = 0;
+    // Calculate footprints for all subresources
+    mParentDevice->GetTextureFootprints(
+        src, 
+        0, 
+        numSubresources, 
+        0, 
+        footprints.data(), 
+        numRows.data(), 
+        rowSizeInBytes.data(), 
+        &totalBytes
+    );
 
     for (uint mip = 0; mip < textureDesc.MipLevels; mip++) {
-        uint mipWidth = std::max(1u, textureDesc.Width >> mip);
-        uint mipHeight = std::max(1u, textureDesc.Height >> mip);
+        for (uint layer = 0; layer < textureDesc.Depth; layer++) {
+            uint subresource = mip + layer * textureDesc.MipLevels;
+            uint mipWidth = std::max(1u, textureDesc.Width >> mip);
+            uint mipHeight = std::max(1u, textureDesc.Height >> mip);
 
-        uint rowPitch = 0;
-        uint rowLength = 0;
-        uint imageHeight = 0;
-        VkExtent3D imageExtent = {};
+            // For compressed formats, we need to handle row pitch differently
+            uint bytesPerPixel = IRHITexture::BytesPerPixel(textureDesc.Format);
+            uint64 rowPitch = footprints[subresource].RowPitch;
+            
+            // Calculate bufferRowLength in pixels (must be 0 if uncompressed, or multiple of compressed block width)
+            uint bufferRowLength = 0;
+            if (!IRHITexture::IsBlockFormat(textureDesc.Format)) {
+                bufferRowLength = static_cast<uint>(rowPitch / bytesPerPixel);
+            }
 
-        if (isBlockCompressed) {
-            uint blocksWide = (mipWidth + 3) / 4;
-            uint blocksHigh = (mipHeight + 3) / 4;
+            VkBufferImageCopy copyRegion = {};
+            copyRegion.bufferOffset = footprints[subresource].Offset;
+            copyRegion.bufferRowLength = bufferRowLength;
+            copyRegion.bufferImageHeight = numRows[subresource];
+            copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            copyRegion.imageSubresource.mipLevel = mip;
+            copyRegion.imageSubresource.baseArrayLayer = layer;
+            copyRegion.imageSubresource.layerCount = 1;
+            copyRegion.imageOffset = { 0, 0, 0 };
+            copyRegion.imageExtent = { mipWidth, mipHeight, 1 };
 
-            rowPitch = Align<uint>(blocksWide * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
-            rowLength = blocksWide * 4; // in texels
-            imageExtent = { std::max(1u, mipWidth), std::max(1u, mipHeight), 1 };
+            vkCmdCopyImageToBuffer(
+                mCmdBuffer,
+                image,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                buffer,
+                1,
+                &copyRegion
+            );
         }
-        else {
-            rowPitch = Align<uint>(mipWidth * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
-            rowLength = mipWidth;
-            imageExtent = { mipWidth, mipHeight, 1 };
-        }
-
-        VkBufferImageCopy copyRegion = {};
-        copyRegion.bufferOffset = bufferOffset;
-        copyRegion.bufferRowLength = rowLength;
-        copyRegion.bufferImageHeight = mipWidth == 1 ? 0 : rowPitch;
-        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copyRegion.imageSubresource.mipLevel = mip;
-        copyRegion.imageSubresource.baseArrayLayer = 0;
-        copyRegion.imageSubresource.layerCount = 1;
-        copyRegion.imageOffset = { 0, 0, 0 };
-        copyRegion.imageExtent = imageExtent;
-
-        vkCmdCopyImageToBuffer(
-            mCmdBuffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            buffer,
-            1,
-            &copyRegion
-        );
-
-        uint mipHeightInBlocks = isBlockCompressed ? (mipHeight + 3) / 4 : mipHeight;
-        bufferOffset += rowPitch * mipHeightInBlocks;
     }
 }
 

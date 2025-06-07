@@ -23,6 +23,13 @@
 #include "BufferView.h"
 #include "ImGuiContext.h"
 
+struct RHITextureFootprint
+{
+    uint64 Offset;
+    uint64 RowPitch;
+    uint64 SlicePitch;
+};
+
 class IRHIDevice
 {
 public:
@@ -46,6 +53,16 @@ public:
     virtual IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) = 0;
 
     virtual RHITextureFormat GetSurfaceFormat() = 0;
+    virtual void GetTextureFootprints(
+        IRHITexture* texture,
+        uint firstSubresource,
+        uint numSubresources,
+        uint64 baseOffset,
+        RHITextureFootprint* footprints,
+        uint* numRows,
+        uint64* rowSizeInBytes,
+        uint64* totalBytes
+    ) = 0;
 protected:
     IRHIDevice() = default;
 };

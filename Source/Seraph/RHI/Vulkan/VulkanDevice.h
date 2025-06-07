@@ -37,6 +37,16 @@ public:
     IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
     RHITextureFormat GetSurfaceFormat() override { return RHITextureFormat::kB8G8R8A8_UNORM; }
+    void GetTextureFootprints(
+        IRHITexture* texture,
+        uint firstSubresource,
+        uint numSubresources,
+        uint64 baseOffset,
+        RHITextureFootprint* footprints,
+        uint* numRows,
+        uint64* rowSizeInBytes,
+        uint64* totalBytes
+    ) override;
 public:
     VkInstance Instance() const { return mInstance; }
     VkPhysicalDevice GPU() const { return mPhysicalDevice; }
@@ -48,6 +58,9 @@ public:
     uint32 GraphicsQueueFamilyIndex() const { return mGraphicsQueueFamilyIndex; }
     uint32 ComputeQueueFamilyIndex() const { return mComputeQueueFamilyIndex; }
     uint32 TransferQueueFamilyIndex() const { return mTransferQueueFamilyIndex; } 
+
+private:
+    uint GetTexelBlockSize(RHITextureFormat format);
 
 private:
     VkInstance mInstance;
@@ -62,6 +75,7 @@ private:
     uint32 mGraphicsQueueFamilyIndex;
     uint32 mComputeQueueFamilyIndex;
     uint32 mTransferQueueFamilyIndex;
+    uint32 mBufferImageGranularity;
 
     void BuildInstance(bool validationLayers);
     void BuildPhysicalDevice();

@@ -5,8 +5,10 @@
 
 #pragma once
 
+#include "Asset/Compressor.h"
 #include "Asset/Image.h"
 #include "Asset/Model.h"
+#include "Asset/Texture.h"
 
 #include "Core/Assert.h"
 #include "Core/Context.h"
