@@ -161,7 +161,6 @@ void VulkanDevice::GetTextureFootprints(
     for (uint i = 0; i < numSubresources; i++) {
         uint subresourceIndex = firstSubresource + i;
         uint mipLevel = subresourceIndex % desc.MipLevels;
-        uint arraySlice = subresourceIndex / desc.MipLevels;
         
         uint mipWidth = std::max(1u, desc.Width >> mipLevel);
         uint mipHeight = std::max(1u, desc.Height >> mipLevel);
