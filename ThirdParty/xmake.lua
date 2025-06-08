@@ -7,6 +7,7 @@
 includes("CGLTF")
 includes("DirectX")
 includes("DXC")
+includes("ENTT")
 includes("FLIP")
 includes("GLM")
 includes("ImGui")
