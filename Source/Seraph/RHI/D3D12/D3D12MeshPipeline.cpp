@@ -14,8 +14,8 @@ D3D12MeshPipeline::D3D12MeshPipeline(D3D12Device* device, RHIMeshPipelineDesc de
     ShaderModule meshModule = desc.Bytecode[ShaderStage::kMesh];
     ShaderModule fragmentModule = desc.Bytecode[ShaderStage::kFragment];
 
-    std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
-    std::vector<std::string> InputElementSemanticNames;
+    Array<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
+    Array<std::string> InputElementSemanticNames;
 
     D3DX12_MESH_SHADER_PIPELINE_STATE_DESC Desc = {};
     Desc.MS.pShaderBytecode = meshModule.Bytecode.data();

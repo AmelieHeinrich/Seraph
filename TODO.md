@@ -2,7 +2,6 @@
 
 ## Frontburner
 
-- Rework texture uploader because this can't be happening
 - ECS
 - Add new sponza with new curtains
 - Build scene TLAS in renderer

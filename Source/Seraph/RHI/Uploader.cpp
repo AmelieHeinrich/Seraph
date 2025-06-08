@@ -7,6 +7,13 @@
 
 Uploader::PrivateData Uploader::sData;
 
+struct MipLevelInfo
+{
+    uint32 Width, Height;
+    uint64 BufferOffset;
+    uint64 RowPitch;
+};
+
 void Uploader::Initialize(IRHIDevice* device, IRHICommandQueue* copyQueue)
 {
     sData = {};
@@ -51,76 +58,78 @@ void Uploader::EnqueueBLASBuild(IRHIBLAS* blas)
         Flush();
 }
 
-// This function is fucking beautiful actually and I'm very proud of it :3
 void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITexture* texture)
 {
     RHITextureDesc desc = texture->GetDesc();
     uint mipLevels = desc.MipLevels;
     uint baseWidth = desc.Width;
     uint baseHeight = desc.Height;
-
-    // Get the actual footprint requirements from the RHI layer
-    // This should internally use GetCopyableFootprints on D3D12
-    Array<RHITextureFootprint> footprints(mipLevels);
-    uint64 totalStagingSize = 0;
-
-    // Query actual footprint requirements from the RHI
-    sData.Device->GetTextureFootprints(texture, 0, mipLevels, 0, footprints.data(), nullptr, nullptr, &totalStagingSize);
-
+    Array<MipLevelInfo> mips;
+    uint64 totalBufferSize = 0;
+    // 1. Layout mip levels
+    for (uint32 i = 0; i < mipLevels; i++) {
+        MipLevelInfo mip = {};
+        mip.Width = std::max(1u, baseWidth >> i);
+        mip.Height = std::max(1u, baseHeight >> i);
+        
+        if (IRHITexture::IsBlockFormat(desc.Format)) {
+            uint blockWidth = (mip.Width + 3) / 4;
+            uint blockHeight = (mip.Height + 3) / 4; // FIX: Calculate block height
+            // FIX: Use dynamic bytes per block instead of hardcoded 16
+            mip.RowPitch = Align<uint>(blockWidth * IRHITexture::BytesPerPixel(desc.Format), sData.Device->GetOptimalRowPitchAlignment());
+            // FIX: Use block height for buffer size calculation
+            totalBufferSize += mip.RowPitch * blockHeight;
+        } else {
+            mip.RowPitch = Align<uint>(mip.Width * IRHITexture::BytesPerPixel(desc.Format), sData.Device->GetOptimalRowPitchAlignment());
+            totalBufferSize += mip.RowPitch * mip.Height;
+        }
+        mip.BufferOffset = totalBufferSize - (IRHITexture::IsBlockFormat(desc.Format) ? 
+            mip.RowPitch * ((mip.Height + 3) / 4) : mip.RowPitch * mip.Height);
+        mips.push_back(mip);
+    }
+    // 2. Allocate staging buffer
     RHIBufferDesc stagingDesc = {};
-    stagingDesc.Size = totalStagingSize;
+    stagingDesc.Size = totalBufferSize;
     stagingDesc.Usage = RHIBufferUsage::kStaging;
-
     UploadRequest request = {};
     request.Type = UploadRequestType::kTextureCPUToGPU;
     request.DstTexture = texture;
     request.StagingBuffer = sData.Device->CreateBuffer(stagingDesc);
-
+    // 3. Copy data into staging buffer
     void* mappedVoid = request.StagingBuffer->Map();
     uint8* dstBase = reinterpret_cast<uint8*>(mappedVoid);
     const uint8* srcPtr = reinterpret_cast<const uint8*>(data);
-
+    uint64 srcOffset = 0;
     for (uint mip = 0; mip < mipLevels; mip++) {
-        uint mipWidth = std::max(1u, baseWidth >> mip);
-        uint mipHeight = std::max(1u, baseHeight >> mip);
-
-        const RHITextureFootprint& footprint = footprints[mip];
-        uint8* dstMipStart = dstBase + footprint.Offset;
-
+        const auto& mipInfo = mips[mip];
+        uint32 srcWidth = mipInfo.Width;
+        uint32 srcHeight = mipInfo.Height;
+        uint32 rowPitch = mipInfo.RowPitch;
         if (IRHITexture::IsBlockFormat(desc.Format)) {
-            uint blocksWide = std::max(1u, (mipWidth + 3) / 4);
-            uint blocksHigh = std::max(1u, (mipHeight + 3) / 4);
-            uint bytesPerBlock = IRHITexture::BytesPerPixel(desc.Format);
-            uint64 srcRowSize = blocksWide * bytesPerBlock;
-
-            for (uint by = 0; by < blocksHigh; by++) {
-                SafeMemcpy(
-                    dstMipStart + by * footprint.RowPitch,
-                    srcPtr + by * srcRowSize,
-                    srcRowSize
-                );
+            uint32 blockWidth = (srcWidth + 3) / 4;
+            uint32 blockHeight = (srcHeight + 3) / 4;
+            // FIX: Use dynamic bytes per block instead of hardcoded 16
+            uint32 rowSize = blockWidth * IRHITexture::BytesPerPixel(desc.Format);
+            for (uint32 y = 0; y < blockHeight; ++y) {
+                const uint8* srcRow = srcPtr + srcOffset;
+                uint8* dstRow = dstBase + mipInfo.BufferOffset + y * rowPitch;
+                SafeMemcpy(dstRow, srcRow, rowSize);
+                srcOffset += rowSize;
             }
-            srcPtr += srcRowSize * blocksHigh;
         }
         else {
-            uint bpp = IRHITexture::BytesPerPixel(desc.Format);
-            uint64 srcRowSize = mipWidth * bpp;
-
-            for (uint y = 0; y < mipHeight; y++) {
-                SafeMemcpy(
-                    dstMipStart + y * footprint.RowPitch,
-                    srcPtr + y * srcRowSize,
-                    srcRowSize
-                );
+            uint32 rowSize = srcWidth * IRHITexture::BytesPerPixel(desc.Format);
+            for (uint32 y = 0; y < srcHeight; ++y) {
+                const uint8* srcRow = srcPtr + srcOffset;
+                uint8* dstRow = dstBase + mipInfo.BufferOffset + y * rowPitch;
+                SafeMemcpy(dstRow, srcRow, rowSize);
+                srcOffset += rowSize;
             }
-            srcPtr += srcRowSize * mipHeight;
         }
     }
-
     request.StagingBuffer->Unmap();
     sData.Requests.push_back(std::move(request));
-
-    sData.UploadBatchSize += totalStagingSize;
+    sData.UploadBatchSize += totalBufferSize;
     if (sData.UploadBatchSize >= MAX_BATCH_SIZE)
         Flush();
 }

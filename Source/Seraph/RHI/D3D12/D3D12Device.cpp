@@ -26,7 +26,7 @@ extern "C"
     __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
-    __declspec(dllexport) extern const uint32_t D3D12SDKVersion = 614;
+    __declspec(dllexport) extern const uint D3D12SDKVersion = 614;
     __declspec(dllexport) extern const char* D3D12SDKPath = ".\\.\\";
 }
 
@@ -53,7 +53,7 @@ D3D12Device::D3D12Device(bool validationLayers)
 
     // Get adapter.
     std::unordered_map<IDXGIAdapter1*, uint64_t> adapterScores;
-    for (uint32_t adapterIndex = 0;; adapterIndex++) {
+    for (uint adapterIndex = 0;; adapterIndex++) {
         IDXGIAdapter1* adapter;
         if (FAILED(mFactory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_UNSPECIFIED, IID_PPV_ARGS(&adapter))))
             break;
@@ -236,32 +236,4 @@ IRHIBufferView* D3D12Device::CreateBufferView(RHIBufferViewDesc desc)
 IRHIImGuiContext* D3D12Device::CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window)
 {
     return (new D3D12ImGuiContext(this, static_cast<D3D12CommandQueue*>(mainQueue), window));
-}
-
-void D3D12Device::GetTextureFootprints(
-    IRHITexture* texture,
-    uint firstSubresource,
-    uint numSubresources,
-    uint64 baseOffset,
-    RHITextureFootprint* footprints,
-    uint* numRows,
-    uint64* rowSizeInBytes,
-    uint64* totalBytes
-)
-{
-    D3D12Texture* d3d12Tex = static_cast<D3D12Texture*>(texture);
-    D3D12_RESOURCE_DESC desc = d3d12Tex->GetResource()->GetDesc();
-
-    Array<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> d3d12Footprints(numSubresources);
-
-    mDevice->GetCopyableFootprints(
-        &desc, firstSubresource, numSubresources, baseOffset,
-        d3d12Footprints.data(), numRows, rowSizeInBytes, totalBytes
-    );
-
-    for (uint i = 0; i < numSubresources; i++) {
-        footprints[i].Offset = d3d12Footprints[i].Offset;
-        footprints[i].RowPitch = d3d12Footprints[i].Footprint.RowPitch;
-        footprints[i].SlicePitch = d3d12Footprints[i].Footprint.RowPitch * d3d12Footprints[i].Footprint.Height;
-    }
 }

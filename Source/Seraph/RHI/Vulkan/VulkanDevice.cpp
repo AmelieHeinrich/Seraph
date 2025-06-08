@@ -138,90 +138,6 @@ IRHIImGuiContext* VulkanDevice::CreateImGuiContext(IRHICommandQueue* mainQueue, 
     return (new VulkanImGuiContext(this, static_cast<VulkanCommandQueue*>(mainQueue), window));
 }
 
-void VulkanDevice::GetTextureFootprints(
-    IRHITexture* texture,
-    uint firstSubresource,
-    uint numSubresources,
-    uint64 baseOffset,
-    RHITextureFootprint* footprints,
-    uint* numRows,
-    uint64* rowSizeInBytes,
-    uint64* totalBytes
-) {
-    VulkanTexture* vulkanTex = static_cast<VulkanTexture*>(texture);
-    RHITextureDesc desc = vulkanTex->GetDesc();
-    
-    uint64 currentOffset = baseOffset;
-    uint64 totalSize = 0;
-    
-    // Get device limits for proper alignment
-    uint32 bufferImageGranularity = mBufferImageGranularity;
-    const uint64 minAlignment = 4; // Minimum required alignment in Vulkan
-    
-    for (uint i = 0; i < numSubresources; i++) {
-        uint subresourceIndex = firstSubresource + i;
-        uint mipLevel = subresourceIndex % desc.MipLevels;
-        
-        uint mipWidth = std::max(1u, desc.Width >> mipLevel);
-        uint mipHeight = std::max(1u, desc.Height >> mipLevel);
-        uint mipDepth = std::max(1u, desc.Depth >> mipLevel);
-        
-        uint64 unalignedRowSize;
-        uint rows;
-        uint64 alignedRowPitch;
-        
-        if (IRHITexture::IsBlockFormat(desc.Format)) {
-            uint blocksWide = std::max(1u, (mipWidth + 4 - 1) / 4);
-            uint blocksHigh = std::max(1u, (mipHeight + 4 - 1) / 4);
-            uint bytesPerBlock = 16;
-            
-            unalignedRowSize = blocksWide * bytesPerBlock;
-            rows = blocksHigh;
-            
-            // For block formats, row pitch should be aligned to block size
-            alignedRowPitch = Align<uint64>(unalignedRowSize, std::max(16u, bufferImageGranularity));
-        } else {
-            // Uncompressed formats
-            uint bpp = IRHITexture::BytesPerPixel(desc.Format);
-            unalignedRowSize = mipWidth * bpp;
-            rows = mipHeight;
-            
-            // Row pitch alignment for uncompressed formats
-            // Use the larger of pixel alignment or buffer-image granularity
-            alignedRowPitch = Align<uint64>(unalignedRowSize, std::max(bpp, bufferImageGranularity));
-        }
-        
-        // Ensure minimum alignment requirements are met
-        alignedRowPitch = Align<uint64>(alignedRowPitch, minAlignment);
-        
-        // Calculate slice size (for 2D textures, mipDepth will be 1)
-        uint64 sliceSize = alignedRowPitch * rows;
-        
-        // Align the entire subresource size to buffer-image granularity
-        uint64 subresourceSize = Align<uint64>(sliceSize * mipDepth, bufferImageGranularity);
-        
-        // Store footprint info
-        footprints[i].Offset = currentOffset;
-        footprints[i].RowPitch = alignedRowPitch;
-        footprints[i].SlicePitch = sliceSize;
-        
-        if (numRows) {
-            numRows[i] = rows;
-        }
-        
-        if (rowSizeInBytes) {
-            rowSizeInBytes[i] = unalignedRowSize;
-        }
-        
-        currentOffset += subresourceSize;
-        totalSize = currentOffset - baseOffset;
-    }
-    
-    if (totalBytes) {
-        *totalBytes = totalSize;
-    }
-}
-
 void VulkanDevice::BuildInstance(bool validationLayers)
 {
     uint32 instanceLayerCount = 1;
@@ -301,6 +217,7 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);   
     mBufferImageGranularity = deviceProperties.limits.bufferImageGranularity;
+    mOptimalRowPitchAlignment = deviceProperties.limits.optimalBufferCopyRowPitchAlignment;
     
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
@@ -403,16 +320,16 @@ void VulkanDevice::BuildLogicalDevice()
     bda.pNext = nullptr;
 
     // Queue family selection
-    uint32_t queueFamilyCount = 0;
+    uint queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, nullptr);
     Array<VkQueueFamilyProperties> families(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, families.data());
 
-    uint32_t graphicsIndex = UINT32_MAX;
-    uint32_t computeIndex = UINT32_MAX;
-    uint32_t transferIndex = UINT32_MAX;
+    uint graphicsIndex = UINT32_MAX;
+    uint computeIndex = UINT32_MAX;
+    uint transferIndex = UINT32_MAX;
 
-    for (uint32_t i = 0; i < queueFamilyCount; ++i) {
+    for (uint i = 0; i < queueFamilyCount; ++i) {
         const auto& flags = families[i].queueFlags;
 
         if ((flags & VK_QUEUE_GRAPHICS_BIT) && graphicsIndex == UINT32_MAX)
@@ -430,10 +347,10 @@ void VulkanDevice::BuildLogicalDevice()
 
     // Deduplicate queue families
     Array<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { graphicsIndex, computeIndex, transferIndex };
+    std::set<uint> uniqueQueueFamilies = { graphicsIndex, computeIndex, transferIndex };
     float priority = 1.0f;
 
-    for (uint32_t index : uniqueQueueFamilies) {
+    for (uint index : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueInfo = {};
         queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueInfo.queueFamilyIndex = index;
@@ -446,9 +363,9 @@ void VulkanDevice::BuildLogicalDevice()
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = &deviceFeatures2;
-    deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    deviceCreateInfo.queueCreateInfoCount = static_cast<uint>(queueCreateInfos.size());
     deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-    deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+    deviceCreateInfo.enabledExtensionCount = static_cast<uint>(requiredExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
     VkResult result = vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice);

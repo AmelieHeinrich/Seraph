@@ -37,16 +37,7 @@ public:
     IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
     RHITextureFormat GetSurfaceFormat() override { return RHITextureFormat::kB8G8R8A8_UNORM; }
-    void GetTextureFootprints(
-        IRHITexture* texture,
-        uint firstSubresource,
-        uint numSubresources,
-        uint64 baseOffset,
-        RHITextureFootprint* footprints,
-        uint* numRows,
-        uint64* rowSizeInBytes,
-        uint64* totalBytes
-    ) override;
+    uint64 GetOptimalRowPitchAlignment() override { return mOptimalRowPitchAlignment; }
 public:
     VkInstance Instance() const { return mInstance; }
     VkPhysicalDevice GPU() const { return mPhysicalDevice; }
@@ -76,6 +67,7 @@ private:
     uint32 mComputeQueueFamilyIndex;
     uint32 mTransferQueueFamilyIndex;
     uint32 mBufferImageGranularity;
+    uint32 mOptimalRowPitchAlignment;
 
     void BuildInstance(bool validationLayers);
     void BuildPhysicalDevice();

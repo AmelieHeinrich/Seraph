@@ -57,5 +57,7 @@ FragmentOutput FSMain(VertexOutput input)
     FragmentOutput output = {};
     output.Normal = float4(input.Normal, 1.0);
     output.Albedo = texture.Sample(sampler, input.UV);
+    if (output.Albedo.a < 0.25)
+        discard;
     return output;
 }

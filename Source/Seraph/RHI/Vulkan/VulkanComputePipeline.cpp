@@ -18,7 +18,7 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice* device, RHIComputePip
     VkShaderModuleCreateInfo shaderCreateInfo = {};
     shaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderCreateInfo.codeSize = desc.ComputeBytecode.Bytecode.size();
-    shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(desc.ComputeBytecode.Bytecode.data());
+    shaderCreateInfo.pCode = reinterpret_cast<const uint*>(desc.ComputeBytecode.Bytecode.data());
 
     VkResult result = vkCreateShaderModule(mParentDevice->Device(), &shaderCreateInfo, nullptr, &computeModule);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create shader module!");

@@ -316,29 +316,55 @@ void D3D12CommandList::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
 
 void D3D12CommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
 {
-    ID3D12Resource* srcResource = static_cast<D3D12Buffer*>(src)->GetResource();
-    ID3D12Resource* dstResource = static_cast<D3D12Texture*>(dest)->GetResource();
-    D3D12_RESOURCE_DESC desc = dstResource->GetDesc();
-
-    std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(desc.MipLevels);
-    std::vector<uint32_t> num_rows(desc.MipLevels);
-    std::vector<uint64_t> row_sizes(desc.MipLevels);
-    uint64_t totalSize = 0;
-
-    mParentDevice->GetDevice()->GetCopyableFootprints(&desc, 0, desc.MipLevels, 0, footprints.data(), num_rows.data(), row_sizes.data(), &totalSize);
-
-    for (uint32_t i = 0; i < desc.MipLevels; i++) {
-        D3D12_TEXTURE_COPY_LOCATION srcCopy = {};
-        srcCopy.pResource = srcResource;
-        srcCopy.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-        srcCopy.PlacedFootprint = footprints[i];
-
-        D3D12_TEXTURE_COPY_LOCATION dstCopy = {};
-        dstCopy.pResource = dstResource;
-        dstCopy.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        dstCopy.SubresourceIndex = i;
-
-        mList->CopyTextureRegion(&dstCopy, 0, 0, 0, &srcCopy, nullptr);
+    auto* srcResource = static_cast<D3D12Buffer*>(src)->GetResource();
+    auto* dstResource = static_cast<D3D12Texture*>(dest)->GetResource();
+    const RHITextureDesc& textureDesc = dest->GetDesc();
+    D3D12_RESOURCE_DESC texDesc = dstResource->GetDesc();
+    
+    uint64 bufferOffset = 0;
+    for (uint mip = 0; mip < textureDesc.MipLevels; ++mip) {
+        uint width = max(1u, textureDesc.Width >> mip);
+        uint height = max(1u, textureDesc.Height >> mip);
+        uint64 rowSizeInBytes;
+        uint numRows;
+        uint64 rowPitch;
+        
+        if (IRHITexture::IsBlockFormat(textureDesc.Format)) {
+            uint blockWidth = (width + 3) / 4;
+            uint blockHeight = (height + 3) / 4;
+            // FIX: Use dynamic bytes per block instead of hardcoded 16
+            rowSizeInBytes = blockWidth * IRHITexture::BytesPerPixel(textureDesc.Format);
+            numRows = blockHeight;
+            rowPitch = Align<uint>(rowSizeInBytes, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+        }
+        else {
+            rowSizeInBytes = width * IRHITexture::BytesPerPixel(textureDesc.Format);
+            numRows = height;
+            rowPitch = Align<uint>(rowSizeInBytes, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+        }
+        
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint = {};
+        footprint.Offset = bufferOffset;
+        footprint.Footprint.Format = texDesc.Format;
+        footprint.Footprint.Width = width;
+        footprint.Footprint.Height = height;
+        footprint.Footprint.Depth = 1;
+        footprint.Footprint.RowPitch = static_cast<UINT>(rowPitch);
+        
+        D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
+        dstLocation.pResource = dstResource;
+        dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        dstLocation.SubresourceIndex = mip;
+        
+        D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+        srcLocation.pResource = srcResource;
+        srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        srcLocation.PlacedFootprint = footprint;
+        
+        D3D12_BOX* pBox = nullptr; // nullptr means copy full footprint
+        mList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, pBox);
+        
+        bufferOffset += rowPitch * numRows;
     }
 }
 
@@ -348,9 +374,9 @@ void D3D12CommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     ID3D12Resource* srcResource = static_cast<D3D12Texture*>(src)->GetResource();
     D3D12_RESOURCE_DESC desc = srcResource->GetDesc();
 
-    std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(desc.MipLevels);
-    std::vector<uint32_t> num_rows(desc.MipLevels);
-    std::vector<uint64_t> row_sizes(desc.MipLevels);
+    Array<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(desc.MipLevels);
+    Array<uint> num_rows(desc.MipLevels);
+    Array<uint64_t> row_sizes(desc.MipLevels);
     uint64_t totalSize = 0;
 
     mParentDevice->GetDevice()->GetCopyableFootprints(
@@ -364,7 +390,7 @@ void D3D12CommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
         &totalSize
     );
 
-    for (uint32_t i = 0; i < desc.MipLevels; i++) {
+    for (uint i = 0; i < desc.MipLevels; i++) {
         D3D12_TEXTURE_COPY_LOCATION dstCopy = {};
         dstCopy.pResource = dstResource;
         dstCopy.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;

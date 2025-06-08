@@ -69,7 +69,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
         VkShaderModuleCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = module.Bytecode.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(module.Bytecode.data());
+        createInfo.pCode = reinterpret_cast<const uint*>(module.Bytecode.data());
 
         VkShaderModule shaderModule;
         VkResult res = vkCreateShaderModule(mParentDevice->Device(), &createInfo, nullptr, &shaderModule);
@@ -113,7 +113,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     rasterizer.lineWidth = 1.0f;
 
     // Color blend attachments
-    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments;
+    Array<VkPipelineColorBlendAttachmentState> blendAttachments;
     for (size_t i = 0; i < desc.RenderTargetFormats.size(); ++i)
     {
         VkPipelineColorBlendAttachmentState attachment = {};
@@ -126,7 +126,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     VkPipelineColorBlendStateCreateInfo colorBlend = {};
     colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlend.logicOpEnable = VK_FALSE;
-    colorBlend.attachmentCount = static_cast<uint32_t>(blendAttachments.size());
+    colorBlend.attachmentCount = static_cast<uint>(blendAttachments.size());
     colorBlend.pAttachments = blendAttachments.data();
 
     // Depth stencil
@@ -158,23 +158,23 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     // Dynamic states (we assume viewport/scissor are dynamic)
-    std::vector<VkDynamicState> dynamicStates = {
+    Array<VkDynamicState> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
     VkPipelineDynamicStateCreateInfo dynamicState = {};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.dynamicStateCount = static_cast<uint>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Rendering info (for dynamic rendering)
-    std::vector<VkFormat> colorFormats;
+    Array<VkFormat> colorFormats;
     for (const auto& fmt : desc.RenderTargetFormats)
         colorFormats.push_back(VulkanTexture::RHIToVkFormat(fmt));
 
     VkPipelineRenderingCreateInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorFormats.size());
+    renderingInfo.colorAttachmentCount = static_cast<uint>(colorFormats.size());
     renderingInfo.pColorAttachmentFormats = colorFormats.data();
     renderingInfo.depthAttachmentFormat = desc.DepthEnabled ? VulkanTexture::RHIToVkFormat(desc.DepthFormat) : VK_FORMAT_UNDEFINED;
 
@@ -198,7 +198,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineInfo.stageCount = static_cast<uint>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pRasterizationState = &rasterizer;

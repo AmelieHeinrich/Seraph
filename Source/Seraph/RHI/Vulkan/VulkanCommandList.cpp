@@ -92,7 +92,7 @@ void VulkanCommandList::BeginRendering(const RHIRenderBegin& begin)
     renderingInfo.renderArea.offset = { 0, 0 };
     renderingInfo.renderArea.extent = { begin.Width, begin.Height };
     renderingInfo.layerCount = 1;
-    renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachments.size());
+    renderingInfo.colorAttachmentCount = static_cast<uint>(colorAttachments.size());
     renderingInfo.pColorAttachments = colorAttachments.data();
     renderingInfo.pDepthAttachment = hasDepth ? &depthAttachment : nullptr;
 
@@ -332,8 +332,8 @@ void VulkanCommandList::SetViewport(float width, float height, float x, float y)
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissorRect = {};
-    scissorRect.extent.width = static_cast<uint32_t>(width);
-    scissorRect.extent.height = static_cast<uint32_t>(height);
+    scissorRect.extent.width = static_cast<uint>(width);
+    scissorRect.extent.height = static_cast<uint>(height);
     scissorRect.offset.x = static_cast<int32_t>(x);
     scissorRect.offset.y = static_cast<int32_t>(y);
 
@@ -415,28 +415,24 @@ void VulkanCommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
 
     const bool isBlockCompressed = IRHITexture::IsBlockFormat(textureDesc.Format);
     const uint bytesPerUnit = IRHITexture::BytesPerPixel(textureDesc.Format); // bytes per pixel or per block
-
     VkDeviceSize bufferOffset = 0;
-
+    Array<VkBufferImageCopy> regions;
+    
     for (uint mip = 0; mip < textureDesc.MipLevels; mip++) {
         uint mipWidth = std::max(1u, textureDesc.Width >> mip);
         uint mipHeight = std::max(1u, textureDesc.Height >> mip);
-
         uint rowPitch = 0;
         uint rowLength = 0;
         uint imageHeight = 0;
         VkExtent3D imageExtent = {};
-
+        
         if (isBlockCompressed) {
             // Calculate block count (in 4x4 blocks)
             uint blocksWide = (mipWidth + 3) / 4;
             uint blocksHigh = (mipHeight + 3) / 4;
-
             rowPitch = Align<uint>(blocksWide * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
-            rowLength = blocksWide * 4; // Expressed in texels, not blocks
+            rowLength = (rowPitch / bytesPerUnit) * 4;
             imageExtent = { std::max(1u, mipWidth), std::max(1u, mipHeight), 1 };
-
-            // bufferImageHeight = 0 is acceptable here since it's same as mipHeight
         } else {
             rowPitch = Align<uint>(mipWidth * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
             rowLength = rowPitch / bytesPerUnit;
@@ -453,19 +449,20 @@ void VulkanCommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
         copyRegion.imageSubresource.layerCount = 1;
         copyRegion.imageOffset = { 0, 0, 0 };
         copyRegion.imageExtent = imageExtent;
-
-        vkCmdCopyBufferToImage(
-            mCmdBuffer,
-            buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &copyRegion
-        );
+        regions.push_back(copyRegion);
 
         uint mipHeightInBlocks = isBlockCompressed ? (mipHeight + 3) / 4 : mipHeight;
         bufferOffset += rowPitch * mipHeightInBlocks;
     }
+
+    vkCmdCopyBufferToImage(
+        mCmdBuffer,
+        buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        regions.size(),
+        regions.data()
+    );
 }
 
 void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
@@ -474,61 +471,54 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     VkImage image = static_cast<VulkanTexture*>(src)->Image();
     VkBuffer buffer = static_cast<VulkanBuffer*>(dest)->GetBuffer();
 
-    uint numSubresources = textureDesc.MipLevels * textureDesc.Depth;
-    Array<RHITextureFootprint> footprints(numSubresources);
-    Array<uint> numRows(numSubresources);
-    Array<uint64> rowSizeInBytes(numSubresources);
-    uint64 totalBytes = 0;
+    VkDeviceSize bufferOffset = 0;
+    Array<VkBufferImageCopy> regions;
 
-    // Calculate footprints for all subresources
-    mParentDevice->GetTextureFootprints(
-        src, 
-        0, 
-        numSubresources, 
-        0, 
-        footprints.data(), 
-        numRows.data(), 
-        rowSizeInBytes.data(), 
-        &totalBytes
-    );
+    for (uint mip = 0; mip < textureDesc.MipLevels; ++mip) {
+        uint width = std::max(1u, textureDesc.Width >> mip);
+        uint height = std::max(1u, textureDesc.Height >> mip);
 
-    for (uint mip = 0; mip < textureDesc.MipLevels; mip++) {
-        for (uint layer = 0; layer < textureDesc.Depth; layer++) {
-            uint subresource = mip + layer * textureDesc.MipLevels;
-            uint mipWidth = std::max(1u, textureDesc.Width >> mip);
-            uint mipHeight = std::max(1u, textureDesc.Height >> mip);
-
-            // For compressed formats, we need to handle row pitch differently
+        VkDeviceSize rowPitch;
+        if (IRHITexture::IsBlockFormat(textureDesc.Format)) {
+            uint blockWidth = (width + 3) / 4;
+            rowPitch = Align<uint>(blockWidth * 16, 4); // Vulkan only requires row alignment to 4 bytes
+        } else {
             uint bytesPerPixel = IRHITexture::BytesPerPixel(textureDesc.Format);
-            uint64 rowPitch = footprints[subresource].RowPitch;
-            
-            // Calculate bufferRowLength in pixels (must be 0 if uncompressed, or multiple of compressed block width)
-            uint bufferRowLength = 0;
-            if (!IRHITexture::IsBlockFormat(textureDesc.Format)) {
-                bufferRowLength = static_cast<uint>(rowPitch / bytesPerPixel);
-            }
-
-            VkBufferImageCopy copyRegion = {};
-            copyRegion.bufferOffset = footprints[subresource].Offset;
-            copyRegion.bufferRowLength = bufferRowLength;
-            copyRegion.bufferImageHeight = numRows[subresource];
-            copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            copyRegion.imageSubresource.mipLevel = mip;
-            copyRegion.imageSubresource.baseArrayLayer = layer;
-            copyRegion.imageSubresource.layerCount = 1;
-            copyRegion.imageOffset = { 0, 0, 0 };
-            copyRegion.imageExtent = { mipWidth, mipHeight, 1 };
-
-            vkCmdCopyImageToBuffer(
-                mCmdBuffer,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                buffer,
-                1,
-                &copyRegion
-            );
+            rowPitch = Align<uint>(width * bytesPerPixel, 4);
         }
+
+        VkBufferImageCopy region = {};
+        region.bufferOffset = bufferOffset;
+        region.bufferRowLength = 0; // Tightly packed
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = mip;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {
+            width,
+            height,
+            1
+        };
+
+        regions.push_back(region);
+
+        VkDeviceSize heightInBlocks = IRHITexture::IsBlockFormat(textureDesc.Format)
+            ? ((height + 3) / 4)
+            : height;
+
+        bufferOffset += rowPitch * heightInBlocks;
     }
+
+    vkCmdCopyImageToBuffer(
+        mCmdBuffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        buffer,
+        static_cast<uint>(regions.size()),
+        regions.data()
+    );
 }
 
 void VulkanCommandList::CopyTextureToTexture(IRHITexture* dst, IRHITexture* src)

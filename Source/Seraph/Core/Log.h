@@ -70,5 +70,5 @@ public:
 protected:
     virtual void Output(LogLevel level, const String& format) override;
 
-    std::vector<ILogger*> mLoggers;
+    Array<ILogger*> mLoggers;
 };

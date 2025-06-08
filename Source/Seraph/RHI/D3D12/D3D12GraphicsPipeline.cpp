@@ -36,8 +36,8 @@ D3D12GraphicsPipeline::D3D12GraphicsPipeline(D3D12Device* device, RHIGraphicsPip
     D3D12_SHADER_DESC vertexDesc;
     pVertexReflection->GetDesc(&vertexDesc);
 
-    std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
-    std::vector<std::string> InputElementSemanticNames;
+    Array<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
+    Array<std::string> InputElementSemanticNames;
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC Desc = {};
     Desc.VS.pShaderBytecode = vertexModule.Bytecode.data();
@@ -126,7 +126,7 @@ D3D12GraphicsPipeline::D3D12GraphicsPipeline(D3D12Device* device, RHIGraphicsPip
     }
     if (desc.ReflectInputLayout) {
         Desc.InputLayout.pInputElementDescs = InputElementDescs.data();
-        Desc.InputLayout.NumElements = static_cast<uint32_t>(InputElementDescs.size());
+        Desc.InputLayout.NumElements = static_cast<uint>(InputElementDescs.size());
     }
 
     if (desc.PushConstantSize > 0) {
