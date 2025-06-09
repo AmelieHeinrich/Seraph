@@ -45,7 +45,10 @@ private:
     struct LineVertex
     {
         glm::vec3 Position;
+        float Pad;
+    
         glm::vec3 Color;
+        float Pad1;
     };
 
     static struct Data

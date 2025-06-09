@@ -33,7 +33,7 @@ Debug::Debug(IRHIDevice* device, uint width, uint height)
     desc.LineTopology = true;
     desc.CullMode = RHICullMode::kNone;
     desc.RenderTargetFormats.push_back(RHITextureFormat::kR8G8B8A8_UNORM);
-    desc.PushConstantSize = sizeof(glm::mat4) * 2;
+    desc.PushConstantSize = sizeof(glm::mat4) * 2 + sizeof(uint) * 4;
 
     sData.Pipeline = device->CreateGraphicsPipeline(desc);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
@@ -56,8 +56,8 @@ void Debug::Render(RenderPassBegin& begin)
     if (!sData.Lines.empty()) {
         Array<LineVertex> vertices;
         for (const Line& line : sData.Lines) {
-            vertices.push_back({ line.From, line.Color });
-            vertices.push_back({ line.To, line.Color });
+            vertices.push_back({ line.From, 0.0f, line.Color });
+            vertices.push_back({ line.To, 0.0f, line.Color });
         }
 
         void* ptr = sData.TransferBuffer[begin.FrameIndex]->Map();
@@ -97,9 +97,18 @@ void Debug::RenderLines(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Render Debug Lines");
     {
-        glm::mat4 constants[] = {
+        struct Constants {
+            glm::mat4 proj;
+            glm::mat4 view;
+
+            BindlessHandle handle;
+            glm::uvec3 pad;
+        } constants = {
             begin.Projection,
-            begin.View
+            begin.View,
+            
+            RendererViewRecycler::GetSRV(sData.VertexBuffer[begin.FrameIndex])->GetBindlessHandle(),
+            {}
         };
         RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kColorWrite);
         RHIRenderBegin renderBegin(mWidth, mHeight, { RHIRenderAttachment(RendererViewRecycler::GetRTV(ldr.Texture), false) }, {});
@@ -108,7 +117,7 @@ void Debug::RenderLines(RenderPassBegin& begin)
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
         begin.CommandList->SetGraphicsPipeline(sData.Pipeline);
         begin.CommandList->SetVertexBuffer(sData.VertexBuffer[begin.FrameIndex]);
-        begin.CommandList->SetGraphicsConstants(sData.Pipeline, constants, sizeof(constants));
+        begin.CommandList->SetGraphicsConstants(sData.Pipeline, &constants, sizeof(constants));
         begin.CommandList->Draw(sData.Lines.size() * 2, 1, 0, 0);
         begin.CommandList->EndRendering();
     }

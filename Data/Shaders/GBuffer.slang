@@ -7,10 +7,16 @@
 
 struct VertexInput
 {
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float2 UV : TEXCOORD;
+    float3 Position;
+    float _pad0;
+
+    float3 Normal;
+    float _pad1;
+
+    float2 Texcoord;
+    float2 _pad2;
 };
+DEFINE_SRV_ARRAY(VertexInput);
 
 struct VertexOutput
 {
@@ -29,7 +35,8 @@ struct PushConstants
 {
     uint MyTexture;
     uint MySampler;
-    uint2 Pad;
+    uint MyVertexBuffer;
+    uint Pad;
 
     column_major float4x4 View;
     column_major float4x4 Projection;
@@ -37,14 +44,15 @@ struct PushConstants
 PUSH_CONSTANTS(PushConstants, Push);
 
 [shader("vertex")]
-VertexOutput VSMain(VertexInput input)
+VertexOutput VSMain(uint vid : SV_VertexID)
 {
-    VertexOutput output = {};
+    StructuredBuffer<VertexInput> vertices = BindlessSRV_VertexInput.Load(Push.MyVertexBuffer);
+    VertexInput input = vertices[vid];
 
+    VertexOutput output = {};
     output.Position = mul(Push.Projection, mul(Push.View, float4(input.Position, 1.0f)));
     output.Normal = input.Normal;
-    output.UV = input.UV;
-
+    output.UV = input.Texcoord;
     return output;
 }
 

@@ -13,11 +13,16 @@
 
 class Asset;
 
-struct StaticModelVertex
+struct alignas(16) StaticModelVertex
 {
-    glm::vec3 Position;
-    glm::vec3 Normal;
-    glm::vec2 Texcoord;
+    glm::vec3 Position;   // 12 bytes
+    float _pad0;          // 4 bytes padding
+
+    glm::vec3 Normal;     // 12 bytes
+    float _pad1;          // 4 bytes padding
+
+    glm::vec2 Texcoord;   // 8 bytes
+    float _pad2[2];       // 8 bytes padding to align to 16 bytes
 };
 
 struct ModelMaterial

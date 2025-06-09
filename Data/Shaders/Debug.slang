@@ -8,8 +8,12 @@
 struct VertexIn
 {
     float3 Position : POSITION;
+    float Pad;
+
     float3 Color : COLOR;
+    float Pad1;
 };
+DEFINE_SRV_ARRAY(VertexIn);
 
 struct VertexOut
 {
@@ -21,12 +25,18 @@ struct Settings
 {
     column_major float4x4 Projection;
     column_major float4x4 View;
+
+    uint MyVertexBuffer;
+    uint3 Pad;
 };
 PUSH_CONSTANTS(Settings, PushConstants);
 
 [shader("vertex")]
-VertexOut VSMain(VertexIn Input)
+VertexOut VSMain(uint vid : SV_VertexID)
 {
+    StructuredBuffer<VertexIn> vertices = BindlessSRV_VertexIn.Load(PushConstants.MyVertexBuffer);
+    VertexIn Input = vertices[vid];
+
     VertexOut Output = (VertexOut)0;
     Output.Position = float4(Input.Position, 1.0);
     Output.Position = mul(PushConstants.View, Output.Position);

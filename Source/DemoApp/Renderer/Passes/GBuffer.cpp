@@ -40,7 +40,6 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     RHIGraphicsPipelineDesc pipelineDesc = {};
     pipelineDesc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
     pipelineDesc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
-    pipelineDesc.ReflectInputLayout = true;
     pipelineDesc.PushConstantSize = sizeof(BindlessHandle) * 4 + sizeof(glm::mat4) * 2;
     pipelineDesc.RenderTargetFormats = {
         RHITextureFormat::kR16G16B16A16_FLOAT,
@@ -85,20 +84,21 @@ void GBuffer::Render(RenderPassBegin& begin)
                 struct PushConstant {
                     BindlessHandle Texture;
                     BindlessHandle Sampler;
-                    glm::uvec2 Pad;
+                    BindlessHandle VertexBuffer;
+                    uint Pad;
                 
                     glm::mat4 View;
                     glm::mat4 Projection;
                 } constant = {
                     material.Albedo->TextureOrImage.View->GetBindlessHandle(),
                     materialSampler.Sampler->GetBindlessHandle(),
-                    {},
+                    RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
+                    0,
                 
                     begin.View,
                     begin.Projection
                 };
             
-                begin.CommandList->SetVertexBuffer(primitive.VertexBuffer);
                 begin.CommandList->SetIndexBuffer(primitive.IndexBuffer);
                 begin.CommandList->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
                 begin.CommandList->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);

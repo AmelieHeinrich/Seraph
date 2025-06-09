@@ -45,8 +45,8 @@ import BindlessTypes;
     };
 
 #define DEFINE_SRV_ARRAY(type)                                                                                \
-    public struct BindlessCBV_##type {                                                                                                         \
-        StructuredBuffer<type> Load(uint index) {                                                                                                     \
+    public struct BindlessSRV_##type {                                                                                                         \
+        static StructuredBuffer<type> Load(uint index) {                                                                                                     \
             return defaultGetDescriptorFromHandle(DescriptorHandle<StructuredBuffer<type>>(uint2(index, 0))); \
         }                                                                                                   \
     };
