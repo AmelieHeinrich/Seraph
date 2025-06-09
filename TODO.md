@@ -2,18 +2,18 @@
 
 ## Frontburner
 
-- Add new sponza with new curtains
-- Build scene TLAS in renderer
-- Add pathtrace mode
-- CVARs
 - Build light list
-- TAA
-- Raytraced AO
+- Simple point light shading with Cook-Torrance BRDF
+- FPS count, triangle count, draw call count
 
 ## Backburner
 
+- Build scene TLAS in renderer
+- Add pathtrace mode
+- CVARs
+- TAA
+- Raytraced AO
 - Indirect
-- Raytracing pipelines
 - GPU timestamps
 
 ## Tests
