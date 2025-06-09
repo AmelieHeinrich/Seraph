@@ -32,7 +32,6 @@ VulkanImGuiContext::VulkanImGuiContext(VulkanDevice* device, VulkanCommandQueue*
     initInfo.Device = device->Device();
     initInfo.QueueFamily = device->GraphicsQueueFamilyIndex();
     initInfo.Queue = queue->GetQueue();
-    initInfo.DescriptorPoolSize = 32;
     initInfo.UseDynamicRendering = true;
     initInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
@@ -42,6 +41,7 @@ VulkanImGuiContext::VulkanImGuiContext(VulkanDevice* device, VulkanCommandQueue*
     initInfo.MinImageCount = FRAMES_IN_FLIGHT;
     initInfo.ImageCount = FRAMES_IN_FLIGHT;
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    initInfo.DescriptorPoolSize = 100;
 
     ImGui_ImplSDL3_InitForVulkan(window->GetWindow());
     ImGui_ImplVulkan_Init(&initInfo);

@@ -61,6 +61,7 @@ public:
     RHITextureViewDesc GetDesc() const { return mDesc; }
     BindlessHandle GetBindlessHandle() const { return mBindless; }
 
+    virtual uint64 GetTextureID() = 0;
 protected:
     RHITextureViewDesc mDesc;
 

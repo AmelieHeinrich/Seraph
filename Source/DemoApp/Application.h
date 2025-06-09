@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Seraph/Seraph.h>
+#include <imgui/imgui.h>
 
 #include "Camera.h"
 #include "Renderer/Renderer.h"
@@ -25,6 +26,10 @@ public:
 
     void Run();
 private:
+    void BeginDockspace();
+    void UI(RenderPassBegin& begin, RendererResource& ldr);
+    void EndDockspace();
+
     ApplicationSpecs mSpecs;
     Camera mCamera;
 
@@ -38,4 +43,9 @@ private:
     IRHIImGuiContext* mImGuiContext;
 
     Renderer* mRenderer;
+
+    ImVec2 mViewportSize;
+    ImVec2 mViewportBounds[2];
+    bool mViewportFocused = false;
+    bool mGizmoFocused = false;
 };

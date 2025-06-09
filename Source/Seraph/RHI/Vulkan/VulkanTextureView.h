@@ -19,6 +19,7 @@ public:
 
     VkImageView GetView() const { return mImageView; }
 
+    uint64 GetTextureID() override { return (uint64)mImGuiSet; }
 private:
     VkImageViewType RHIToVkImageViewType(RHITextureViewDimension dimension);
 
@@ -26,4 +27,5 @@ private:
     VulkanDevice* mParentDevice;
 
     VkImageView mImageView;
+    VkDescriptorSet mImGuiSet;
 };

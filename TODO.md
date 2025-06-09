@@ -2,12 +2,9 @@
 
 ## Frontburner
 
-- ECS
 - Add new sponza with new curtains
-- Asset manager
 - Build scene TLAS in renderer
 - Add pathtrace mode
-- Better UI
 - CVARs
 - Build light list
 - TAA

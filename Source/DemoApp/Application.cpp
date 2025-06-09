@@ -4,8 +4,8 @@
 //
 
 #include "Application.h"
+#include "Renderer/Passes/Tonemapping.h"
 
-#include <imgui/imgui.h>
 #include <chrono>
 
 Application::Application(const ApplicationSpecs& specs)
@@ -54,6 +54,7 @@ Application::~Application()
 void Application::Run()
 {
     auto lastFrame = std::chrono::high_resolution_clock::now();
+    int firstFrame = 0;
 
     while (mWindow->IsOpen()) {
         // Start Frame
@@ -75,6 +76,7 @@ void Application::Run()
         begin.View = mCamera.View();
 
         // Record command list
+        RHITextureBarrier beginGuiBarrier(begin.SwapchainTexture, firstFrame < 3 ? RHIResourceAccess::kNone : RHIResourceAccess::kMemoryRead, RHIResourceAccess::kColorAttachmentWrite, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kColorAttachmentOutput, RHIResourceLayout::kColorAttachment);
         RHITextureBarrier endGuiBarrier(begin.SwapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kAllCommands, RHIResourceLayout::kPresent);
         RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(begin.SwapchainTextureView, false) }, {});
 
@@ -85,12 +87,18 @@ void Application::Run()
         mRenderer->Render(RenderPath::kBasic, begin);
         
         // ImGui
+        begin.CommandList->PushMarker("ImGui");
+        RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kShaderRead);
+        begin.CommandList->Barrier(beginGuiBarrier);
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->BeginImGui();
-        ImGui::ShowDemoWindow();
+        BeginDockspace();
+        UI(begin, ldr);
+        EndDockspace();
         begin.CommandList->EndImGui();
         begin.CommandList->EndRendering();
         begin.CommandList->Barrier(endGuiBarrier);
+        begin.CommandList->PopMarker();
         
         // Synchronize frame
         begin.CommandList->End();
@@ -99,5 +107,79 @@ void Application::Run()
 
         // Update camera
         mCamera.Update(delta, 16, 9);
+        firstFrame++;
     }
+}
+
+void Application::UI(RenderPassBegin& begin, RendererResource& ldr)
+{
+    ImGui::Begin("Viewport");
+
+    auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+    auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+    auto viewportOffset = ImGui::GetWindowPos();
+    mViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+    mViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+    mViewportFocused = ImGui::IsWindowFocused();
+
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    mViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+    ImGui::Image((ImTextureID)RendererViewRecycler::GetSRV(ldr.Texture)->GetTextureID(), mViewportSize);
+
+    // Gizmos?
+
+    ImGui::End();
+}
+
+void Application::BeginDockspace()
+{
+    static bool dockspaceOpen = true;
+    static bool opt_fullscreen_persistant = true;
+    bool opt_fullscreen = opt_fullscreen_persistant;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    if (opt_fullscreen) {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    }
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        window_flags |= ImGuiWindowFlags_NoBackground;
+    
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+    ImGui::PopStyleVar();
+    if (opt_fullscreen)
+        ImGui::PopStyleVar(2);
+    
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    float minWinSizeX = style.WindowMinSize.x;
+    style.WindowMinSize.x = 370.0f;
+    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    }
+    style.WindowMinSize.x = minWinSizeX;
+
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Close")) {
+                // TODO
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+}
+
+void Application::EndDockspace()
+{
+    ImGui::End();
 }

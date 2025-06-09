@@ -11,7 +11,7 @@
 #include "VulkanBufferView.h"
 #include "VulkanBuffer.h"
 
-constexpr uint64 MAX_BINDLESS_RESOURCES = 1000000;
+constexpr uint64 MAX_BINDLESS_RESOURCES = 400000;
 constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
 constexpr uint64 MAX_BINDLESS_AS = 8;
 
@@ -86,7 +86,9 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     Array<VkDescriptorPoolSize> poolSizes = {
         { VK_DESCRIPTOR_TYPE_MUTABLE_EXT, MAX_BINDLESS_RESOURCES },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_BINDLESS_SAMPLERS },
-        { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, MAX_BINDLESS_AS }
+        { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, MAX_BINDLESS_AS },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 100 },
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 100 }
     };
 
     VkDescriptorPoolCreateInfo poolInfo = {};
@@ -115,6 +117,31 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     mSamplerLUT.resize(MAX_BINDLESS_SAMPLERS);
     mASLUT.resize(MAX_BINDLESS_AS);
 
+    // Create global sampler
+    VkSamplerCreateInfo samplerInfo = {
+        .sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .pNext                   = nullptr,
+        .flags                   = 0,
+        .magFilter               = VK_FILTER_NEAREST,
+        .minFilter               = VK_FILTER_NEAREST,
+        .mipmapMode             = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .addressModeU           = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+        .addressModeV           = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+        .addressModeW           = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+        .mipLodBias             = 0.0f,
+        .anisotropyEnable       = VK_FALSE,
+        .maxAnisotropy          = 1.0f,
+        .compareEnable          = VK_FALSE,
+        .compareOp              = VK_COMPARE_OP_ALWAYS,
+        .minLod                 = 0.0f,
+        .maxLod                 = 0.0f,
+        .borderColor            = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE
+    };
+
+    result = vkCreateSampler(mParentDevice->Device(), &samplerInfo, nullptr, &mGlobalSampler);
+    ASSERT_EQ(result == VK_SUCCESS, "Failed to create global sampler!");
+
     SERAPH_INFO("Initialized Vulkan Bindless Manager");
 }
 
@@ -124,6 +151,7 @@ VulkanBindlessManager::~VulkanBindlessManager()
     mSamplerLUT.clear();
     mASLUT.clear();
 
+    if (mGlobalSampler) vkDestroySampler(mParentDevice->Device(), mGlobalSampler, nullptr);
     if (mSet) vkFreeDescriptorSets(mParentDevice->Device(), mPool, 1, &mSet);
     if (mLayout) vkDestroyDescriptorSetLayout(mParentDevice->Device(), mLayout, nullptr);
     if (mPool) vkDestroyDescriptorPool(mParentDevice->Device(), mPool, nullptr);

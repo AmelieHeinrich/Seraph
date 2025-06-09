@@ -18,6 +18,8 @@ public:
     ~D3D12TextureView();
 
     D3D12BindlessAlloc GetAlloc() { return mAlloc; }
+
+    uint64 GetTextureID() override { return GetAlloc().GPU.ptr; }
 private:
     D3D12Device* mParentDevice;
 

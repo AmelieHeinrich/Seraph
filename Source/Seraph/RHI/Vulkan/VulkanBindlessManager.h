@@ -23,6 +23,7 @@ public:
 
     VkDescriptorSetLayout GetLayout() const { return mLayout; }
     VkDescriptorSet GetSet() const { return mSet; }
+    VkDescriptorPool GetPool() const { return mPool; }
 
     // ResourceDescriptorHeap[]
     uint WriteTextureSRV(VulkanTextureView* srv);
@@ -39,12 +40,17 @@ public:
     // AccelerationStructure
     uint WriteAS(VulkanTLAS* as);
     void FreeAS(uint index);
+
+    // Other
+    VkSampler GetGlobalSampler() { return mGlobalSampler; }
 private:
     VulkanDevice* mParentDevice;
 
     VkDescriptorSetLayout mLayout;
     VkDescriptorSet mSet;
     VkDescriptorPool mPool;
+
+    VkSampler mGlobalSampler;
 
     Array<bool> mResourceLUT;
     Array<bool> mSamplerLUT;

@@ -7,6 +7,9 @@
 #include "VulkanDevice.h"
 #include "VulkanTexture.h"
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_vulkan.h>
+
 VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc viewDesc)
     : mParentDevice(static_cast<VulkanDevice*>(device))
 {
@@ -37,6 +40,10 @@ VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc view
     VkResult result = vkCreateImageView(mParentDevice->Device(), &createInfo, nullptr, &mImageView);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan image view!");
 
+    if (ImGui::GetCurrentContext() && viewDesc.Type == RHITextureViewType::kShaderRead) {
+        mImGuiSet = ImGui_ImplVulkan_AddTexture(mParentDevice->GetBindlessManager()->GetGlobalSampler(), mImageView, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
+    }
+
     // Get bindless
     switch (viewDesc.Type) {
         case RHITextureViewType::kShaderRead: {
@@ -54,6 +61,7 @@ VulkanTextureView::VulkanTextureView(IRHIDevice* device, RHITextureViewDesc view
 
 VulkanTextureView::~VulkanTextureView()
 {
+    if (mImGuiSet) ImGui_ImplVulkan_RemoveTexture(mImGuiSet);
     if (mBindless.Index != INVALID_HANDLE) mParentDevice->GetBindlessManager()->FreeCBVSRVUAV(mBindless.Index);
     if (mImageView) vkDestroyImageView(mParentDevice->Device(), mImageView, nullptr);
 }

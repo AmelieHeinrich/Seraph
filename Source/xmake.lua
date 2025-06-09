@@ -14,7 +14,7 @@ target("Seraph")
     add_includedirs("Seraph")
     add_syslinks("user32", { public = true })
     add_defines("ENABLE_PIX", "GLM_ENABLE_EXPERIMENTAL", { public = true })
-    add_deps("SDL3", "Vulkan", "Slang", "DirectX", "PIX", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "NVTT", "ENTT", { public = true })
+    add_deps("SDL3", "Vulkan", "Slang", "DirectX", "PIX", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "NVTT", { public = true })
 
     before_link(function (target)
         os.cp("Binaries/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
