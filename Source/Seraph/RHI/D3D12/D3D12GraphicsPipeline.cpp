@@ -29,6 +29,8 @@ ID3D12ShaderReflection* ReflectShader(ShaderModule shader)
 
 D3D12GraphicsPipeline::D3D12GraphicsPipeline(D3D12Device* device, RHIGraphicsPipelineDesc desc)
 {
+    mDesc = desc;
+
     ShaderModule vertexModule = desc.Bytecode[ShaderStage::kVertex];
     ShaderModule fragmentModule = desc.Bytecode[ShaderStage::kFragment];
 

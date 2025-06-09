@@ -46,6 +46,7 @@ private:
     IDXGIAdapter1* mAdapter = nullptr;
     ID3D12Device14* mDevice = nullptr;
     ID3D12Debug1* mDebug = nullptr;
+    ID3D12InfoQueue1* mInfoQueue = nullptr;
 
     D3D12BindlessManager* mBindlessManager;
     D3D12MA::Allocator* mAllocator;

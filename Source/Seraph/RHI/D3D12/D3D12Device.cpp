@@ -30,6 +30,16 @@ extern "C"
     __declspec(dllexport) extern const char* D3D12SDKPath = ".\\.\\";
 }
 
+void D3D12MessageCallback(D3D12_MESSAGE_CATEGORY Category, 
+    D3D12_MESSAGE_SEVERITY Severity, 
+    D3D12_MESSAGE_ID ID, 
+    LPCSTR pDescription, 
+    void* pContext)
+{
+    if (Severity == D3D12_MESSAGE_SEVERITY_ERROR || Severity == D3D12_MESSAGE_SEVERITY_CORRUPTION) {
+        SERAPH_ERROR("D3D12 error: %s", pDescription);
+    }
+}
 
 D3D12Device::D3D12Device(bool validationLayers)
 {
@@ -82,12 +92,8 @@ D3D12Device::D3D12Device(bool validationLayers)
     ASSERT_EQ(SUCCEEDED(result), "Failed to create D3D12 device!");
 
     // Create info queue.
-    ID3D12InfoQueue* infoQueue = 0;
-    result = mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
+    result = mDevice->QueryInterface(IID_PPV_ARGS(&mInfoQueue));
     if (SUCCEEDED(result)) {
-        infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-        infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-
         D3D12_MESSAGE_SEVERITY supressSeverities[] = {
             D3D12_MESSAGE_SEVERITY_INFO
         };
@@ -96,9 +102,6 @@ D3D12Device::D3D12Device(bool validationLayers)
             D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE,
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
             D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
-            // You might be asking, Amélie, why the fuck would you do that? Well Enhanced Barriers errors are very broken that's about it lol
-            D3D12_MESSAGE_ID_INCOMPATIBLE_BARRIER_ACCESS,
-            D3D12_MESSAGE_ID_INVALID_BARRIER_ACCESS
         };
 
         D3D12_INFO_QUEUE_FILTER filter = {0};
@@ -107,8 +110,8 @@ D3D12Device::D3D12Device(bool validationLayers)
         filter.DenyList.NumIDs = ARRAYSIZE(supressIDs);
         filter.DenyList.pIDList = supressIDs;
 
-        infoQueue->PushStorageFilter(&filter);
-        infoQueue->Release();
+        mInfoQueue->RegisterMessageCallback(D3D12MessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, nullptr);
+        mInfoQueue->PushStorageFilter(&filter);
     }
 
     mBindlessManager = new D3D12BindlessManager(this);
@@ -118,6 +121,7 @@ D3D12Device::D3D12Device(bool validationLayers)
 
 D3D12Device::~D3D12Device()
 {
+    if (mInfoQueue) mInfoQueue->Release();
     if (mAllocator) mAllocator->Release();
     delete mBindlessManager;
     if (mDevice) mDevice->Release();

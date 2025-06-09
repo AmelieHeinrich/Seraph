@@ -8,6 +8,7 @@
 #include "Passes/GBuffer.h"
 #include "Passes/Deferred.h"
 #include "Passes/Tonemapping.h"
+#include "Passes/Debug.h"
 
 Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 {
@@ -20,7 +21,8 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
     mPasses[RenderPath::kBasic] = {
         std::make_shared<GBuffer>(device, width, height),
         std::make_shared<Deferred>(device, width, height),
-        std::make_shared<Tonemapping>(device, width, height)  
+        std::make_shared<Tonemapping>(device, width, height),
+        std::make_shared<Debug>(device, width, height)
     };
 }
 

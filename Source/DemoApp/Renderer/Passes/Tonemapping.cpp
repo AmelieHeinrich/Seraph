@@ -15,7 +15,7 @@ Tonemapping::Tonemapping(IRHIDevice* device, uint width, uint height)
     hdrDesc.Width = width;
     hdrDesc.Height = height;
     hdrDesc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
-    hdrDesc.Usage = RHITextureUsage::kShaderResource | RHITextureUsage::kStorage;
+    hdrDesc.Usage = RHITextureUsage::kShaderResource | RHITextureUsage::kStorage | RHITextureUsage::kRenderTarget;
     
     RendererResourceManager::CreateTexture(TONEMAPPING_LDR_ID, hdrDesc);
 

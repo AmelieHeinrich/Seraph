@@ -157,7 +157,7 @@ void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
     Array<D3D12_GLOBAL_BARRIER> globalBarriers;
     Array<D3D12_BARRIER_GROUP> barriers;
 
-    for (RHITextureBarrier barrier : barrierGroup.TextureBarriers) {
+    for (const RHITextureBarrier& barrier : barrierGroup.TextureBarriers) {
         D3D12_TEXTURE_BARRIER texBarrier = {};
         texBarrier.pResource = static_cast<D3D12Texture*>(barrier.Texture)->GetResource();
         texBarrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_NONE;
@@ -177,7 +177,7 @@ void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 
         textureBarriers.push_back(texBarrier);
     }
-    for (RHIBufferBarrier barrier : barrierGroup.BufferBarriers) {
+    for (const RHIBufferBarrier& barrier : barrierGroup.BufferBarriers) {
         D3D12_BUFFER_BARRIER bufBarrier = {};
         bufBarrier.pResource = static_cast<D3D12Buffer*>(barrier.Buffer)->GetResource();
         bufBarrier.AccessBefore = ToD3D12BarrierAccess(barrier.SourceAccess);
@@ -189,7 +189,7 @@ void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 
         bufferBarriers.push_back(bufBarrier);
     }
-    for (RHIMemoryBarrier barrier : barrierGroup.MemoryBarriers) {
+    for (const RHIMemoryBarrier& barrier : barrierGroup.MemoryBarriers) {
         D3D12_GLOBAL_BARRIER globalBarrier = {};
         globalBarrier.AccessBefore = ToD3D12BarrierAccess(barrier.SourceAccess);
         globalBarrier.AccessAfter = ToD3D12BarrierAccess(barrier.DestAccess);
@@ -228,13 +228,15 @@ void D3D12CommandList::ClearColor(IRHITextureView* view, float r, float g, float
 
 void D3D12CommandList::SetGraphicsPipeline(IRHIGraphicsPipeline* pipeline)
 {
-    mList->SetPipelineState(static_cast<D3D12GraphicsPipeline*>(pipeline)->GetPipelineState());
-    mList->SetGraphicsRootSignature(static_cast<D3D12GraphicsPipeline*>(pipeline)->GetRootSignature());
+    D3D12GraphicsPipeline* d3dPipeline = static_cast<D3D12GraphicsPipeline*>(pipeline);
+
+    mList->SetPipelineState(d3dPipeline->GetPipelineState());
+    mList->SetGraphicsRootSignature(d3dPipeline->GetRootSignature());
 
     if (pipeline->GetDesc().LineTopology) {
-        mList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
+        mList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST);
     } else {
-        mList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        mList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     }
 }
 
@@ -420,7 +422,6 @@ void D3D12CommandList::BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode)
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
     buildDesc.Inputs = d3dblas->mInputs;
     buildDesc.DestAccelerationStructureData = d3dblas->mMemory->GetAddress();
-    buildDesc.SourceAccelerationStructureData = d3dblas->mMemory->GetAddress();
     buildDesc.ScratchAccelerationStructureData = d3dblas->mScratch->GetAddress();
     if (mode == RHIASBuildMode::kRefit) {
         buildDesc.Inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;

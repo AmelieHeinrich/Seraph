@@ -5,6 +5,7 @@
 
 #include "Application.h"
 #include "Renderer/Passes/Tonemapping.h"
+#include "Renderer/Passes/Debug.h"
 
 #include <chrono>
 
@@ -82,6 +83,8 @@ void Application::Run()
 
         begin.CommandList->Reset();
         begin.CommandList->Begin();
+        
+        Debug::DrawSphere(glm::vec3(0.0f), 3.0f);
 
         // Render
         mRenderer->Render(RenderPath::kBasic, begin);
