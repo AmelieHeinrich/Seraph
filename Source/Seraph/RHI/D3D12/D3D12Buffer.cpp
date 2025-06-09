@@ -57,7 +57,7 @@ void* D3D12Buffer::Map()
 {
     D3D12_RANGE range;
     range.Begin = 0;
-    range.End = 0;
+    range.End = mDesc.Size;
 
     void* ptr;
     mResource->Map(0, &range, &ptr);
@@ -68,7 +68,7 @@ void D3D12Buffer::Unmap()
 {
     D3D12_RANGE range;
     range.Begin = 0;
-    range.End = 0;
+    range.End = mDesc.Size;
 
     mResource->Unmap(0, &range);
 }

@@ -499,6 +499,7 @@ D3D12_BARRIER_SYNC D3D12CommandList::ToD3D12BarrierSync(RHIPipelineStage stage)
     if (Any(stage & kCopy)) sync |= D3D12_BARRIER_SYNC_COPY;
     if (Any(stage & kAccelStructureWrite)) sync |= D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
     if (Any(stage & kBottomOfPipe)) sync |= D3D12_BARRIER_SYNC_ALL_SHADING;
+    if (Any(stage & kTopOfPipe)) sync |= D3D12_BARRIER_SYNC_ALL_SHADING;
 
     return sync;
 }

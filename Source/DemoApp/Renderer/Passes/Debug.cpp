@@ -37,8 +37,8 @@ Debug::Debug(IRHIDevice* device, uint width, uint height)
 
     sData.Pipeline = device->CreateGraphicsPipeline(desc);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-        sData.TransferBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, 0, RHIBufferUsage::kStaging));
-        sData.VertexBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, 0, RHIBufferUsage::kVertex));
+        sData.TransferBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kStaging));
+        sData.VertexBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kVertex));
     }
 }
 
@@ -78,10 +78,10 @@ void Debug::CopyToVB(RenderPassBegin& begin)
     begin.CommandList->PushMarker("Copy to Vertex Buffer");
     {
         RHIBufferBarrier transferStart(sData.TransferBuffer[begin.FrameIndex], RHIResourceAccess::kMemoryWrite, RHIResourceAccess::kTransferRead, RHIPipelineStage::kAllCommands, RHIPipelineStage::kCopy);
-        RHIBufferBarrier vertexStart(sData.VertexBuffer[begin.FrameIndex], RHIResourceAccess::kVertexBufferRead, RHIResourceAccess::kTransferWrite, RHIPipelineStage::kVertexInput, RHIPipelineStage::kCopy);
+        RHIBufferBarrier vertexStart(sData.VertexBuffer[begin.FrameIndex], RHIResourceAccess::kVertexBufferRead, RHIResourceAccess::kTransferWrite, RHIPipelineStage::kAllGraphics, RHIPipelineStage::kCopy);
 
         RHIBufferBarrier transferEnd(sData.TransferBuffer[begin.FrameIndex], RHIResourceAccess::kTransferRead, RHIResourceAccess::kMemoryWrite, RHIPipelineStage::kCopy, RHIPipelineStage::kAllCommands);
-        RHIBufferBarrier vertexEnd(sData.VertexBuffer[begin.FrameIndex], RHIResourceAccess::kTransferWrite, RHIResourceAccess::kVertexBufferRead, RHIPipelineStage::kCopy, RHIPipelineStage::kVertexInput);
+        RHIBufferBarrier vertexEnd(sData.VertexBuffer[begin.FrameIndex], RHIResourceAccess::kTransferWrite, RHIResourceAccess::kVertexBufferRead, RHIPipelineStage::kCopy, RHIPipelineStage::kAllGraphics);
         
         RHIBarrierGroup beginGroup = { {}, { transferStart, vertexStart } };
         RHIBarrierGroup endGroup = { {}, { transferEnd, vertexEnd } };

@@ -214,16 +214,55 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
 {
     uint64 score = 0;
 
+    // Query device properties and features
     VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);   
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
     mBufferImageGranularity = deviceProperties.limits.bufferImageGranularity;
     mOptimalRowPitchAlignment = deviceProperties.limits.optimalBufferCopyRowPitchAlignment;
-    
+
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
     VkPhysicalDeviceLimits limits = deviceProperties.limits;
 
+    // Query supported extensions
+    uint32_t extensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    // Required extensions
+    const Array<const char*> requiredExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
+        VK_KHR_RAY_QUERY_EXTENSION_NAME,
+        VK_EXT_MESH_SHADER_EXTENSION_NAME,
+        VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
+    };
+
+    // Check if all required extensions are supported
+    for (const char* required : requiredExtensions) {
+        bool found = false;
+        for (const auto& ext : availableExtensions) {
+            if (strcmp(required, ext.extensionName) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            SERAPH_INFO("GPU %s is missing %s. Skipping", deviceProperties.deviceName, required);
+            return 0; // Missing a required extension
+        }
+    }
+
+    // Add to score based on device properties/features
     if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 100000000;
     if (deviceFeatures.depthClamp) score += 1000;
     if (deviceFeatures.geometryShader) score += 1000;
@@ -234,6 +273,7 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
     if (deviceFeatures.pipelineStatisticsQuery) score += 10000;
 
     score += limits.maxDescriptorSetSamplers;
+
     return score;
 }
 
@@ -244,18 +284,14 @@ void VulkanDevice::BuildLogicalDevice()
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-        VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-        VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_SPIRV_1_4_EXTENSION_NAME,
-        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
         VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-        VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
         VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
     };
 
@@ -300,9 +336,6 @@ void VulkanDevice::BuildLogicalDevice()
     VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptor = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT };
     mutableDescriptor.mutableDescriptorType = VK_TRUE;
 
-    VkPhysicalDeviceRobustness2FeaturesEXT robustness2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
-    robustness2.nullDescriptor = VK_TRUE;
-
     VkPhysicalDeviceBufferDeviceAddressFeatures bda = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES };
     bda.bufferDeviceAddress = VK_TRUE;
 
@@ -315,8 +348,7 @@ void VulkanDevice::BuildLogicalDevice()
     rayTracingPipeline.pNext = &rayQuery;
     rayQuery.pNext = &meshShader;
     meshShader.pNext = &mutableDescriptor;
-    mutableDescriptor.pNext = &robustness2;
-    robustness2.pNext = &bda;
+    mutableDescriptor.pNext = &bda;
     bda.pNext = nullptr;
 
     // Queue family selection

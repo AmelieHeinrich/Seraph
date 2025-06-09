@@ -103,6 +103,9 @@ RendererResource& RendererResourceManager::Import(const String& name, IRHIComman
             }
         }
 
+        resource->LastAccess = barrier.DestAccess,
+        resource->LastStage = barrier.DestStage;
+
         list->Barrier(barrier);
         break;
     }
@@ -148,6 +151,9 @@ RendererResource& RendererResourceManager::Import(const String& name, IRHIComman
                 break;
             }
         }
+
+        resource->LastAccess = barrier.DestAccess,
+        resource->LastStage = barrier.DestStage;
 
         list->Barrier(barrier);
         break;
