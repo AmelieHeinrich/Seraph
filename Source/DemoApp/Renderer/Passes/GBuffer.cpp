@@ -32,7 +32,7 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
     // Model
-    mTestSponza = new Model(device, "Data/Models/Sponza/Sponza.gltf");
+    mSponza = AssetManager::Get("Data/Models/Sponza/Sponza.gltf", AssetType::kModel);
 
     // Shader
     CompiledShader shader = ShaderCompiler::Compile("GBuffer", { "VSMain", "FSMain" });
@@ -56,8 +56,8 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
 
 GBuffer::~GBuffer()
 {
+    AssetManager::Release(mSponza);
     delete mPipeline;
-    delete mTestSponza;
 }
 
 void GBuffer::Render(RenderPassBegin& begin)
@@ -78,9 +78,9 @@ void GBuffer::Render(RenderPassBegin& begin)
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->SetGraphicsPipeline(mPipeline);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
-        for (auto& node : mTestSponza->GetNodes()) {
+        for (auto& node : mSponza->Model->GetNodes()) {
             for (auto& primitive : node.Primitives) {
-                ModelMaterial material = mTestSponza->GetMaterials()[primitive.MaterialIndex];
+                ModelMaterial material = mSponza->Model->GetMaterials()[primitive.MaterialIndex];
             
                 struct PushConstant {
                     BindlessHandle Texture;
@@ -90,7 +90,7 @@ void GBuffer::Render(RenderPassBegin& begin)
                     glm::mat4 View;
                     glm::mat4 Projection;
                 } constant = {
-                    material.TextureRead->GetBindlessHandle(),
+                    material.Albedo->TextureOrImage.View->GetBindlessHandle(),
                     materialSampler.Sampler->GetBindlessHandle(),
                     {},
                 

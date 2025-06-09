@@ -21,7 +21,7 @@ public:
 
     void Render(RenderPassBegin& begin) override;
 private:
-    Model* mTestSponza;
+    Asset::Handle mSponza;
 
     IRHIGraphicsPipeline* mPipeline;
 };

@@ -16,24 +16,26 @@ Application::Application(const ApplicationSpecs& specs)
 
     ShaderCompiler::Initialize(specs.Backend);
 
-    mWindow = SharedPtr<Window>(new Window(specs.WindowWidth, specs.WindowHeight, "Seraph"));
     mDevice = IRHIDevice::CreateDevice(specs.Backend, true);
+    AssetManager::Initialize(mDevice);
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
+    Uploader::Initialize(mDevice, mGraphicsQueue);
+
+    mWindow = SharedPtr<Window>(new Window(specs.WindowWidth, specs.WindowHeight, "Seraph"));
     mSurface = mDevice->CreateSurface(mWindow.get(), mGraphicsQueue);
+    mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
+    mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         mCommandBuffers[i] = mGraphicsQueue->CreateCommandBuffer(false);
     }
-    mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
-    Uploader::Initialize(mDevice, mGraphicsQueue);
-    mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());
 
     mRenderer = new Renderer(mDevice, mSpecs.WindowWidth, mSpecs.WindowHeight);
-    
     Uploader::Flush();
 }
 
 Application::~Application()
 {
+    AssetManager::Shutdown();
     Uploader::Shutdown();
 
     delete mRenderer;

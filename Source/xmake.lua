@@ -39,7 +39,7 @@ target("DemoApp")
     add_files("DemoApp/**.cpp")
     add_headerfiles("DemoApp/**.h")
     add_includedirs(".", "Seraph")
-    add_deps("Seraph")
+    add_deps("Seraph", "PIX")
     add_defines("ENABLE_PIX")
 
     if is_mode("debug") then

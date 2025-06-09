@@ -9,10 +9,9 @@
 - Add pathtrace mode
 - Better UI
 - CVARs
-- Asset manager
 - Build light list
 - TAA
-- Raytraced shadows
+- Raytraced AO
 
 ## Backburner
 

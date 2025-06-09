@@ -7,6 +7,7 @@
 
 #include "Asset/Compressor.h"
 #include "Asset/Image.h"
+#include "Asset/Manager.h"
 #include "Asset/Model.h"
 #include "Asset/Texture.h"
 

@@ -7,6 +7,7 @@
 #include "Image.h"
 #include "Compressor.h"
 #include "Texture.h"
+#include "Manager.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -49,8 +50,7 @@ Model::~Model()
         }
     }
     for (auto& material : mMaterials) {
-        delete material.Texture;
-        delete material.TextureRead;
+        AssetManager::Release(material.Albedo);
     }
 }
 
@@ -163,20 +163,7 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
         if (material->pbr_metallic_roughness.base_color_texture.texture) {
             String path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.base_color_texture.texture->image->uri);
     
-            TextureAsset data;
-            data.Load(Compressor::ToCachedPath(path));
-
-            RHITextureDesc desc = {};
-            desc.Width = data.Header.Width;
-            desc.Height = data.Header.Height;
-            desc.MipLevels = data.Header.Mips - 2;
-            desc.Format = data.Header.Format;
-            desc.Usage = RHITextureUsage::kShaderResource;
-
-            modelMaterial.Texture = mParentDevice->CreateTexture(desc);
-            modelMaterial.TextureRead = mParentDevice->CreateTextureView(RHITextureViewDesc(modelMaterial.Texture, RHITextureViewType::kShaderRead));
-
-            Uploader::EnqueueTextureUploadRaw(data.Pixels.data(), data.Pixels.size(), modelMaterial.Texture);
+            modelMaterial.Albedo = AssetManager::Get(path, AssetType::kTexture);
         }
     }
 

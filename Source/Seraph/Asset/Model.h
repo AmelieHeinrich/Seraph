@@ -11,6 +11,8 @@
 #include <RHI/Device.h>
 #include <RHI/Uploader.h>
 
+class Asset;
+
 struct StaticModelVertex
 {
     glm::vec3 Position;
@@ -22,8 +24,7 @@ struct ModelMaterial
 {
     bool AlphaTested = false;
 
-    IRHITexture* Texture;
-    IRHITextureView* TextureRead;
+    Asset* Albedo;
 };
 
 struct ModelPrimitive
