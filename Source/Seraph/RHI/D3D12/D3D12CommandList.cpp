@@ -173,7 +173,6 @@ void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
         texBarrier.Subresources.NumArraySlices = barrier.LayerCount;
         texBarrier.Subresources.FirstPlane = 0;
         texBarrier.Subresources.NumPlanes = 1;
-        barrier.Texture->SetLayout(barrier.NewLayout);
 
         textureBarriers.push_back(texBarrier);
     }
@@ -218,6 +217,10 @@ void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
     if (globBarriers.NumBarriers > 0) barriers.push_back(globBarriers);  
 
     mList->Barrier(barriers.size(), barriers.data());
+
+    for (const RHITextureBarrier& barrier : barrierGroup.TextureBarriers) {
+        barrier.Texture->SetLayout(barrier.NewLayout);
+    }
 }
 
 void D3D12CommandList::ClearColor(IRHITextureView* view, float r, float g, float b)

@@ -132,7 +132,7 @@ D3D12GraphicsPipeline::D3D12GraphicsPipeline(D3D12Device* device, RHIGraphicsPip
     }
 
     if (desc.PushConstantSize > 0) {
-        CD3DX12_ROOT_PARAMETER1 rootParameters[1];
+        CD3DX12_ROOT_PARAMETER1 rootParameters[1] = {};
         rootParameters[0].InitAsConstants(desc.PushConstantSize / 4, 0, D3D12_SHADER_VISIBILITY_ALL);
 
         D3D12_ROOT_SIGNATURE_FLAGS rootSigFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
@@ -184,7 +184,6 @@ D3D12GraphicsPipeline::D3D12GraphicsPipeline(D3D12Device* device, RHIGraphicsPip
         if (signatureBlob) signatureBlob->Release();
         if (errorBlob) errorBlob->Release();
     }
-
     Desc.pRootSignature = mRootSignature;
 
     HRESULT result = device->GetDevice()->CreateGraphicsPipelineState(&Desc, IID_PPV_ARGS(&mPipelineState));

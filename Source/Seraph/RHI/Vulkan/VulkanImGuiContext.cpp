@@ -45,6 +45,7 @@ VulkanImGuiContext::VulkanImGuiContext(VulkanDevice* device, VulkanCommandQueue*
 
     ImGui_ImplSDL3_InitForVulkan(window->GetWindow());
     ImGui_ImplVulkan_Init(&initInfo);
+    ImGui_ImplVulkan_CreateFontsTexture();
 }
 
 VulkanImGuiContext::~VulkanImGuiContext()

@@ -39,6 +39,7 @@ D3D12ImGuiContext::D3D12ImGuiContext(D3D12Device* device, D3D12CommandQueue* que
     
     ImGui_ImplSDL3_InitForVulkan(window->GetWindow());
     ImGui_ImplDX12_Init(&initInfo);
+    ImGui_ImplDX12_CreateDeviceObjects();
 }
 
 D3D12ImGuiContext::~D3D12ImGuiContext()

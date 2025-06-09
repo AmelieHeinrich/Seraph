@@ -7,6 +7,9 @@
 
 #include "RendererResource.h"
 
+constexpr const char* DEFAULT_WHITE_TEXTURE = "Default/White";
+constexpr const char* DEFAULT_BLACK_TEXTURE = "Default/Black";
+
 enum class RendererImportType
 {
     kShaderRead,

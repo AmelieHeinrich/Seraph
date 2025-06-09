@@ -30,17 +30,6 @@ extern "C"
     __declspec(dllexport) extern const char* D3D12SDKPath = ".\\.\\";
 }
 
-void D3D12MessageCallback(D3D12_MESSAGE_CATEGORY Category, 
-    D3D12_MESSAGE_SEVERITY Severity, 
-    D3D12_MESSAGE_ID ID, 
-    LPCSTR pDescription, 
-    void* pContext)
-{
-    if (Severity == D3D12_MESSAGE_SEVERITY_ERROR || Severity == D3D12_MESSAGE_SEVERITY_CORRUPTION) {
-        SERAPH_ERROR("D3D12 error: %s", pDescription);
-    }
-}
-
 D3D12Device::D3D12Device(bool validationLayers)
 {
     IDXGIFactory1* tempFactory;
@@ -94,6 +83,8 @@ D3D12Device::D3D12Device(bool validationLayers)
     // Create info queue.
     result = mDevice->QueryInterface(IID_PPV_ARGS(&mInfoQueue));
     if (SUCCEEDED(result)) {
+        mInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+
         D3D12_MESSAGE_SEVERITY supressSeverities[] = {
             D3D12_MESSAGE_SEVERITY_INFO
         };
@@ -102,6 +93,7 @@ D3D12Device::D3D12Device(bool validationLayers)
             D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE,
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
             D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
+            D3D12_MESSAGE_ID_INCOMPATIBLE_BARRIER_ACCESS
         };
 
         D3D12_INFO_QUEUE_FILTER filter = {0};
@@ -110,7 +102,6 @@ D3D12Device::D3D12Device(bool validationLayers)
         filter.DenyList.NumIDs = ARRAYSIZE(supressIDs);
         filter.DenyList.pIDList = supressIDs;
 
-        mInfoQueue->RegisterMessageCallback(D3D12MessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, nullptr);
         mInfoQueue->PushStorageFilter(&filter);
     }
 

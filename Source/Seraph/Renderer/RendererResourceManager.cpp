@@ -5,11 +5,32 @@
 
 #include "RendererResourceManager.h"
 
+#include <RHI/Uploader.h>
+
 RendererResourceManager::Data RendererResourceManager::sData;
 
 void RendererResourceManager::Initialize(IRHIDevice* device)
 {
     sData.Device = device;
+
+    RHITextureDesc defaultDesc = {};
+    defaultDesc.Width = 1;
+    defaultDesc.Height = 1;
+    defaultDesc.MipLevels = 1;
+    defaultDesc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
+    defaultDesc.Usage = RHITextureUsage::kShaderResource;
+
+    CreateTexture(DEFAULT_WHITE_TEXTURE, defaultDesc);
+    CreateTexture(DEFAULT_BLACK_TEXTURE, defaultDesc);
+
+    auto& black = Get(DEFAULT_WHITE_TEXTURE);
+    auto& white = Get(DEFAULT_BLACK_TEXTURE);
+
+    uint32 blackColor = 0x000000FF;
+    uint32 whiteColor = 0xFFFFFFFF;
+
+    Uploader::EnqueueTextureUploadRaw(&blackColor, sizeof(uint), black.Texture);
+    Uploader::EnqueueTextureUploadRaw(&whiteColor, sizeof(uint), white.Texture);
 }
 
 void RendererResourceManager::Shutdown()

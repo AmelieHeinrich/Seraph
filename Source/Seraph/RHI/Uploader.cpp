@@ -66,6 +66,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     uint baseHeight = desc.Height;
     Array<MipLevelInfo> mips;
     uint64 totalBufferSize = 0;
+    
     // 1. Layout mip levels
     for (uint32 i = 0; i < mipLevels; i++) {
         MipLevelInfo mip = {};
@@ -87,14 +88,17 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
             mip.RowPitch * ((mip.Height + 3) / 4) : mip.RowPitch * mip.Height);
         mips.push_back(mip);
     }
+    
     // 2. Allocate staging buffer
     RHIBufferDesc stagingDesc = {};
     stagingDesc.Size = totalBufferSize;
     stagingDesc.Usage = RHIBufferUsage::kStaging;
+    
     UploadRequest request = {};
     request.Type = UploadRequestType::kTextureCPUToGPU;
     request.DstTexture = texture;
     request.StagingBuffer = sData.Device->CreateBuffer(stagingDesc);
+    
     // 3. Copy data into staging buffer
     void* mappedVoid = request.StagingBuffer->Map();
     uint8* dstBase = reinterpret_cast<uint8*>(mappedVoid);
@@ -108,7 +112,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
         if (IRHITexture::IsBlockFormat(desc.Format)) {
             uint32 blockWidth = (srcWidth + 3) / 4;
             uint32 blockHeight = (srcHeight + 3) / 4;
-            // FIX: Use dynamic bytes per block instead of hardcoded 16
+            
             uint32 rowSize = blockWidth * IRHITexture::BytesPerPixel(desc.Format);
             for (uint32 y = 0; y < blockHeight; ++y) {
                 const uint8* srcRow = srcPtr + srcOffset;
@@ -128,6 +132,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
         }
     }
     request.StagingBuffer->Unmap();
+    
     sData.Requests.push_back(std::move(request));
     sData.UploadBatchSize += totalBufferSize;
     if (sData.UploadBatchSize >= MAX_BATCH_SIZE)

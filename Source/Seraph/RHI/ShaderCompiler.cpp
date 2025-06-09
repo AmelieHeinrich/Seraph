@@ -39,7 +39,7 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
 
     slang::CompilerOptionEntry debugEntry;
     debugEntry.name = slang::CompilerOptionName::DebugInformation;
-    debugEntry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_MAXIMAL;
+    debugEntry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_STANDARD;
 
     slang::PreprocessorMacroDesc platformDesc = {};
     platformDesc.value = "1";

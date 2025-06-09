@@ -50,7 +50,7 @@ Model::~Model()
         }
     }
     for (auto& material : mMaterials) {
-        AssetManager::Release(material.Albedo);
+        if (material.Albedo) AssetManager::Release(material.Albedo);
     }
 }
 

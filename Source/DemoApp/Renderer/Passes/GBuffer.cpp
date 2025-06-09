@@ -32,7 +32,7 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
     // Model
-    mSponza = AssetManager::Get("Data/Models/Sponza/Sponza.gltf", AssetType::kModel);
+    mSponza = AssetManager::Get("Data/Models/NewSponza/NewSponza.gltf", AssetType::kModel);
 
     // Shader
     CompiledShader shader = ShaderCompiler::Compile("GBuffer", { "VSMain", "FSMain" });
@@ -67,7 +67,8 @@ void GBuffer::Render(RenderPassBegin& begin)
         RendererResource& normalTexture = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kColorWrite);
         RendererResource& albedoTexture = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kColorWrite);
         RendererResource& materialSampler = RendererResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
-        
+        RendererResource& defaultWhite = RendererResourceManager::Get(DEFAULT_WHITE_TEXTURE);
+
         Array<RHIRenderAttachment> attachments = {
             RHIRenderAttachment(RendererViewRecycler::GetRTV(normalTexture.Texture)),
             RHIRenderAttachment(RendererViewRecycler::GetRTV(albedoTexture.Texture))
@@ -80,7 +81,8 @@ void GBuffer::Render(RenderPassBegin& begin)
         for (auto& node : mSponza->Model->GetNodes()) {
             for (auto& primitive : node.Primitives) {
                 ModelMaterial material = mSponza->Model->GetMaterials()[primitive.MaterialIndex];
-            
+                IRHITextureView* albedoView = material.Albedo ? material.Albedo->TextureOrImage.View : RendererViewRecycler::GetSRV(defaultWhite.Texture);
+
                 struct PushConstant {
                     BindlessHandle Texture;
                     BindlessHandle Sampler;
@@ -90,7 +92,7 @@ void GBuffer::Render(RenderPassBegin& begin)
                     glm::mat4 View;
                     glm::mat4 Projection;
                 } constant = {
-                    material.Albedo->TextureOrImage.View->GetBindlessHandle(),
+                    albedoView->GetBindlessHandle(),
                     materialSampler.Sampler->GetBindlessHandle(),
                     RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
                     0,

@@ -14,5 +14,6 @@ imgui.ini
 Data/Tests/*.png
 Data/TestReport.json
 
-# Garbage data
+# Garbage data and fatass stuff
 .cache/*.stf
+Data/Models/NewSponza
