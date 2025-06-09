@@ -18,19 +18,16 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 
     // Setup Normal Path
     mPasses[RenderPath::kBasic] = {
-        new GBuffer(device, width, height),
-        new Deferred(device, width, height),
-        new Tonemapping(device, width, height)  
+        std::make_shared<GBuffer>(device, width, height),
+        std::make_shared<Deferred>(device, width, height),
+        std::make_shared<Tonemapping>(device, width, height)  
     };
 }
 
 Renderer::~Renderer()
 {
-    for (auto& pass : mPasses[RenderPath::kBasic]) {
-        delete pass;
-    }
-    for (auto& pass : mPasses[RenderPath::kPathtracer]) {
-        delete pass;
+    for (auto& passes : mPasses) {
+        passes.second.clear();
     }
     mPasses.clear();
 

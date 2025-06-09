@@ -22,7 +22,6 @@ class RenderPass
 {
 public:
     RenderPass(IRHIDevice* device, uint width, uint height);
-    ~RenderPass() = default;
 
     virtual void Render(RenderPassBegin& begin) = 0;
 protected:

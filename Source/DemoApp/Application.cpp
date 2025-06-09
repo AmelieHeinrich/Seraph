@@ -35,7 +35,6 @@ Application::Application(const ApplicationSpecs& specs)
 
 Application::~Application()
 {
-    AssetManager::Shutdown();
     Uploader::Shutdown();
 
     delete mRenderer;
@@ -46,8 +45,9 @@ Application::~Application()
     }
     delete mGraphicsQueue;
     delete mSurface;
-    delete mDevice;
 
+    AssetManager::Shutdown();
+    delete mDevice;
     ShaderCompiler::Shutdown();
 }
 

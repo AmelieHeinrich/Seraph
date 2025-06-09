@@ -21,5 +21,5 @@ public:
 
     void Render(RenderPath path, RenderPassBegin& begin);
 private:
-    UnorderedMap<RenderPath, Array<RenderPass*>> mPasses;
+    UnorderedMap<RenderPath, Array<SharedPtr<RenderPass>>> mPasses;
 };
