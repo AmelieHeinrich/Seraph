@@ -9,6 +9,7 @@
 
 #include <Agility/d3d12.h>
 #include <RHI/Sampler.h>
+#include <RHI/DescriptorAllocator.h>
 
 class D3D12Device;
 class D3D12TextureView;
@@ -63,19 +64,19 @@ private:
 private:
     D3D12Device* mParentDevice;
 
-    Array<bool> mResourceLUT;
+    DescriptorAllocator mResourceAllocator;
     ID3D12DescriptorHeap* mResourceHeap;
     uint64 mResourceIncrement;
 
-    Array<bool> mSamplerLUT;
+    DescriptorAllocator mSamplerAllocator;
     ID3D12DescriptorHeap* mSamplerHeap;
     uint64 mSamplerIncrement;
 
-    Array<bool> mRTVLUT;
+    DescriptorAllocator mRTVAllocator;
     ID3D12DescriptorHeap* mRTVHeap;
     uint64 mRenderTargetIncrement;
 
-    Array<bool> mDSVLUT;
+    DescriptorAllocator mDSVAllocator;
     ID3D12DescriptorHeap* mDSVHeap;
     uint64 mDepthStencilIncrement;
 };

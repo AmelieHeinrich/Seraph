@@ -12,13 +12,13 @@
 #include "D3D12Sampler.h"
 #include "D3D12TLAS.h"
 
-constexpr uint64 MAX_BINDLESS_RESOURCES = 1000000;
+constexpr uint64 MAX_BINDLESS_RESOURCES = 400000;
 constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
 constexpr uint64 MAX_RENDER_TARGETS = 2048;
 constexpr uint64 MAX_DEPTH_TARGETS = 2048;
 
 D3D12BindlessManager::D3D12BindlessManager(D3D12Device* device)
-    : mParentDevice(device)
+    : mParentDevice(device), mResourceAllocator(MAX_BINDLESS_RESOURCES), mSamplerAllocator(MAX_BINDLESS_SAMPLERS), mRTVAllocator(MAX_RENDER_TARGETS), mDSVAllocator(MAX_DEPTH_TARGETS)
 {
     // CBVSRVUAV
     {
@@ -30,7 +30,6 @@ D3D12BindlessManager::D3D12BindlessManager(D3D12Device* device)
         HRESULT result = device->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mResourceHeap));
         ASSERT_EQ(SUCCEEDED(result), "Failed to create descriptor heap!");
 
-        mResourceLUT.resize(MAX_BINDLESS_RESOURCES, false);
         mResourceIncrement = device->GetDevice()->GetDescriptorHandleIncrementSize(desc.Type);
     }
     // SAMPLER
@@ -43,7 +42,6 @@ D3D12BindlessManager::D3D12BindlessManager(D3D12Device* device)
         HRESULT result = device->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mSamplerHeap));
         ASSERT_EQ(SUCCEEDED(result), "Failed to create descriptor heap!");
 
-        mSamplerLUT.resize(MAX_BINDLESS_SAMPLERS, false);
         mSamplerIncrement = device->GetDevice()->GetDescriptorHandleIncrementSize(desc.Type);
     }
     // RTV
@@ -55,7 +53,6 @@ D3D12BindlessManager::D3D12BindlessManager(D3D12Device* device)
         HRESULT result = device->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mRTVHeap));
         ASSERT_EQ(SUCCEEDED(result), "Failed to create descriptor heap!");
 
-        mRTVLUT.resize(MAX_RENDER_TARGETS, false);
         mRenderTargetIncrement = device->GetDevice()->GetDescriptorHandleIncrementSize(desc.Type);
     }
     // UAV
@@ -67,7 +64,6 @@ D3D12BindlessManager::D3D12BindlessManager(D3D12Device* device)
         HRESULT result = device->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mDSVHeap));
         ASSERT_EQ(SUCCEEDED(result), "Failed to create descriptor heap!");
 
-        mDSVLUT.resize(MAX_DEPTH_TARGETS, false);
         mDepthStencilIncrement = device->GetDevice()->GetDescriptorHandleIncrementSize(desc.Type);
     }
 
@@ -87,14 +83,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteTextureSRV(D3D12TextureView* srv)
     ID3D12Resource* resource = static_cast<D3D12Texture*>(srv->GetDesc().Texture)->GetResource();
     auto desc = srv->GetDesc();
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mDSVAllocator.Allocate();
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -126,14 +115,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteTextureUAV(D3D12TextureView* srv)
     ID3D12Resource* resource = static_cast<D3D12Texture*>(srv->GetDesc().Texture)->GetResource();
     auto desc = srv->GetDesc();
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceAllocator.Allocate();
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
@@ -160,14 +142,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteTextureUAV(D3D12TextureView* srv)
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteBufferCBV(D3D12BufferView* cbv)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceAllocator.Allocate();
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC cbvd = {};
     cbvd.BufferLocation = cbv->GetDesc().Buffer->GetAddress();
@@ -188,14 +163,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferSRV(D3D12BufferView* cbv)
 {
     ID3D12Resource* resource = static_cast<D3D12Buffer*>(cbv->GetDesc().Buffer)->GetResource();
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceAllocator.Allocate();
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
     srv.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
@@ -221,14 +189,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferUAV(D3D12BufferView* cbv)
 {
     ID3D12Resource* resource = static_cast<D3D12Buffer*>(cbv->GetDesc().Buffer)->GetResource();
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceAllocator.Allocate();
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavd = {};
     uavd.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -252,14 +213,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteBufferUAV(D3D12BufferView* cbv)
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteAS(D3D12TLAS* as)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceAllocator.Allocate();
 
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
@@ -280,19 +234,12 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteAS(D3D12TLAS* as)
 
 void D3D12BindlessManager::FreeCBVSRVUAV(D3D12BindlessAlloc index)
 {
-    mResourceLUT[index.Index] = false;
+    mResourceAllocator.Free(index.Index);
 }
 
 D3D12BindlessAlloc D3D12BindlessManager::FindFreeSpace()
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceAllocator.Allocate();
 
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
@@ -323,14 +270,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteSampler(D3D12Sampler* sampler)
     samplerDesc.BorderColor[2] = 1.0f;
     samplerDesc.BorderColor[3] = 1.0f;
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mSamplerLUT.size(); i++) {
-        if (mSamplerLUT[i] == false) {
-            mSamplerLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mSamplerAllocator.Allocate();
 
     D3D12BindlessAlloc alloc = {};
     alloc.Index = availableIndex;
@@ -345,21 +285,14 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteSampler(D3D12Sampler* sampler)
 
 void D3D12BindlessManager::FreeSampler(D3D12BindlessAlloc index)
 {
-    mSamplerLUT[index.Index] = false;
+    mSamplerAllocator.Free(index.Index);
 }
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteRTV(D3D12TextureView* rtv)
 {
     ID3D12Resource* resource = static_cast<D3D12Texture*>(rtv->GetDesc().Texture)->GetResource();
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mRTVLUT.size(); i++) {
-        if (mRTVLUT[i] == false) {
-            mRTVLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mRTVAllocator.Allocate();
 
     D3D12_RENDER_TARGET_VIEW_DESC desc = {};
     desc.Format = D3D12Texture::TranslateToDXGIFormat(rtv->GetDesc().ViewFormat);
@@ -379,21 +312,14 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteRTV(D3D12TextureView* rtv)
 
 void D3D12BindlessManager::FreeRTV(D3D12BindlessAlloc index)
 {
-    mRTVLUT[index.Index] = false;
+    mRTVAllocator.Free(index.Index);
 }
 
 D3D12BindlessAlloc D3D12BindlessManager::WriteDSV(D3D12TextureView* dsv)
 {
     ID3D12Resource* resource = static_cast<D3D12Texture*>(dsv->GetDesc().Texture)->GetResource();
 
-    uint availableIndex = 0;
-    for (uint i = 0; i < mDSVLUT.size(); i++) {
-        if (mDSVLUT[i] == false) {
-            mDSVLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mDSVAllocator.Allocate();
 
     D3D12_DEPTH_STENCIL_VIEW_DESC desc = {};
     desc.Format = D3D12Texture::TranslateToDXGIFormat(dsv->GetDesc().ViewFormat);
@@ -417,7 +343,7 @@ D3D12BindlessAlloc D3D12BindlessManager::WriteDSV(D3D12TextureView* dsv)
 
 void D3D12BindlessManager::FreeDSV(D3D12BindlessAlloc index)
 {
-    mDSVLUT[index.Index] = false;
+    mDSVAllocator.Free(index.Index);
 }
 
 D3D12_TEXTURE_ADDRESS_MODE D3D12BindlessManager::TranslateD3DAddress(RHISamplerAddress address)

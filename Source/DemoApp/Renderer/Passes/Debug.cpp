@@ -33,7 +33,7 @@ Debug::Debug(IRHIDevice* device, uint width, uint height)
     desc.LineTopology = true;
     desc.CullMode = RHICullMode::kNone;
     desc.RenderTargetFormats.push_back(RHITextureFormat::kR8G8B8A8_UNORM);
-    desc.PushConstantSize = sizeof(glm::mat4) * 2 + sizeof(uint) * 4;
+    desc.PushConstantSize = (sizeof(glm::mat4) * 2) + (sizeof(uint) * 4);
 
     sData.Pipeline = device->CreateGraphicsPipeline(desc);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {

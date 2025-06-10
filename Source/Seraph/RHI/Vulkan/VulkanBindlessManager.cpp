@@ -16,7 +16,7 @@ constexpr uint64 MAX_BINDLESS_SAMPLERS = 2048;
 constexpr uint64 MAX_BINDLESS_AS = 8;
 
 VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
-    : mParentDevice(device)
+    : mParentDevice(device), mResourceLUT(MAX_BINDLESS_RESOURCES), mSamplerLUT(MAX_BINDLESS_SAMPLERS), mASLUT(MAX_BINDLESS_AS)
 {
     // Layout
     VkDescriptorType cbvSrvUavTypes[] = {
@@ -112,11 +112,6 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     result = vkAllocateDescriptorSets(mParentDevice->Device(), &allocInfo, &mSet);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan descriptor set!");
 
-    // Allocate LUTs
-    mResourceLUT.resize(MAX_BINDLESS_RESOURCES);
-    mSamplerLUT.resize(MAX_BINDLESS_SAMPLERS);
-    mASLUT.resize(MAX_BINDLESS_AS);
-
     // Create global sampler
     VkSamplerCreateInfo samplerInfo = {
         .sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -147,10 +142,6 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
 
 VulkanBindlessManager::~VulkanBindlessManager()
 {
-    mResourceLUT.clear();
-    mSamplerLUT.clear();
-    mASLUT.clear();
-
     if (mGlobalSampler) vkDestroySampler(mParentDevice->Device(), mGlobalSampler, nullptr);
     if (mSet) vkFreeDescriptorSets(mParentDevice->Device(), mPool, 1, &mSet);
     if (mLayout) vkDestroyDescriptorSetLayout(mParentDevice->Device(), mLayout, nullptr);
@@ -159,14 +150,7 @@ VulkanBindlessManager::~VulkanBindlessManager()
 
 uint VulkanBindlessManager::WriteTextureSRV(VulkanTextureView* srv)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceLUT.Allocate();
 
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -189,14 +173,7 @@ uint VulkanBindlessManager::WriteTextureSRV(VulkanTextureView* srv)
 
 uint VulkanBindlessManager::WriteTextureUAV(VulkanTextureView* srv)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceLUT.Allocate();
 
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -218,14 +195,7 @@ uint VulkanBindlessManager::WriteTextureUAV(VulkanTextureView* srv)
 
 uint VulkanBindlessManager::WriteBufferCBV(VulkanBufferView* cbv)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceLUT.Allocate();
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = static_cast<VulkanBuffer*>(cbv->GetDesc().Buffer)->GetBuffer();
@@ -249,14 +219,7 @@ uint VulkanBindlessManager::WriteBufferCBV(VulkanBufferView* cbv)
 
 uint VulkanBindlessManager::WriteBufferSRV(VulkanBufferView* cbv)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceLUT.Allocate();
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = static_cast<VulkanBuffer*>(cbv->GetDesc().Buffer)->GetBuffer();
@@ -280,14 +243,7 @@ uint VulkanBindlessManager::WriteBufferSRV(VulkanBufferView* cbv)
 
 uint VulkanBindlessManager::WriteBufferUAV(VulkanBufferView* cbv)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mResourceLUT.size(); i++) {
-        if (mResourceLUT[i] == false) {
-            mResourceLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mResourceLUT.Allocate();
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = static_cast<VulkanBuffer*>(cbv->GetDesc().Buffer)->GetBuffer();
@@ -311,19 +267,12 @@ uint VulkanBindlessManager::WriteBufferUAV(VulkanBufferView* cbv)
 
 void VulkanBindlessManager::FreeCBVSRVUAV(uint index)
 {
-    mResourceLUT[index] = false;
+    mResourceLUT.Free(index);
 }
 
 uint VulkanBindlessManager::WriteSampler(VulkanSampler* sampler)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mSamplerLUT.size(); i++) {
-        if (mSamplerLUT[i] == false) {
-            mSamplerLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mSamplerLUT.Allocate();
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.sampler = sampler->GetSampler();
@@ -344,19 +293,12 @@ uint VulkanBindlessManager::WriteSampler(VulkanSampler* sampler)
 
 void VulkanBindlessManager::FreeSampler(uint index)
 {
-    mSamplerLUT[index] = false;
+    mSamplerLUT.Free(index);
 }
 
 uint VulkanBindlessManager::WriteAS(VulkanTLAS* as)
 {
-    uint availableIndex = 0;
-    for (uint i = 0; i < mASLUT.size(); i++) {
-        if (mASLUT[i] == false) {
-            mASLUT[i] = true;
-            availableIndex = i;
-            break;
-        }
-    }
+    uint availableIndex = mASLUT.Allocate();
 
     VkAccelerationStructureKHR handle = as->GetHandle();
 
@@ -384,5 +326,5 @@ uint VulkanBindlessManager::WriteAS(VulkanTLAS* as)
 
 void VulkanBindlessManager::FreeAS(uint index)
 {
-    mASLUT[index] = false;
+    mASLUT.Free(index);
 }

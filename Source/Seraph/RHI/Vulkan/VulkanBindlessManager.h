@@ -8,6 +8,7 @@
 #include <Core/Context.h>
 
 #include <Vk/volk.h>
+#include <RHI/DescriptorAllocator.h>
 
 class VulkanDevice;
 class VulkanTextureView;
@@ -52,7 +53,7 @@ private:
 
     VkSampler mGlobalSampler;
 
-    Array<bool> mResourceLUT;
-    Array<bool> mSamplerLUT;
-    Array<bool> mASLUT;
+    DescriptorAllocator mResourceLUT;
+    DescriptorAllocator mSamplerLUT;
+    DescriptorAllocator mASLUT;
 };
