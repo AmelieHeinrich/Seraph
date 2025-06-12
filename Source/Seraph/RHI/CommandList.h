@@ -13,6 +13,7 @@
 #include "ComputePipeline.h"
 #include "BLAS.h"
 #include "TLAS.h"
+#include "MeshPipeline.h"
 
 enum class RHIPipelineStage : uint64
 {
@@ -178,9 +179,13 @@ public:
     virtual void SetComputePipeline(IRHIComputePipeline* pipeline) = 0;
     virtual void SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size) = 0;
 
+    virtual void SetMeshPipeline(IRHIMeshPipeline* pipeline) = 0;
+    virtual void SetMeshConstants(IRHIMeshPipeline* pipeline, const void *data, uint64 size) = 0;
+
     virtual void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) = 0;
     virtual void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) = 0;
     virtual void Dispatch(uint x, uint y, uint z) = 0;
+    virtual void DispatchMesh(uint x, uint y, uint z) = 0;
 
     virtual void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) = 0;
     virtual void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) = 0;

@@ -19,6 +19,7 @@
 ## Tests
 
 - Textured test
-- Texture blending
+- Uncompressed vs compressed textures
+- Texture alpha cut
 - Viewport & Scissor
 - Skybox

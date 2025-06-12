@@ -12,6 +12,7 @@
 #include "VulkanComputePipeline.h"
 #include "VulkanBLAS.h"
 #include "VulkanTLAS.H"
+#include "VulkanMeshPipeline.h"
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_sdl3.h>
@@ -381,6 +382,22 @@ void VulkanCommandList::SetComputeConstants(IRHIComputePipeline* pipeline, const
     vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, size, data);
 }
 
+void VulkanCommandList::SetMeshPipeline(IRHIMeshPipeline* pipeline)
+{
+    VkDescriptorSet set = mParentDevice->GetBindlessManager()->GetSet();
+    VulkanMeshPipeline* vkPipeline = static_cast<VulkanMeshPipeline*>(pipeline);
+
+    vkCmdBindPipeline(mCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetPipeline());
+    vkCmdBindDescriptorSets(mCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->GetLayout(), 0, 1, &set, 0, nullptr);
+}
+
+void VulkanCommandList::SetMeshConstants(IRHIMeshPipeline* pipeline, const void *data, uint64 size)
+{
+    VulkanMeshPipeline* vkPipeline = static_cast<VulkanMeshPipeline*>(pipeline);
+
+    vkCmdPushConstants(mCmdBuffer, vkPipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, 0, size, data);
+}
+
 void VulkanCommandList::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     vkCmdDraw(mCmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -394,6 +411,11 @@ void VulkanCommandList::DrawIndexed(uint indexCount, uint instanceCount, uint fi
 void VulkanCommandList::Dispatch(uint x, uint y, uint z)
 {
     vkCmdDispatch(mCmdBuffer, x, y, z);
+}
+
+void VulkanCommandList::DispatchMesh(uint x, uint y, uint z)
+{
+    vkCmdDrawMeshTasksEXT(mCmdBuffer, x, y, z);
 }
 
 void VulkanCommandList::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)

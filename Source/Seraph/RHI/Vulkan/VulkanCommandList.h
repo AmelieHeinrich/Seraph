@@ -37,9 +37,13 @@ public:
     void SetComputePipeline(IRHIComputePipeline* pipeline) override;
     void SetComputeConstants(IRHIComputePipeline* pipeline, const void* data, uint64 size) override;
 
+    void SetMeshPipeline(IRHIMeshPipeline* pipeline) override;
+    void SetMeshConstants(IRHIMeshPipeline* pipeline, const void *data, uint64 size) override;
+
     void Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) override;
     void DrawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint vertexOffset, uint firstInstance) override;
     void Dispatch(uint x, uint y, uint z) override;
+    void DispatchMesh(uint x, uint y, uint z) override;
 
     void CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src) override;
     void CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src) override;

@@ -86,6 +86,10 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     Slang::ComPtr<slang::IComponentType> linkedProgram = nullptr;
     Slang::ComPtr<ISlangBlob> diagnosticBlob = nullptr;
     program->link(linkedProgram.writeRef(), diagnosticBlob.writeRef());
+    if (diagnosticBlob) {
+        SERAPH_ERROR("Failed to link shader %s : %s", path.c_str(), diagnosticBlob->getBufferPointer());
+        return {};
+    }
 
     for (int i = 0; i < entryPoints.size(); i++) {
         Slang::ComPtr<slang::IBlob> kernelBlob;

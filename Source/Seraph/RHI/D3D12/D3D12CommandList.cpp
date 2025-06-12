@@ -11,6 +11,7 @@
 #include "D3D12Buffer.h"
 #include "D3D12GraphicsPipeline.h"
 #include "D3D12ComputePipeline.h"
+#include "D3D12MeshPipeline.h"
 #include "D3D12BLAS.h"
 #include "D3D12TLAS.h"
 
@@ -299,6 +300,19 @@ void D3D12CommandList::SetComputeConstants(IRHIComputePipeline* pipeline, const 
     mList->SetComputeRoot32BitConstants(0, size / 4, data, 0);
 }
 
+void D3D12CommandList::SetMeshPipeline(IRHIMeshPipeline* pipeline)
+{
+    D3D12MeshPipeline* d3dPipeline = static_cast<D3D12MeshPipeline*>(pipeline);
+
+    mList->SetPipelineState(d3dPipeline->GetPipelineState());
+    mList->SetGraphicsRootSignature(d3dPipeline->GetRootSignature());
+}
+
+void D3D12CommandList::SetMeshConstants(IRHIMeshPipeline* pipeline, const void *data, uint64 size)
+{
+    mList->SetGraphicsRoot32BitConstants(0, size / 4, data, 0);
+}
+
 void D3D12CommandList::Draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance)
 {
     mList->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
@@ -312,6 +326,11 @@ void D3D12CommandList::DrawIndexed(uint indexCount, uint instanceCount, uint fir
 void D3D12CommandList::Dispatch(uint x, uint y, uint z)
 {
     mList->Dispatch(x, y, z);
+}
+
+void D3D12CommandList::DispatchMesh(uint x, uint y, uint z)
+{
+    mList->DispatchMesh(x, y, z);
 }
 
 void D3D12CommandList::CopyBufferToBufferFull(IRHIBuffer* dest, IRHIBuffer* src)
