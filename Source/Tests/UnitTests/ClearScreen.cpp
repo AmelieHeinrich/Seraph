@@ -4,70 +4,51 @@
 //
 
 #include "Test.h"
+#include "Base.h"
 
-DEFINE_RHI_TEST(ClearScreen) {
-    TestStarters starters = ITest::CreateStarters(backend);
-    
-    IRHITextureView* view = starters.Device->CreateTextureView(RHITextureViewDesc(starters.RenderTexture, RHITextureViewType::kRenderTarget));
-    IRHICommandList* cmdBuf = starters.Queue->CreateCommandBuffer(true);
-
-    cmdBuf->Begin();
+class ClearScreenTest : public RHIBaseTest
+{
+public:
+    ClearScreenTest(RHIBackend backend)
+        : RHIBaseTest(backend)
     {
-        RHITextureBarrier beginRenderBarrier(starters.RenderTexture);
+        mView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mStarters.RenderTexture, RHITextureViewType::kRenderTarget));
+    }
+
+    ~ClearScreenTest()
+    {
+        delete mView;
+    }
+
+    void Execute() override
+    {
+        RHITextureBarrier beginRenderBarrier(mStarters.RenderTexture);
         beginRenderBarrier.SourceStage  = RHIPipelineStage::kBottomOfPipe;
         beginRenderBarrier.DestStage    = RHIPipelineStage::kColorAttachmentOutput;
         beginRenderBarrier.SourceAccess = RHIResourceAccess::kNone;
         beginRenderBarrier.DestAccess   = RHIResourceAccess::kColorAttachmentWrite;
         beginRenderBarrier.NewLayout    = RHIResourceLayout::kColorAttachment;
 
-        RHITextureBarrier endRenderBarrier(starters.RenderTexture);
+        RHITextureBarrier endRenderBarrier(mStarters.RenderTexture);
         endRenderBarrier.SourceStage  = RHIPipelineStage::kColorAttachmentOutput;
         endRenderBarrier.DestStage    = RHIPipelineStage::kCopy;
         endRenderBarrier.SourceAccess = RHIResourceAccess::kColorAttachmentWrite;
         endRenderBarrier.DestAccess   = RHIResourceAccess::kMemoryRead;
         endRenderBarrier.NewLayout    = RHIResourceLayout::kTransferSrc;
 
-        RHIRenderAttachment attachment(view);
-        RHIRenderBegin renderBegin(starters.RenderTexture->GetDesc().Width, starters.RenderTexture->GetDesc().Height, { attachment }, {});
+        RHIRenderAttachment attachment(mView);
+        RHIRenderBegin renderBegin(mStarters.RenderTexture->GetDesc().Width, mStarters.RenderTexture->GetDesc().Height, { attachment }, {});
 
-        cmdBuf->Barrier(beginRenderBarrier);
-        cmdBuf->BeginRendering(renderBegin);
-        cmdBuf->EndRendering();
-        cmdBuf->Barrier(endRenderBarrier);
+        mCommandList->Barrier(beginRenderBarrier);
+        mCommandList->BeginRendering(renderBegin);
+        mCommandList->EndRendering();
+        mCommandList->Barrier(endRenderBarrier);
     }
-    cmdBuf->End();
-    starters.Queue->SubmitAndFlushCommandBuffer(cmdBuf);
-    delete cmdBuf;
+private:
+    IRHITextureView* mView;
+};
 
-    cmdBuf = starters.Queue->CreateCommandBuffer(true);
-    cmdBuf->Begin();
-    {
-        RHIBufferBarrier beginBufferBarrier(starters.ScreenshotBuffer);
-        beginBufferBarrier.SourceAccess = RHIResourceAccess::kMemoryRead;
-        beginBufferBarrier.DestAccess = RHIResourceAccess::kMemoryWrite;
-        beginBufferBarrier.SourceStage = RHIPipelineStage::kAllCommands;
-        beginBufferBarrier.DestStage = RHIPipelineStage::kCopy;
-
-        RHIBufferBarrier endBufferBarrier(starters.ScreenshotBuffer);
-        endBufferBarrier.SourceAccess = RHIResourceAccess::kMemoryWrite;
-        endBufferBarrier.DestAccess = RHIResourceAccess::kMemoryRead;
-        endBufferBarrier.SourceStage = RHIPipelineStage::kCopy;
-        endBufferBarrier.DestStage = RHIPipelineStage::kAllCommands;
-
-        cmdBuf->Barrier(beginBufferBarrier);
-        cmdBuf->CopyTextureToBuffer(starters.ScreenshotBuffer, starters.RenderTexture);
-        cmdBuf->Barrier(endBufferBarrier);
-    }
-    cmdBuf->End();
-    starters.Queue->SubmitAndFlushCommandBuffer(cmdBuf);
-
-    void* data = starters.ScreenshotBuffer->Map();
-    memcpy(starters.ScreenshotData.Pixels.data(), data, starters.ScreenshotData.Pixels.size());
-    starters.ScreenshotBuffer->Unmap();
-
-    delete cmdBuf;
-    delete view;
-    ITest::DeleteStarts(starters);
-
-    return { std::move(starters.ScreenshotData), true };
+DEFINE_RHI_TEST(ClearScreen) {
+    ClearScreenTest test(backend);
+    return test.Run();
 }

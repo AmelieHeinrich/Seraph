@@ -4,65 +4,78 @@
 //
 
 #include "Test.h"
+#include "Base.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-DEFINE_RHI_TEST(RayQuery) {
-    TestStarters starters = ITest::CreateStarters(backend);
-
-    uint indices[] = {
-        0, 1, 2
-    };
-
-    glm::vec3 vertices[] = {
-        glm::vec3{  0.0f, -0.5f, 1.0f },
-        glm::vec3{ -0.5f,  0.5f, 1.0f },
-        glm::vec3{  0.5f,  0.5f, 1.0f }
-    };
-
-    IRHIBuffer* vertexBuffer = starters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(glm::vec3), RHIBufferUsage::kVertex));
-    IRHIBuffer* indexBuffer = starters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
-    IRHIBLAS* blas = starters.Device->CreateBLAS(RHIBLASDesc(vertexBuffer, indexBuffer));
-    IRHITLAS* tlas = starters.Device->CreateTLAS();
-
-    TLASInstance instance = {};
-    instance.Transform = glm::identity<glm::mat3x4>();
-    instance.AccelerationStructureReference = blas->GetAddress();
-    instance.Mask = 1;
-    instance.InstanceCustomIndex = 0;
-    instance.Flags = TLAS_INSTANCE_OPAQUE;
-
-    IRHIBuffer* instanceBuffer = starters.Device->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance), sizeof(TLASInstance), RHIBufferUsage::kConstant));
-    void* ptr = instanceBuffer->Map();
-    memcpy(ptr, &instance, sizeof(instance));
-    instanceBuffer->Unmap();
-
-    Uploader::EnqueueBufferUpload(vertices, sizeof(vertices), vertexBuffer);
-    Uploader::EnqueueBufferUpload(indices, sizeof(indices), indexBuffer);
-    Uploader::EnqueueBLASBuild(blas);
-    Uploader::EnqueueTLASBuild(tlas, instanceBuffer, 1);
-    Uploader::Flush();
-    
-    IRHITextureView* view = starters.Device->CreateTextureView(RHITextureViewDesc(starters.RenderTexture, RHITextureViewType::kShaderWrite));
-    IRHICommandList* cmdBuf = starters.Queue->CreateCommandBuffer(true);
-    
-    CompiledShader shader = ShaderCompiler::Compile("Tests/RayQuery.slang", { "CSMain" });
-
-    RHIComputePipelineDesc desc = {};
-    desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 4;
-    IRHIComputePipeline* pipeline = starters.Device->CreateComputePipeline(desc);
-
-    cmdBuf->Begin();
+class RayQueryTest : public RHIBaseTest
+{
+public:
+    RayQueryTest(RHIBackend backend)
+        : RHIBaseTest(backend)
     {
-        RHITextureBarrier beginRenderBarrier(starters.RenderTexture);
+        uint indices[] = {
+            0, 1, 2
+        };
+
+        glm::vec3 vertices[] = {
+            glm::vec3{  0.0f, -0.5f, 1.0f },
+            glm::vec3{ -0.5f,  0.5f, 1.0f },
+            glm::vec3{  0.5f,  0.5f, 1.0f }
+        };
+
+        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(glm::vec3), RHIBufferUsage::kVertex));
+        mIndexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
+        mBLAS = mStarters.Device->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
+        mTLAS = mStarters.Device->CreateTLAS();
+        mInstanceBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance), sizeof(TLASInstance), RHIBufferUsage::kConstant));
+        mView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mStarters.RenderTexture, RHITextureViewType::kShaderWrite));
+
+        TLASInstance instance = {};
+        instance.Transform = glm::identity<glm::mat3x4>();
+        instance.AccelerationStructureReference = mBLAS->GetAddress();
+        instance.Mask = 1;
+        instance.InstanceCustomIndex = 0;
+        instance.Flags = TLAS_INSTANCE_OPAQUE;
+
+        void* ptr = mInstanceBuffer->Map();
+        memcpy(ptr, &instance, sizeof(instance));
+        mInstanceBuffer->Unmap();
+
+        CompiledShader shader = ShaderCompiler::Compile("Tests/RayQuery.slang", { "CSMain" });
+
+        RHIComputePipelineDesc desc = {};
+        desc.ComputeBytecode = shader.Entries["CSMain"];
+        desc.PushConstantSize = sizeof(uint) * 4;
+        mComputePipeline = mStarters.Device->CreateComputePipeline(desc);
+
+        Uploader::EnqueueBufferUpload(vertices, sizeof(vertices), mVertexBuffer);
+        Uploader::EnqueueBufferUpload(indices, sizeof(indices), mIndexBuffer);
+        Uploader::EnqueueBLASBuild(mBLAS);
+        Uploader::EnqueueTLASBuild(mTLAS, mInstanceBuffer, 1);
+        Uploader::Flush();
+    }
+
+    ~RayQueryTest()
+    {
+        delete mTLAS;
+        delete mBLAS;
+        delete mIndexBuffer;
+        delete mVertexBuffer;
+        delete mComputePipeline;
+        delete mView;
+    }
+
+    void Execute() override
+    {
+        RHITextureBarrier beginRenderBarrier(mStarters.RenderTexture);
         beginRenderBarrier.SourceStage = RHIPipelineStage::kBottomOfPipe;
         beginRenderBarrier.DestStage = RHIPipelineStage::kComputeShader;
         beginRenderBarrier.SourceAccess = RHIResourceAccess::kNone;
         beginRenderBarrier.DestAccess = RHIResourceAccess::kShaderWrite;
         beginRenderBarrier.NewLayout = RHIResourceLayout::kGeneral;
 
-        RHITextureBarrier endRenderBarrier(starters.RenderTexture);
+        RHITextureBarrier endRenderBarrier(mStarters.RenderTexture);
         endRenderBarrier.SourceStage = RHIPipelineStage::kComputeShader;
         endRenderBarrier.DestStage = RHIPipelineStage::kCopy;
         endRenderBarrier.SourceAccess = RHIResourceAccess::kShaderWrite;
@@ -75,56 +88,32 @@ DEFINE_RHI_TEST(RayQuery) {
             uint width;
             uint height;
         } handle = {
-            view->GetBindlessHandle(),
-            tlas->GetBindlessHandle(),
+            mView->GetBindlessHandle(),
+            mTLAS->GetBindlessHandle(),
             TEST_WIDTH,
             TEST_HEIGHT
         };
 
-        cmdBuf->Barrier(beginRenderBarrier);
-        cmdBuf->SetComputePipeline(pipeline);
-        cmdBuf->SetComputeConstants(pipeline, &handle, sizeof(handle));
-        cmdBuf->Dispatch((TEST_WIDTH + 7) / 8, (TEST_HEIGHT + 7) / 8, 1);
-        cmdBuf->Barrier(endRenderBarrier);
+        mCommandList->Barrier(beginRenderBarrier);
+        mCommandList->SetComputePipeline(mComputePipeline);
+        mCommandList->SetComputeConstants(mComputePipeline, &handle, sizeof(handle));
+        mCommandList->Dispatch((TEST_WIDTH + 7) / 8, (TEST_HEIGHT + 7) / 8, 1);
+        mCommandList->Barrier(endRenderBarrier);
     }
-    cmdBuf->End();
-    starters.Queue->SubmitAndFlushCommandBuffer(cmdBuf);
-    delete cmdBuf;
+private:
+    IRHITextureView* mView;
+    
+    IRHIBuffer* mVertexBuffer;
+    IRHIBuffer* mIndexBuffer;
+    IRHIBLAS* mBLAS;
+    
+    IRHITLAS* mTLAS;
+    IRHIBuffer* mInstanceBuffer;
+    
+    IRHIComputePipeline* mComputePipeline;
+};
 
-    cmdBuf = starters.Queue->CreateCommandBuffer(true);
-    cmdBuf->Begin();
-    {
-        RHIBufferBarrier beginBufferBarrier(starters.ScreenshotBuffer);
-        beginBufferBarrier.SourceAccess = RHIResourceAccess::kMemoryRead;
-        beginBufferBarrier.DestAccess = RHIResourceAccess::kMemoryWrite;
-        beginBufferBarrier.SourceStage = RHIPipelineStage::kAllCommands;
-        beginBufferBarrier.DestStage = RHIPipelineStage::kCopy;
-
-        RHIBufferBarrier endBufferBarrier(starters.ScreenshotBuffer);
-        endBufferBarrier.SourceAccess = RHIResourceAccess::kMemoryWrite;
-        endBufferBarrier.DestAccess = RHIResourceAccess::kMemoryRead;
-        endBufferBarrier.SourceStage = RHIPipelineStage::kCopy;
-        endBufferBarrier.DestStage = RHIPipelineStage::kAllCommands;
-
-        cmdBuf->Barrier(beginBufferBarrier);
-        cmdBuf->CopyTextureToBuffer(starters.ScreenshotBuffer, starters.RenderTexture);
-        cmdBuf->Barrier(endBufferBarrier);
-    }
-    cmdBuf->End();
-    starters.Queue->SubmitAndFlushCommandBuffer(cmdBuf);
-
-    void* data = starters.ScreenshotBuffer->Map();
-    memcpy(starters.ScreenshotData.Pixels.data(), data, starters.ScreenshotData.Pixels.size());
-    starters.ScreenshotBuffer->Unmap();
-
-    delete tlas;
-    delete blas;
-    delete indexBuffer;
-    delete vertexBuffer;
-    delete pipeline;
-    delete cmdBuf;
-    delete view;
-    ITest::DeleteStarts(starters);
-
-    return { std::move(starters.ScreenshotData), true };
+DEFINE_RHI_TEST(RayQuery) {
+    RayQueryTest test(backend);
+    return test.Run();
 }

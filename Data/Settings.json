@@ -1,5 +1,5 @@
 {
     "width": 1920,
     "height": 1080,
-    "backend": "D3D12"
+    "backend": "Vulkan"
 }
