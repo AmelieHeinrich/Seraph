@@ -79,21 +79,22 @@ void GBuffer::Render(RenderPassBegin& begin)
             for (auto& node : model->GetNodes()) {
                 for (auto& primitive : node.Primitives) {
                     ModelMaterial material = model->GetMaterials()[primitive.MaterialIndex];
-                    IRHITextureView* albedoView = material.Albedo ? material.Albedo->TextureOrImage.View : RendererViewRecycler::GetSRV(defaultWhite.Texture);
+                    BindlessHandle albedoView = material.Albedo ? material.Albedo->TextureOrImage.View->GetBindlessHandle() : RendererViewRecycler::GetSRV(defaultWhite.Texture)->GetBindlessHandle();
+                    BindlessHandle normalView = material.Normal ? material.Normal->TextureOrImage.View->GetBindlessHandle() : INVALID_HANDLE;
 
                     struct PushConstant {
                         BindlessHandle Texture;
+                        BindlessHandle Normal;
                         BindlessHandle Sampler;
                         BindlessHandle VertexBuffer;
-                        uint Pad;
-                    
+
                         glm::mat4 View;
                         glm::mat4 Projection;
                     } constant = {
-                        albedoView->GetBindlessHandle(),
+                        albedoView,
+                        normalView,
                         materialSampler.Sampler->GetBindlessHandle(),
                         RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
-                        0,
                     
                         begin.View,
                         begin.Projection

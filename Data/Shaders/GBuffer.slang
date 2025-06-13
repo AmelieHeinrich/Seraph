@@ -15,12 +15,19 @@ struct VertexInput
 
     float2 Texcoord;
     float2 _pad2;
+
+    float3 Tangent;
+    float _pad3;
+
+    float3 Bitangent;
+    float _pad4;
 };
 DEFINE_SRV_ARRAY(VertexInput);
 
 struct VertexOutput
 {
     float4 Position : SV_Position;
+    float4 WorldPosition : POSITION;
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
 };
@@ -34,9 +41,9 @@ struct FragmentOutput
 struct PushConstants
 {
     uint MyTexture;
+    uint MyNormalTexture;
     uint MySampler;
     uint MyVertexBuffer;
-    uint Pad;
 
     column_major float4x4 View;
     column_major float4x4 Projection;
@@ -51,6 +58,7 @@ VertexOutput VSMain(uint vid : SV_VertexID)
 
     VertexOutput output = {};
     output.Position = mul(Push.Projection, mul(Push.View, float4(input.Position, 1.0f)));
+    output.WorldPosition = float4(input.Position, 1.0f);
     output.Normal = input.Normal;
     output.UV = input.Texcoord;
     return output;
@@ -63,9 +71,7 @@ FragmentOutput FSMain(VertexOutput input)
     SamplerState sampler = BindlessSampler.Load(Push.MySampler);
 
     FragmentOutput output = {};
-    output.Normal = float4(input.Normal, 1.0);
-    output.Albedo = texture.Sample(sampler, input.UV);
-    if (output.Albedo.a < 0.1)
-        discard;
+    output.Normal = float4(input.Normal, 1.0f);
+    output.Albedo = output.Normal;
     return output;
 }

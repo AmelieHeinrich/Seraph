@@ -7,6 +7,8 @@ module Bindless;
 
 import BindlessTypes;
 
+static const uint INVALID_DESCRIPTOR = 0xFFFFFFFF;
+
 #define PUSH_CONSTANTS(Type, Name) [[vk::push_constant]] ConstantBuffer<Type> Name : register(b0)
 
 #ifdef VULKAN

@@ -22,7 +22,13 @@ struct alignas(16) StaticModelVertex
     float _pad1;          // 4 bytes padding
 
     glm::vec2 Texcoord;   // 8 bytes
-    float _pad2[2];       // 8 bytes padding to align to 16 bytes
+    float _pad2[2];       // 8 bytes padding
+
+    glm::vec3 Tangent;    // 12 bytes
+    float _pad3;          // 4 bytes padding
+
+    glm::vec3 Biangent;   // 12 bytes
+    float _pad4;          // 4 bytes padding
 };
 
 struct ModelMaterial
