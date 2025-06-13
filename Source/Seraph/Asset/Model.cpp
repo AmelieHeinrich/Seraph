@@ -50,6 +50,8 @@ Model::~Model()
         }
     }
     for (auto& material : mMaterials) {
+        if (material.PBR) AssetManager::Release(material.PBR);
+        if (material.Normal) AssetManager::Release(material.Normal);
         if (material.Albedo) AssetManager::Release(material.Albedo);
     }
 }
@@ -164,6 +166,16 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
             String path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.base_color_texture.texture->image->uri);
     
             modelMaterial.Albedo = AssetManager::Get(path, AssetType::kTexture);
+        }
+        if (material->normal_texture.texture) {
+            String path = mDirectory + '/' + std::string(material->normal_texture.texture->image->uri);
+    
+            modelMaterial.Normal = AssetManager::Get(path, AssetType::kTexture);
+        }
+        if (material->pbr_metallic_roughness.metallic_roughness_texture.texture) {
+            String path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri);
+    
+            modelMaterial.PBR = AssetManager::Get(path, AssetType::kTexture);
         }
     }
 

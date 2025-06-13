@@ -30,6 +30,8 @@ struct ModelMaterial
     bool AlphaTested = false;
 
     Asset* Albedo;
+    Asset* Normal;
+    Asset* PBR;
 };
 
 struct ModelPrimitive
