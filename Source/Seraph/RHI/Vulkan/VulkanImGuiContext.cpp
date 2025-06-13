@@ -42,6 +42,8 @@ VulkanImGuiContext::VulkanImGuiContext(VulkanDevice* device, VulkanCommandQueue*
     initInfo.ImageCount = FRAMES_IN_FLIGHT;
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     initInfo.DescriptorPoolSize = 100;
+    
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("Data/Fonts/UIFont.ttf", 16);
 
     ImGui_ImplSDL3_InitForVulkan(window->GetWindow());
     ImGui_ImplVulkan_Init(&initInfo);

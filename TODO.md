@@ -2,7 +2,6 @@
 
 ## Frontburner
 
-- Build light list
 - Simple point light shading with Cook-Torrance BRDF
 - FPS count, triangle count, draw call count
 
@@ -18,8 +17,6 @@
 
 ## Tests
 
-- Textured test
 - Uncompressed vs compressed textures
-- Texture alpha cut
 - Viewport & Scissor
 - Skybox

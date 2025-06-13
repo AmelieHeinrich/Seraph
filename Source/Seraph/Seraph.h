@@ -19,6 +19,7 @@
 #include "Core/Types.h"
 #include "Core/Window.h"
 
+#include "Renderer/Lights.h"
 #include "Renderer/RendererResource.h"
 #include "Renderer/RendererResourceManager.h"
 #include "Renderer/RendererViewRecycler.h"
@@ -43,3 +44,5 @@
 #include "RHI/TextureView.h"
 #include "RHI/TLAS.h"
 #include "RHI/Uploader.h"
+
+#include "World/Scene.h"

@@ -26,9 +26,7 @@ public:
 
     void Run();
 private:
-    void BeginDockspace();
-    void UI(RenderPassBegin& begin, RendererResource& ldr);
-    void EndDockspace();
+    void UI(RenderPassBegin& begin);
 
     ApplicationSpecs mSpecs;
     Camera mCamera;
@@ -43,9 +41,14 @@ private:
     IRHIImGuiContext* mImGuiContext;
 
     Renderer* mRenderer;
+    Scene* mScene;
 
-    ImVec2 mViewportSize;
-    ImVec2 mViewportBounds[2];
-    bool mViewportFocused = false;
-    bool mGizmoFocused = false;
+private:
+    // UI stuff
+    bool mUIOpened = false;
+    bool mOverlayOpened = true;
+
+private:
+    // Utility
+    String mStringBackend;
 };

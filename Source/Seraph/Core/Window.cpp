@@ -15,6 +15,8 @@ Window::Window(int width, int height, const StringView& title)
 
     mWindow = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN);
     ASSERT_EQ(mWindow != nullptr, "Failed to create SDL3 window!");
+
+    SDL_SetWindowFullscreen(mWindow, true);
 }
 
 Window::~Window()

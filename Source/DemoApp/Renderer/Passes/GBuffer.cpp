@@ -31,9 +31,6 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, true));
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
-    // Model
-    mSponza = AssetManager::Get("Data/Models/NewSponza/NewSponza.gltf", AssetType::kModel);
-
     // Shader
     CompiledShader shader = ShaderCompiler::Compile("GBuffer", { "VSMain", "FSMain" });
 
@@ -55,7 +52,6 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
 
 GBuffer::~GBuffer()
 {
-    AssetManager::Release(mSponza);
     delete mPipeline;
 }
 
@@ -78,32 +74,35 @@ void GBuffer::Render(RenderPassBegin& begin)
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->SetGraphicsPipeline(mPipeline);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
-        for (auto& node : mSponza->Model->GetNodes()) {
-            for (auto& primitive : node.Primitives) {
-                ModelMaterial material = mSponza->Model->GetMaterials()[primitive.MaterialIndex];
-                IRHITextureView* albedoView = material.Albedo ? material.Albedo->TextureOrImage.View : RendererViewRecycler::GetSRV(defaultWhite.Texture);
+        for (auto& entity : begin.RenderScene->GetEntities()) {
+            Model* model = entity.Model->Model;
+            for (auto& node : model->GetNodes()) {
+                for (auto& primitive : node.Primitives) {
+                    ModelMaterial material = model->GetMaterials()[primitive.MaterialIndex];
+                    IRHITextureView* albedoView = material.Albedo ? material.Albedo->TextureOrImage.View : RendererViewRecycler::GetSRV(defaultWhite.Texture);
 
-                struct PushConstant {
-                    BindlessHandle Texture;
-                    BindlessHandle Sampler;
-                    BindlessHandle VertexBuffer;
-                    uint Pad;
+                    struct PushConstant {
+                        BindlessHandle Texture;
+                        BindlessHandle Sampler;
+                        BindlessHandle VertexBuffer;
+                        uint Pad;
+                    
+                        glm::mat4 View;
+                        glm::mat4 Projection;
+                    } constant = {
+                        albedoView->GetBindlessHandle(),
+                        materialSampler.Sampler->GetBindlessHandle(),
+                        RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
+                        0,
+                    
+                        begin.View,
+                        begin.Projection
+                    };
                 
-                    glm::mat4 View;
-                    glm::mat4 Projection;
-                } constant = {
-                    albedoView->GetBindlessHandle(),
-                    materialSampler.Sampler->GetBindlessHandle(),
-                    RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
-                    0,
-                
-                    begin.View,
-                    begin.Projection
-                };
-            
-                begin.CommandList->SetIndexBuffer(primitive.IndexBuffer);
-                begin.CommandList->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
-                begin.CommandList->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);
+                    begin.CommandList->SetIndexBuffer(primitive.IndexBuffer);
+                    begin.CommandList->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
+                    begin.CommandList->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);
+                }
             }
         }
         begin.CommandList->EndRendering();

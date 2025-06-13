@@ -12,6 +12,8 @@
 Application::Application(const ApplicationSpecs& specs)
     : mSpecs(specs)
 {
+    mStringBackend = specs.Backend == RHIBackend::kVulkan ? "Vulkan" : "D3D12";
+
     Compressor compressor;
     compressor.RecurseFolder("Data/");
 
@@ -31,6 +33,9 @@ Application::Application(const ApplicationSpecs& specs)
     }
 
     mRenderer = new Renderer(mDevice, mSpecs.WindowWidth, mSpecs.WindowHeight);
+    mScene = new Scene(mDevice);
+    mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
+
     Uploader::Flush();
 }
 
@@ -38,6 +43,7 @@ Application::~Application()
 {
     Uploader::Shutdown();
 
+    delete mScene;
     delete mRenderer;
     delete mImGuiContext;
     delete mF2FSync;
@@ -55,8 +61,6 @@ Application::~Application()
 void Application::Run()
 {
     auto lastFrame = std::chrono::high_resolution_clock::now();
-    int firstFrame = 0;
-
     while (mWindow->IsOpen()) {
         // Start Frame
         mWindow->PollEvents();
@@ -75,9 +79,10 @@ void Application::Run()
         begin.SwapchainTextureView = mSurface->GetTextureView(begin.FrameIndex);
         begin.Projection = mCamera.Projection();
         begin.View = mCamera.View();
+        begin.RenderScene = mScene;
 
         // Record command list
-        RHITextureBarrier beginGuiBarrier(begin.SwapchainTexture, firstFrame < 3 ? RHIResourceAccess::kNone : RHIResourceAccess::kMemoryRead, RHIResourceAccess::kColorAttachmentWrite, RHIPipelineStage::kBottomOfPipe, RHIPipelineStage::kColorAttachmentOutput, RHIResourceLayout::kColorAttachment);
+
         RHITextureBarrier endGuiBarrier(begin.SwapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kAllCommands, RHIResourceLayout::kPresent);
         RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(begin.SwapchainTextureView, false) }, {});
 
@@ -89,13 +94,9 @@ void Application::Run()
         
         // ImGui
         begin.CommandList->PushMarker("ImGui");
-        RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kShaderRead);
-        begin.CommandList->Barrier(beginGuiBarrier);
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->BeginImGui();
-        BeginDockspace();
-        UI(begin, ldr);
-        EndDockspace();
+        UI(begin);
         begin.CommandList->EndImGui();
         begin.CommandList->EndRendering();
         begin.CommandList->Barrier(endGuiBarrier);
@@ -106,81 +107,58 @@ void Application::Run()
         mF2FSync->EndSynchronize(mCommandBuffers[begin.FrameIndex]);
         mF2FSync->PresentSurface();
 
-        // Update camera
+        // Update
         mCamera.Update(delta, 16, 9);
-        firstFrame++;
+        mScene->Update();
     }
 }
 
-void Application::UI(RenderPassBegin& begin, RendererResource& ldr)
+void Application::UI(RenderPassBegin& begin)
 {
-    ImGui::Begin("Viewport");
-
-    auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-    auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-    auto viewportOffset = ImGui::GetWindowPos();
-    mViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-    mViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-    mViewportFocused = ImGui::IsWindowFocused();
-
-    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-    mViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-    ImGui::Image((ImTextureID)RendererViewRecycler::GetSRV(ldr.Texture)->GetTextureID(), mViewportSize);
-
-    // Gizmos?
-
-    ImGui::End();
-}
-
-void Application::BeginDockspace()
-{
-    static bool dockspaceOpen = true;
-    static bool opt_fullscreen_persistant = true;
-    bool opt_fullscreen = opt_fullscreen_persistant;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-    
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    if (opt_fullscreen) {
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->Pos);
-        ImGui::SetNextWindowSize(viewport->Size);
-        ImGui::SetNextWindowViewport(viewport->ID);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+        mUIOpened = !mUIOpened;
     }
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        window_flags |= ImGuiWindowFlags_NoBackground;
-    
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
-    ImGui::PopStyleVar();
-    if (opt_fullscreen)
-        ImGui::PopStyleVar(2);
-    
-    ImGuiIO& io = ImGui::GetIO();
-    ImGuiStyle& style = ImGui::GetStyle();
-    float minWinSizeX = style.WindowMinSize.x;
-    style.WindowMinSize.x = 370.0f;
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    if (ImGui::IsKeyPressed(ImGuiKey_F3, false)) {
+        mOverlayOpened = !mOverlayOpened;
     }
-    style.WindowMinSize.x = minWinSizeX;
 
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Close")) {
-                // TODO
+    if (mUIOpened) {
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("World")) {
+                ImGui::EndMenu();
             }
-            ImGui::EndMenu();
+            if (ImGui::BeginMenu("Renderer")) {
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
         }
-        ImGui::EndMenuBar();
-    }
-}
 
-void Application::EndDockspace()
-{
-    ImGui::End();
+        // Overlay
+        if (mOverlayOpened) {
+            ImGuiIO& io = ImGui::GetIO();
+            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
+            const float PAD = 10.0f;
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImVec2 work_pos = viewport->WorkPos;
+            ImVec2 work_size = viewport->WorkSize;
+            ImVec2 window_pos, window_pos_pivot;
+            window_pos.x = (work_pos.x + PAD);
+            window_pos.y = (work_pos.y + PAD);
+            window_pos_pivot.x = 0.0f;
+            window_pos_pivot.y = 0.0f;
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+            window_flags |= ImGuiWindowFlags_NoMove;
+            
+            static bool p_open = true;
+            ImGui::SetNextWindowBgAlpha(0.70f);
+            ImGui::Begin("Example: Simple overlay", &p_open, window_flags);
+            ImGui::Text("Seraph - A modern graphics renderer by Amelie Heinrich");
+            ImGui::Text("Backend : %s", mStringBackend.c_str());
+            ImGui::Separator();
+            ImGui::Text("Debug Menu: F1");
+            ImGui::Text("Screenshot: F2");
+            ImGui::Text("Hide Overlay: F3");
+            ImGui::End();
+        }
+    }
 }

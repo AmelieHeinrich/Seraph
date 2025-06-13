@@ -13,6 +13,7 @@ struct RenderPassBegin
     IRHITexture* SwapchainTexture;
     IRHITextureView* SwapchainTextureView;
     IRHICommandList* CommandList;
+    Scene* RenderScene;
 
     glm::mat4 View;
     glm::mat4 Projection;

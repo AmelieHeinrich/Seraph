@@ -36,6 +36,8 @@ D3D12ImGuiContext::D3D12ImGuiContext(D3D12Device* device, D3D12CommandQueue* que
     initInfo.UserData = device->GetBindlessManager();
     initInfo.LegacySingleSrvCpuDescriptor = mFontAlloc.CPU;
     initInfo.LegacySingleSrvGpuDescriptor = mFontAlloc.GPU;
+
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("Data/Fonts/UIFont.ttf", 16);
     
     ImGui_ImplSDL3_InitForVulkan(window->GetWindow());
     ImGui_ImplDX12_Init(&initInfo);
