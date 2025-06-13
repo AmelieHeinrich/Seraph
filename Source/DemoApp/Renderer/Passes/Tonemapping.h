@@ -17,9 +17,5 @@ public:
 
     void Render(RenderPassBegin& begin) override;
 private:
-    void Tonemap(RenderPassBegin& begin);
-    void Copy(RenderPassBegin& begin);
-
     IRHIComputePipeline* mPipeline;
-    IRHIGraphicsPipeline* mResolvePipeline;
 };

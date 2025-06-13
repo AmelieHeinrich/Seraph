@@ -9,12 +9,11 @@ module Lights;
 
 static const uint MAX_POINT_LIGHTS = 16384;
 
-struct PointLight
+public struct PointLight
 {
-    float3 Position;
-    float Radius;
+    public float3 Position;
+    public float Radius;
 
-    float3 Color;
-    uint ShadowMapSRV;
+    public float3 Color;
+    public uint ShadowMapSRV;
 };
-DEFINE_SRV_ARRAY(PointLight);

@@ -26,7 +26,7 @@ public:
     Scene(IRHIDevice* device);
     ~Scene();
 
-    void Update();
+    void Update(uint frameIndex);
     Entity* AddEntity(const String& modelPath);
 
     LightList& GetLights() { return mLights; }

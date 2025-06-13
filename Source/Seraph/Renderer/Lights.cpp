@@ -7,19 +7,23 @@
 
 LightList::LightList(IRHIDevice* device)
 {
-    mPointLightBuffer = device->CreateBuffer(RHIBufferDesc(sizeof(PointLight) * MAX_POINT_LIGHTS, sizeof(PointLight), RHIBufferUsage::kStaging | RHIBufferUsage::kShaderRead));
-    mPointLightBufferView = device->CreateBufferView(RHIBufferViewDesc(mPointLightBuffer, RHIBufferViewType::kStructured));
+    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+        mPointLightBuffer[i] = device->CreateBuffer(RHIBufferDesc(sizeof(PointLight) * MAX_POINT_LIGHTS, sizeof(PointLight), RHIBufferUsage::kStaging | RHIBufferUsage::kShaderRead));
+        mPointLightBufferView[i] = device->CreateBufferView(RHIBufferViewDesc(mPointLightBuffer[i], RHIBufferViewType::kStructured));
+    }
 }
 
 LightList::~LightList()
 {
-    delete mPointLightBuffer;
-    delete mPointLightBufferView;
+    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+        delete mPointLightBuffer[i];
+        delete mPointLightBufferView[i];
+    }
 }
 
-void LightList::Update()
+void LightList::Update(uint frameIndex)
 {
-    void* mem = mPointLightBuffer->Map();
+    void* mem = mPointLightBuffer[frameIndex]->Map();
     memcpy(mem, PointLights.data(), PointLights.size() * sizeof(PointLight));
-    mPointLightBuffer->Unmap();
+    mPointLightBuffer[frameIndex]->Unmap();
 }

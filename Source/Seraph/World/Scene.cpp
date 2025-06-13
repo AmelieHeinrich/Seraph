@@ -22,13 +22,15 @@ Scene::~Scene()
     mEntities.clear();
 }
 
-void Scene::Update()
+void Scene::Update(uint frameIndex)
 {
     for (auto& entity : mEntities) {
         entity.Transform = glm::translate(glm::mat4(1.0f), entity.Position)
                          * glm::toMat4(entity.Rotation)
                          * glm::scale(glm::mat4(1.0f), entity.Scale);
     }
+
+    mLights.Update(frameIndex);
 }
 
 Entity* Scene::AddEntity(const String& modelPath)

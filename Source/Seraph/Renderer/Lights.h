@@ -25,10 +25,21 @@ public:
     LightList(IRHIDevice* device);
     ~LightList();
 
-    void Update();
+    void Update(uint frameIndex);
+    void AddPointLight(glm::vec3 pos = glm::vec3(0.0f), float radius = 1.0f, glm::vec3 color = glm::vec3(1.0f))
+    {
+        PointLight light;
+        light.Position = pos;
+        light.Radius = radius;
+        light.Color = color;
+        PointLights.push_back(light);
+    }
 
     Array<PointLight> PointLights;
+
+    IRHIBuffer* GetPointLightBuffer(uint frameIndex) { return mPointLightBuffer[frameIndex]; }
+    IRHIBufferView* GetPointLightBufferView(uint frameIndex) { return mPointLightBufferView[frameIndex]; }
 private:
-    IRHIBuffer* mPointLightBuffer;
-    IRHIBufferView* mPointLightBufferView;
+    IRHIBuffer* mPointLightBuffer[FRAMES_IN_FLIGHT];
+    IRHIBufferView* mPointLightBufferView[FRAMES_IN_FLIGHT];
 };

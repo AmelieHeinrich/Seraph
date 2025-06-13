@@ -45,4 +45,6 @@
 #include "RHI/TLAS.h"
 #include "RHI/Uploader.h"
 
+#include "Util/Random.h"
+
 #include "World/Scene.h"

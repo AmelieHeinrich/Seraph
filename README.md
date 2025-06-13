@@ -14,11 +14,12 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 - Test Suite for RHI -- Generates JSON report used to render results in simple web page
 - Asset compression and caching
 - Deferred shading
+- PBR workflow with Lambertian Diffuse & Cook-Torrance BRDF
 
 ## Screenshots
 
 ### Most recent screenshot of the demo app
-![](.github/image.png)
+![](.github/june13.png)
 
 ### Test suite
 ![](.github/tests.png)

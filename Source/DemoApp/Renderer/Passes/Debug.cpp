@@ -5,6 +5,7 @@
 
 #include "Debug.h"
 #include "Tonemapping.h"
+#include "GBuffer.h"
 
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -34,11 +35,14 @@ Debug::Debug(IRHIDevice* device, uint width, uint height)
     desc.CullMode = RHICullMode::kNone;
     desc.RenderTargetFormats.push_back(RHITextureFormat::kR8G8B8A8_UNORM);
     desc.PushConstantSize = (sizeof(glm::mat4) * 2) + (sizeof(uint) * 4);
+    desc.DepthEnabled = true;
+    desc.DepthFormat = RHITextureFormat::kD32_FLOAT;
+    desc.DepthOperation = RHIDepthOperation::kLess;
 
     sData.Pipeline = device->CreateGraphicsPipeline(desc);
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         sData.TransferBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kStaging));
-        sData.VertexBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kVertex));
+        sData.VertexBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kShaderRead));
     }
 }
 
@@ -104,19 +108,20 @@ void Debug::RenderLines(RenderPassBegin& begin)
             BindlessHandle handle;
             glm::uvec3 pad;
         } constants = {
-            begin.Projection,
-            begin.View,
+            begin.CamData.Proj,
+            begin.CamData.View,
             
             RendererViewRecycler::GetSRV(sData.VertexBuffer[begin.FrameIndex])->GetBindlessHandle(),
             {}
         };
         RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kColorWrite);
-        RHIRenderBegin renderBegin(mWidth, mHeight, { RHIRenderAttachment(RendererViewRecycler::GetRTV(ldr.Texture), false) }, {});
+        RendererResource& depthTexture = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kDepthWrite);
+
+        RHIRenderBegin renderBegin(mWidth, mHeight, { RHIRenderAttachment(RendererViewRecycler::GetRTV(ldr.Texture), false) }, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture), false));
 
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
         begin.CommandList->SetGraphicsPipeline(sData.Pipeline);
-        begin.CommandList->SetVertexBuffer(sData.VertexBuffer[begin.FrameIndex]);
         begin.CommandList->SetGraphicsConstants(sData.Pipeline, &constants, sizeof(constants));
         begin.CommandList->Draw(sData.Lines.size() * 2, 1, 0, 0);
         begin.CommandList->EndRendering();

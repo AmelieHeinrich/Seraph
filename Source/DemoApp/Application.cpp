@@ -33,8 +33,18 @@ Application::Application(const ApplicationSpecs& specs)
     }
 
     mRenderer = new Renderer(mDevice, mSpecs.WindowWidth, mSpecs.WindowHeight);
+
     mScene = new Scene(mDevice);
     mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
+
+    Random rng;
+    for (int i = 0; i < 256; i++) {
+        mScene->GetLights().AddPointLight(
+            rng.Vec3(glm::vec3(-5.0f, 0.0f, -5.0f), glm::vec3(5.0f, 7.0f, 5.0f)),
+            rng.Float(0.1f, 0.5f),
+            rng.Vec3(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f))
+        );
+    }
 
     Uploader::Flush();
 }
@@ -65,7 +75,7 @@ void Application::Run()
         // Start Frame
         mWindow->PollEvents();
         mCamera.Begin();
-
+        
         // Calculate DT
         auto time = std::chrono::high_resolution_clock::now();
         float delta = (std::chrono::duration<float>(lastFrame - time).count());
@@ -77,12 +87,16 @@ void Application::Run()
         begin.CommandList = mCommandBuffers[begin.FrameIndex];
         begin.SwapchainTexture = mSurface->GetTexture(begin.FrameIndex);
         begin.SwapchainTextureView = mSurface->GetTextureView(begin.FrameIndex);
-        begin.Projection = mCamera.Projection();
-        begin.View = mCamera.View();
         begin.RenderScene = mScene;
+        begin.CamData.Proj = mCamera.Projection();
+        begin.CamData.View = mCamera.View();
+        begin.CamData.ViewProj = begin.CamData.Proj * begin.CamData.View;
+        begin.CamData.InvProj = glm::inverse(begin.CamData.Proj);
+        begin.CamData.InvView = glm::inverse(begin.CamData.View);
+        begin.CamData.InvViewProj = glm::inverse(begin.CamData.Proj * begin.CamData.View);
+        begin.CamData.Position = glm::vec4(mCamera.Position(), 1.0f);
 
         // Record command list
-
         RHITextureBarrier endGuiBarrier(begin.SwapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kAllCommands, RHIResourceLayout::kPresent);
         RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(begin.SwapchainTextureView, false) }, {});
 
@@ -109,7 +123,7 @@ void Application::Run()
 
         // Update
         mCamera.Update(delta, 16, 9);
-        mScene->Update();
+        mScene->Update(begin.FrameIndex);
     }
 }
 

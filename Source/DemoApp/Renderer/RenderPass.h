@@ -7,6 +7,17 @@
 
 #include <Seraph/Seraph.h>
 
+struct CameraData
+{
+    glm::mat4 View;
+    glm::mat4 Proj;
+    glm::mat4 ViewProj;
+    glm::mat4 InvView;
+    glm::mat4 InvProj;
+    glm::mat4 InvViewProj;
+    glm::vec4 Position;
+};
+
 struct RenderPassBegin
 {
     uint FrameIndex;
@@ -15,8 +26,7 @@ struct RenderPassBegin
     IRHICommandList* CommandList;
     Scene* RenderScene;
 
-    glm::mat4 View;
-    glm::mat4 Projection;
+    CameraData CamData;
 };
 
 class RenderPass

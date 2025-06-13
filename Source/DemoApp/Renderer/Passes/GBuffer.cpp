@@ -55,6 +55,9 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     pipelineDesc.DepthOperation = RHIDepthOperation::kLess;
 
     mPipeline = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
+
+    // Camera CBV
+    RendererResourceManager::CreateRingBuffer(GBUFFER_CAMERA_CBV_ID, Align<uint>(sizeof(CameraData), 256));
 }
 
 GBuffer::~GBuffer()
@@ -66,6 +69,11 @@ void GBuffer::Render(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("GBuffer");
     {
+        RendererResource& cameraBuffer = RendererResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
+        void* ptr = cameraBuffer.RingBuffer[begin.FrameIndex]->Map();
+        memcpy(ptr, &begin.CamData, sizeof(begin.CamData));
+        cameraBuffer.RingBuffer[begin.FrameIndex]->Unmap();
+
         RendererResource& depthTexture = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kDepthWrite);
         RendererResource& normalTexture = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kColorWrite);
         RendererResource& albedoTexture = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kColorWrite);
@@ -81,8 +89,6 @@ void GBuffer::Render(RenderPassBegin& begin)
         };
         RHIRenderBegin renderBegin(mWidth, mHeight, attachments, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture)));
     
-        uint triCount = 0;
-
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->SetGraphicsPipeline(mPipeline);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
@@ -115,21 +121,17 @@ void GBuffer::Render(RenderPassBegin& begin)
                         RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
                         {0,0,0},
 
-                        begin.View,
-                        begin.Projection
+                        begin.CamData.View,
+                        begin.CamData.Proj
                     };
                 
                     begin.CommandList->SetIndexBuffer(primitive.IndexBuffer);
                     begin.CommandList->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
                     begin.CommandList->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);
-
-                    triCount += primitive.IndexCount;
                 }
             }
         }
         begin.CommandList->EndRendering();
-
-        SERAPH_INFO("%u triangles", triCount);
     }
     begin.CommandList->PopMarker();
 }
