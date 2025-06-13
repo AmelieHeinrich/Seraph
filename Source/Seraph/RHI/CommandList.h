@@ -194,7 +194,7 @@ public:
     virtual void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) = 0;
     virtual void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) = 0;
 
-    virtual void PushMarker(const StringView& name) = 0;
+    virtual void PushMarker(const String& name) = 0;
     virtual void PopMarker() = 0;
     
     virtual void BeginImGui() = 0;

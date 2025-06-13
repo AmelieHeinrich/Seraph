@@ -52,7 +52,7 @@ public:
     void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) override;
     void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) override;
     
-    void PushMarker(const StringView& name) override;
+    void PushMarker(const String& name) override;
     void PopMarker() override;
 
     void BeginImGui() override;

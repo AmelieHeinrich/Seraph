@@ -40,7 +40,7 @@ VulkanBuffer::~VulkanBuffer()
     vmaDestroyBuffer(mParentDevice->Allocator(), mBuffer, mAllocation);
 }
 
-void VulkanBuffer::SetName(const StringView& name)
+void VulkanBuffer::SetName(const String& name)
 {
     VkDebugUtilsObjectNameInfoEXT nameInfo = {
         .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,

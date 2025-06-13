@@ -7,7 +7,7 @@
 
 #include <Core/Context.h>
 
-constexpr uint INVALID_HANDLE = 0xFFFFFFFF;
+constexpr uint INVALID_HANDLE = 0x00000000;
 
 struct BindlessHandle
 {

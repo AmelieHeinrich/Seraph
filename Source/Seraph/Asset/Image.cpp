@@ -28,13 +28,13 @@ void ConvertToRGBA8(const float* linearRGB, uint8_t* outRGBA8, int width, int he
     }
 }
 
-void Image::WriteImageData(const ImageData& data, const StringView& path)
+void Image::WriteImageData(const ImageData& data, const String& path)
 {
     stbi_write_png(path.data(), data.Width, data.Height, 4, data.Pixels.data(), data.Width * 4);
     SERAPH_INFO("Wrote image file to %s", path.data());
 }
 
-void Image::WriteImageRGB(const float* data, int width, int height, const StringView& path)
+void Image::WriteImageRGB(const float* data, int width, int height, const String& path)
 {
     uint8* temp = new uint8[width * height * 4];
     ConvertToRGBA8(data, temp, width, height);
@@ -50,7 +50,7 @@ void Image::ShouldFlipImage(bool flip)
     stbi_set_flip_vertically_on_load(flip);
 }
 
-ImageData Image::LoadImageData(const StringView& path)
+ImageData Image::LoadImageData(const String& path)
 {
     ImageData result = {};
 
@@ -63,7 +63,7 @@ ImageData Image::LoadImageData(const StringView& path)
     return result;
 }
 
-ImageData Image::LoadOnlyRGB(const StringView& path)
+ImageData Image::LoadOnlyRGB(const String& path)
 {
     ImageData result = {};
 

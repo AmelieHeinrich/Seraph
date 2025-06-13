@@ -34,9 +34,6 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     targetDesc.format = sData.Backend == RHIBackend::kVulkan ? SLANG_SPIRV : SLANG_DXIL;
     targetDesc.profile = sData.GlobalSession->findProfile("sm_6_6");
 
-    slang::CompilerOptionEntry matrixLayoutEntry;
-    matrixLayoutEntry.name = slang::CompilerOptionName::MatrixLayoutColumn;
-
     slang::CompilerOptionEntry debugEntry;
     debugEntry.name = slang::CompilerOptionName::DebugInformation;
     debugEntry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_STANDARD;
@@ -45,7 +42,7 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     platformDesc.value = "1";
     platformDesc.name = sData.Backend == RHIBackend::kVulkan ? "VULKAN" : "D3D12";
 
-    slang::CompilerOptionEntry entries[] = { matrixLayoutEntry, debugEntry };
+    slang::CompilerOptionEntry entries[] = { debugEntry };
 
     slang::SessionDesc sessionDesc = {};
     sessionDesc.targets = &targetDesc;

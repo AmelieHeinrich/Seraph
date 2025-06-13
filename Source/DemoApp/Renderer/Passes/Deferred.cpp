@@ -39,21 +39,24 @@ void Deferred::Render(RenderPassBegin& begin)
         RendererResource& depth = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& normal = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& albedo = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& pbr = RendererResourceManager::Import(GBUFFER_PBR_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& output = RendererResourceManager::Import(DEFERRED_HDR_TEXTURE_ID, begin.CommandList, RendererImportType::kShaderWrite);
         
         struct Constants {
             BindlessHandle depthHandle;
             BindlessHandle normalHandle;
             BindlessHandle albedoHandle;
+            BindlessHandle pbrHandle;
             BindlessHandle outputHandle;
         
             uint width;
             uint height;
-            glm::uvec2 pad;
+            uint pad;
         } constants = {
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(albedo.Texture)->GetBindlessHandle(),
+            RendererViewRecycler::GetSRV(pbr.Texture)->GetBindlessHandle(),
             RendererViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
         
             mWidth, mHeight

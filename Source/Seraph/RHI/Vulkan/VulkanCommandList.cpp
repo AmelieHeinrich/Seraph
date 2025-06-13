@@ -630,7 +630,7 @@ void VulkanCommandList::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint inst
     vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkTlas->mBuildInfo, &range);
 }
 
-void VulkanCommandList::PushMarker(const StringView& name)
+void VulkanCommandList::PushMarker(const String& name)
 {
     VkDebugUtilsLabelEXT marker = {};
     marker.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;

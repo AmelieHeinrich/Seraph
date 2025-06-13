@@ -46,7 +46,7 @@ VulkanTexture::~VulkanTexture()
     if (mImage && !mDesc.Reserved) vmaDestroyImage(mParentDevice->Allocator(), mImage, mAllocation);
 }
 
-void VulkanTexture::SetName(const StringView& name)
+void VulkanTexture::SetName(const String& name)
 {
     VkDebugUtilsObjectNameInfoEXT nameInfo = {};
     nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -68,6 +68,7 @@ VkFormat VulkanTexture::RHIToVkFormat(RHITextureFormat format)
         case RHITextureFormat::kR16G16B16A16_FLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
         case RHITextureFormat::kR32_FLOAT: return VK_FORMAT_R32_SFLOAT;
         case RHITextureFormat::kBC7_UNORM: return VK_FORMAT_BC7_UNORM_BLOCK;
+        case RHITextureFormat::kR16G16_FLOAT: return VK_FORMAT_R16G16_SFLOAT;
     }
     return VK_FORMAT_UNDEFINED;
 }

@@ -46,7 +46,7 @@ D3D12Texture::~D3D12Texture()
     if (mResource && !mDesc.Reserved) mResource->Release();
 }
 
-void D3D12Texture::SetName(const StringView& name)
+void D3D12Texture::SetName(const String& name)
 {
     mResource->SetName(MULTIBYTE_TO_UNICODE(name.data()));
 }
@@ -62,6 +62,7 @@ DXGI_FORMAT D3D12Texture::TranslateToDXGIFormat(RHITextureFormat format)
         case RHITextureFormat::kR16G16B16A16_FLOAT: return DXGI_FORMAT_R16G16B16A16_FLOAT;
         case RHITextureFormat::kR32_FLOAT: return DXGI_FORMAT_R32_FLOAT;
         case RHITextureFormat::kBC7_UNORM: return DXGI_FORMAT_BC7_UNORM;
+        case RHITextureFormat::kR16G16_FLOAT: return DXGI_FORMAT_R16G16_FLOAT;
     }
     return DXGI_FORMAT_UNKNOWN;
 }

@@ -17,7 +17,7 @@ public:
     D3D12Buffer(D3D12Device* device, RHIBufferDesc desc);
     ~D3D12Buffer();
 
-    void SetName(const StringView& name) override;
+    void SetName(const String& name) override;
 
     void* Map() override;
     void Unmap() override;

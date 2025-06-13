@@ -18,7 +18,7 @@ public:
     D3D12Texture(D3D12Device* device, RHITextureDesc desc);
     ~D3D12Texture();
 
-    void SetName(const StringView& name) override;
+    void SetName(const String& name) override;
 
     ID3D12Resource* GetResource() { return mResource; }
 public:

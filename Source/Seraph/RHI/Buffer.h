@@ -37,7 +37,7 @@ class IRHIBuffer
 public:
     ~IRHIBuffer() = default;
 
-    virtual void SetName(const StringView& name) = 0;
+    virtual void SetName(const String& name) = 0;
 
     RHIBufferDesc GetDesc() const { return mDesc; }
 

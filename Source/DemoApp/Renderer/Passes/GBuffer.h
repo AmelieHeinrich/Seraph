@@ -10,6 +10,7 @@
 constexpr const char* GBUFFER_DEPTH_ID = "GBuffer/Depth";
 constexpr const char* GBUFFER_NORMAL_ID = "GBuffer/Normal";
 constexpr const char* GBUFFER_ALBEDO_ID = "GBuffer/Albedo";
+constexpr const char* GBUFFER_PBR_ID = "GBuffer/PBR";
 constexpr const char* GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID = "GBuffer/DefaultMaterialSampler";
 constexpr const char* GBUFFER_DEFAULT_NEAREST_SAMPLER_ID = "GBuffer/DefaultNearestSampler";
 

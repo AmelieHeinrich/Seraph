@@ -8,7 +8,7 @@
 
 #include <imgui/imgui_impl_sdl3.h>
 
-Window::Window(int width, int height, const StringView& title)
+Window::Window(int width, int height, const String& title)
     : mOpen(true)
 {
     ASSERT_EQ(SDL_Init(SDL_INIT_VIDEO) == true, "Failed to initialize SDL3!");

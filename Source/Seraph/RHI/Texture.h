@@ -18,7 +18,8 @@ enum class RHITextureFormat
     kR16G16B16A16_FLOAT,
     kR32_FLOAT,
     kD32_FLOAT,
-    kBC7_UNORM
+    kBC7_UNORM,
+    kR16G16_FLOAT
 };
 
 enum class RHITextureUsage : uint
@@ -61,7 +62,7 @@ class IRHITexture
 public:
     ~IRHITexture() = default;
 
-    virtual void SetName(const StringView& name) = 0;
+    virtual void SetName(const String& name) = 0;
 
     RHITextureDesc GetDesc() const { return mDesc; }
 

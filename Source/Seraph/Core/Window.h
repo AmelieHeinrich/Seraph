@@ -12,7 +12,7 @@
 class Window
 {
 public:
-    Window(int width, int height, const StringView& title);
+    Window(int width, int height, const String& title);
     ~Window();
 
     bool IsOpen() const;

@@ -13,7 +13,59 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-Model::Model(IRHIDevice* device, const StringView& path)
+#include <MikkTSpace/mikktspace.h>
+
+namespace MikkT
+{
+    int getNumFaces(const SMikkTSpaceContext* context)
+    {
+    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+    	return static_cast<int>(mesh->IndexCount / 3);
+    }
+
+    int getNumVerticesOfFace(const SMikkTSpaceContext* context, int faceIdx)
+    {
+    	return 3; // We're always using triangles
+    }
+
+    void getPosition(const SMikkTSpaceContext* context, float outpos[], int faceIdx, int vertIdx)
+    {
+    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+    	auto& pos = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Position;
+    	outpos[0] = pos.x;
+    	outpos[1] = pos.y;
+    	outpos[2] = pos.z;
+    }
+
+    void getNormal(const SMikkTSpaceContext* context, float outnormal[], int faceIdx, int vertIdx)
+    {
+    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+    	auto& normal = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Normal;
+    	outnormal[0] = normal.x;
+    	outnormal[1] = normal.y;
+    	outnormal[2] = normal.z;
+    }
+
+    void getTexCoord(const SMikkTSpaceContext* context, float outuv[], int faceIdx, int vertIdx)
+    {
+    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+    	auto& uv = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Texcoord;
+    	outuv[0] = uv.x;
+    	outuv[1] = uv.y;
+    }
+
+    void setTSpaceBasic(const SMikkTSpaceContext* context, const float inTangent[], float sign, int faceIdx, int vertIdx)
+    {
+    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+    	auto& tangent = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Tangent;
+    	tangent.x = inTangent[0];
+    	tangent.y = inTangent[1];
+    	tangent.z = inTangent[2];
+    	tangent.w = -1.0f * sign;
+    }
+}
+
+Model::Model(IRHIDevice* device, const String& path)
     : mParentDevice(device)
 {
     mDirectory = path.substr(0, path.find_last_of('/'));
@@ -123,9 +175,7 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
         }
     }
 
-    Array<StaticModelVertex> vertices;
-    Array<uint> indices;
-
+    ModelPrimitive modelPrimitive = {};
     int vertexCount = posAttribute->data->count;
     int indexCount = primitive->indices->count;
 
@@ -152,10 +202,10 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
         }
         vertex.Normal = glm::normalize(glm::mat3(glm::transpose(glm::inverse(localTransform))) * rawNormal);
 
-        vertices.push_back(vertex);
+        modelPrimitive.Vertices.push_back(vertex);
     }
     for (int i = 0; i < indexCount; i++) {
-        indices.push_back(cgltf_accessor_read_index(primitive->indices, i));
+        modelPrimitive.Indices.push_back(cgltf_accessor_read_index(primitive->indices, i));
     }
 
     cgltf_material *material = primitive->material;
@@ -179,7 +229,6 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
         }
     }
 
-    ModelPrimitive modelPrimitive = {};
     modelPrimitive.VertexBuffer = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(StaticModelVertex) * vertexCount, sizeof(StaticModelVertex), RHIBufferUsage::kVertex | RHIBufferUsage::kShaderRead));
     modelPrimitive.IndexBuffer = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(uint) * indexCount, sizeof(uint), RHIBufferUsage::kIndex | RHIBufferUsage::kShaderRead));
     modelPrimitive.BottomLevelAS = mParentDevice->CreateBLAS(RHIBLASDesc(modelPrimitive.VertexBuffer, modelPrimitive.IndexBuffer));
@@ -187,9 +236,29 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
     modelPrimitive.VertexCount = vertexCount;
     modelPrimitive.IndexCount = indexCount;
 
-    Uploader::EnqueueBufferUpload(vertices.data(), sizeof(StaticModelVertex) * vertexCount, modelPrimitive.VertexBuffer);
-    Uploader::EnqueueBufferUpload(indices.data(), sizeof(uint) * indexCount, modelPrimitive.IndexBuffer);
+    SMikkTSpaceInterface mikktInterface = {};
+	mikktInterface.m_getNumFaces = &MikkT::getNumFaces;
+	mikktInterface.m_getNumVerticesOfFace = &MikkT::getNumVerticesOfFace;
+	mikktInterface.m_getPosition = &MikkT::getPosition;
+	mikktInterface.m_getNormal = &MikkT::getNormal;
+	mikktInterface.m_getTexCoord = &MikkT::getTexCoord;
+	mikktInterface.m_setTSpaceBasic = &MikkT::setTSpaceBasic;
+
+	SMikkTSpaceContext context = {};
+	context.m_pInterface = &mikktInterface;
+	context.m_pUserData = &modelPrimitive;
+	if (genTangSpaceDefault(&context) == false) {
+        for (auto& vertex : modelPrimitive.Vertices) {
+            vertex.Tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        }
+	}
+
+    Uploader::EnqueueBufferUpload(modelPrimitive.Vertices.data(), sizeof(StaticModelVertex) * vertexCount, modelPrimitive.VertexBuffer);
+    Uploader::EnqueueBufferUpload(modelPrimitive.Indices.data(), sizeof(uint) * indexCount, modelPrimitive.IndexBuffer);
     Uploader::EnqueueBLASBuild(modelPrimitive.BottomLevelAS);
+
+    modelPrimitive.Vertices.clear();
+    modelPrimitive.Indices.clear();
 
     mMaterials.push_back(std::move(modelMaterial));
     node->Primitives.push_back(std::move(modelPrimitive));

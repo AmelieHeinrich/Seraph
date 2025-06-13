@@ -19,7 +19,7 @@ public:
     VulkanTexture(IRHIDevice* device, RHITextureDesc desc);
     ~VulkanTexture();
 
-    void SetName(const StringView& name) override;
+    void SetName(const String& name) override;
 
     VmaAllocation Allocation() const { return mAllocation; }
     VmaAllocationInfo AllocationInfo() const { return mAllocationInfo; }

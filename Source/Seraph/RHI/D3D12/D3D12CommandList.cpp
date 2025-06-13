@@ -477,7 +477,7 @@ void D3D12CommandList::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint insta
     mList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
-void D3D12CommandList::PushMarker(const StringView& name)
+void D3D12CommandList::PushMarker(const String& name)
 {
     PIXBeginEvent(mList, PIX_COLOR_DEFAULT, name.data());
 }

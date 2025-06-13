@@ -24,11 +24,7 @@ struct alignas(16) StaticModelVertex
     glm::vec2 Texcoord;   // 8 bytes
     float _pad2[2];       // 8 bytes padding
 
-    glm::vec3 Tangent;    // 12 bytes
-    float _pad3;          // 4 bytes padding
-
-    glm::vec3 Biangent;   // 12 bytes
-    float _pad4;          // 4 bytes padding
+    glm::vec4 Tangent;
 };
 
 struct ModelMaterial
@@ -46,6 +42,9 @@ struct ModelPrimitive
     IRHIBuffer* IndexBuffer;
     IRHIBLAS* BottomLevelAS;
 
+    Array<StaticModelVertex> Vertices;
+    Array<uint> Indices;
+
     uint VertexCount;
     uint IndexCount;
     uint MaterialIndex;
@@ -62,7 +61,7 @@ struct ModelNode
 class Model
 {
 public:
-    Model(IRHIDevice* device, const StringView& path);
+    Model(IRHIDevice* device, const String& path);
     ~Model();
 
     Array<ModelNode>& GetNodes() { return mNodes; }

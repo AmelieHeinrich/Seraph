@@ -8,7 +8,7 @@
 #include <Core/Types.h>
 #include <RHI/Device.h>
 
-constexpr uint MAX_POINT_LIGHTS = 8192;
+constexpr uint MAX_POINT_LIGHTS = 16384;
 
 struct PointLight
 {

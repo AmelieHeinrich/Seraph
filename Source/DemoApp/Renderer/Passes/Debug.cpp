@@ -233,8 +233,8 @@ void Debug::DrawCoordinateSystem(glm::mat4 transform, float size)
 {
     glm::vec3 translation = glm::vec3(transform[0][3], transform[1][3], transform[2][3]);
     DrawArrow(translation, transform * glm::vec4(size, 0, 0, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.1f * size);
-	DrawArrow(translation, transform * glm::vec4(0, size, 0, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.1f * size);
-	DrawArrow(translation, transform * glm::vec4(0, 0, size, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.1f * size);
+    DrawArrow(translation, transform * glm::vec4(0, size, 0, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.1f * size);
+    DrawArrow(translation, transform * glm::vec4(0, 0, size, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.1f * size);
 }
 
 void Debug::DrawSphere(glm::vec3 center, float radius, glm::vec3 color, int level)
@@ -245,13 +245,13 @@ void Debug::DrawSphere(glm::vec3 center, float radius, glm::vec3 color, int leve
     glm::vec3 zAxis = glm::vec3(0.0f, 0.0f, 1.0f);
 
     DrawWireUnitSphereRecursive(matrix, color,  xAxis,  yAxis,  zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color, -xAxis,  yAxis,  zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color,  xAxis, -yAxis,  zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color, -xAxis, -yAxis,  zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color,  xAxis,  yAxis, -zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color, -xAxis,  yAxis, -zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color,  xAxis, -yAxis, -zAxis, level);
-	DrawWireUnitSphereRecursive(matrix, color, -xAxis, -yAxis, -zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color, -xAxis,  yAxis,  zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color,  xAxis, -yAxis,  zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color, -xAxis, -yAxis,  zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color,  xAxis,  yAxis, -zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color, -xAxis,  yAxis, -zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color,  xAxis, -yAxis, -zAxis, level);
+    DrawWireUnitSphereRecursive(matrix, color, -xAxis, -yAxis, -zAxis, level);
 }
 
 void Debug::DrawRing(glm::vec3 center, glm::vec3 normal, float radius, glm::vec3 color, int level)
@@ -290,21 +290,21 @@ void Debug::DrawRings(glm::vec3 center, float radius, glm::vec3 color, int level
 void Debug::DrawWireUnitSphereRecursive(glm::mat4 matrix, glm::vec3 inColor, glm::vec3 inDir1, glm::vec3 inDir2, glm::vec3 inDir3, int inLevel)
 {
     if (inLevel == 0) {
-		glm::vec3 d1 = matrix * glm::vec4(inDir1, 1.0f);
-		glm::vec3 d2 = matrix * glm::vec4(inDir2, 1.0f);
-		glm::vec3 d3 = matrix * glm::vec4(inDir3, 1.0f);
+        glm::vec3 d1 = matrix * glm::vec4(inDir1, 1.0f);
+        glm::vec3 d2 = matrix * glm::vec4(inDir2, 1.0f);
+        glm::vec3 d3 = matrix * glm::vec4(inDir3, 1.0f);
 
-		DrawLine(d1, d2, inColor);
-		DrawLine(d2, d3, inColor);
-		DrawLine(d3, d1, inColor);
-	} else {
-		glm::vec3 center1 = glm::normalize(inDir1 + inDir2);
-		glm::vec3 center2 = glm::normalize(inDir2 + inDir3);
-		glm::vec3 center3 = glm::normalize(inDir3 + inDir1);
+        DrawLine(d1, d2, inColor);
+        DrawLine(d2, d3, inColor);
+        DrawLine(d3, d1, inColor);
+    } else {
+        glm::vec3 center1 = glm::normalize(inDir1 + inDir2);
+        glm::vec3 center2 = glm::normalize(inDir2 + inDir3);
+        glm::vec3 center3 = glm::normalize(inDir3 + inDir1);
 
-		DrawWireUnitSphereRecursive(matrix, inColor, inDir1, center1, center3, inLevel - 1);
-		DrawWireUnitSphereRecursive(matrix, inColor, center1, center2, center3, inLevel - 1);
-		DrawWireUnitSphereRecursive(matrix, inColor, center1, inDir2, center2, inLevel - 1);
-		DrawWireUnitSphereRecursive(matrix, inColor, center3, center2, inDir3, inLevel - 1);
-	}
+        DrawWireUnitSphereRecursive(matrix, inColor, inDir1, center1, center3, inLevel - 1);
+        DrawWireUnitSphereRecursive(matrix, inColor, center1, center2, center3, inLevel - 1);
+        DrawWireUnitSphereRecursive(matrix, inColor, center1, inDir2, center2, inLevel - 1);
+        DrawWireUnitSphereRecursive(matrix, inColor, center3, center2, inDir3, inLevel - 1);
+    }
 }
