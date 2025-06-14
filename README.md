@@ -19,7 +19,7 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 ## Screenshots
 
 ### Most recent screenshot of the demo app
-![](.github/june13.png)
+![](.github/june14.png)
 
 ### Test suite
 ![](.github/tests.png)
