@@ -45,10 +45,10 @@ private:
 
 private:
     // UI stuff
-    bool mUIOpened = false;
-    bool mOverlayOpened = true;
+    void SetUITheme();
 
-private:
-    // Utility
+    bool mUIOpened = false;
+    bool mRendererSettingsOpened = false;
+    bool mOverlayOpened = true;
     String mStringBackend;
 };

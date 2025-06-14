@@ -35,6 +35,7 @@ public:
     RenderPass(IRHIDevice* device, uint width, uint height);
 
     virtual void Render(RenderPassBegin& begin) = 0;
+    virtual void UI(RenderPassBegin& begin) {}
 protected:
     IRHIDevice* mParentDevice;
     uint mWidth;

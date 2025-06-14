@@ -35,7 +35,7 @@ public:
     static void DrawRings(glm::vec3 center, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 32);
 
 private:
-    static constexpr uint MAX_LINES = 5192 * 16;
+    static constexpr uint MAX_LINES = 8192 * 16;
 
     void CopyToVB(RenderPassBegin& begin);
     void RenderLines(RenderPassBegin& begin);

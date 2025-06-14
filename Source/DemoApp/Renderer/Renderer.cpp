@@ -5,11 +5,14 @@
 
 #include "Renderer.h"
 
+#include "Passes/LightCulling.h"
 #include "Passes/GBuffer.h"
 #include "Passes/Deferred.h"
 #include "Passes/Tonemapping.h"
 #include "Passes/Debug.h"
 #include "Passes/CopyToSwapchain.h"
+
+#include <ImGui/imgui.h>
 
 Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 {
@@ -20,6 +23,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 
     // Setup Normal Path
     mPasses[RenderPath::kBasic] = {
+        std::make_shared<LightCulling>(device, width, height),
         std::make_shared<GBuffer>(device, width, height),
         std::make_shared<Deferred>(device, width, height),
         std::make_shared<Tonemapping>(device, width, height),
@@ -44,4 +48,13 @@ void Renderer::Render(RenderPath path, RenderPassBegin& begin)
     for (auto& pass : mPasses[path]) {
         pass->Render(begin);
     }
+}
+
+void Renderer::UI(RenderPath path, RenderPassBegin& begin)
+{
+    ImGui::Begin("Renderer Settings");
+    for (auto& pass : mPasses[path]) {
+        pass->UI(begin);
+    }
+    ImGui::End();
 }

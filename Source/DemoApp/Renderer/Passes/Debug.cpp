@@ -64,8 +64,9 @@ void Debug::Render(RenderPassBegin& begin)
             vertices.push_back({ line.To, 0.0f, line.Color });
         }
 
+        uint uploadSize = std::min(vertices.size() * sizeof(LineVertex), sizeof(LineVertex) * MAX_LINES);
         void* ptr = sData.TransferBuffer[begin.FrameIndex]->Map();
-        memcpy(ptr, vertices.data(), vertices.size() * sizeof(LineVertex));
+        memcpy(ptr, vertices.data(), uploadSize);
         sData.TransferBuffer[begin.FrameIndex]->Unmap();
   
         begin.CommandList->PushMarker("Debug");

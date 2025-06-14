@@ -20,6 +20,7 @@ public:
     ~Renderer();
 
     void Render(RenderPath path, RenderPassBegin& begin);
+    void UI(RenderPath path, RenderPassBegin& begin);
 private:
     UnorderedMap<RenderPath, Array<SharedPtr<RenderPass>>> mPasses;
 };
