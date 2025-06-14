@@ -64,9 +64,11 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
 
         // Light vector and distance
         float3 lightVector = light.Position - worldPosition.xyz;
-        float lightDistance = length(lightVector);
-        float3 L = lightVector / lightDistance;
-        float attenuation = 1.0 / (lightDistance * lightDistance / (light.Radius * light.Radius));
+        float distance = length(lightVector);
+        float3 L = lightVector / distance;
+
+        float attenuation = 1.0 / (distance * distance + 1.0);  // safe inverse-square
+        attenuation *= saturate(1.0 - distance / light.Radius); // fade to 0 at max range
 
         // Cook-Torrance
         float3 H = normalize(V + L);
@@ -87,8 +89,13 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
         float3 kD = (1.0 - F) * (1.0 - metallic);
         float3 diffuse = kD * materialColor / PI;
 
+        // Constant ambient just in case
+        float3 ambient = 0.04;
+
         // Apply attenuation to final contribution
-        finalColor += (diffuse + specular) * NdotL * (attenuation * light.Color);
+        float3 distributedEnergy = ((diffuse + specular) * NdotL);
+        float3 incomingRadiance = attenuation * light.Color * light.Intensity;
+        finalColor += distributedEnergy * incomingRadiance;
     }
 
     output[tid.xy] = float4(finalColor, 1.0);

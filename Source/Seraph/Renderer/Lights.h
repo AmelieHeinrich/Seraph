@@ -16,7 +16,7 @@ struct PointLight
     float Radius;
 
     glm::vec3 Color;
-    uint ShadowMapSRV;
+    float Intensity;
 };
 
 class LightList
@@ -26,12 +26,13 @@ public:
     ~LightList();
 
     void Update(uint frameIndex);
-    void AddPointLight(glm::vec3 pos = glm::vec3(0.0f), float radius = 1.0f, glm::vec3 color = glm::vec3(1.0f))
+    void AddPointLight(glm::vec3 pos = glm::vec3(0.0f), float radius = 1.0f, glm::vec3 color = glm::vec3(1.0f), float intensity = 1.0f)
     {
         PointLight light;
         light.Position = pos;
         light.Radius = radius;
         light.Color = color;
+        light.Intensity = intensity;
         PointLights.push_back(light);
     }
 

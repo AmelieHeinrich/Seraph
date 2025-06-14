@@ -15,5 +15,5 @@ public struct PointLight
     public float Radius;
 
     public float3 Color;
-    public uint ShadowMapSRV;
+    public float Intensity;
 };
