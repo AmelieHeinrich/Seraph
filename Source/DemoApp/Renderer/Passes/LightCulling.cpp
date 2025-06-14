@@ -47,6 +47,10 @@ void LightCulling::Render(RenderPassBegin& begin)
     begin.CommandList->PushMarker("Cull Lights");
     {
         RendererResource& cameraBuffer = RendererResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
+        void* ptr = cameraBuffer.RingBuffer[begin.FrameIndex]->Map();
+        memcpy(ptr, &begin.CamData, sizeof(begin.CamData));
+        cameraBuffer.RingBuffer[begin.FrameIndex]->Unmap();
+
         RendererResource& tileBuffer = RendererResourceManager::Import(LIGHT_CULL_TILE_BUFFER, begin.CommandList, RendererImportType::kShaderWrite);
         RendererResource& tileIndicesBuffer = RendererResourceManager::Import(LIGHT_CULL_TILE_INDICES_BUFFER, begin.CommandList, RendererImportType::kShaderWrite);
     
@@ -81,14 +85,10 @@ void LightCulling::Render(RenderPassBegin& begin)
             static_cast<uint>(begin.RenderScene->GetLights().PointLights.size()),
             0
         };
-
+            
         begin.CommandList->SetComputePipeline(mCullPipeline);
         begin.CommandList->SetComputeConstants(mCullPipeline, &constants, sizeof(constants));
-        begin.CommandList->Dispatch(
-            (mNumTilesX + 31) / 32,
-            (mNumTilesY + 31) / 32,
-            1
-        );
+        begin.CommandList->Dispatch(mNumTilesX, mNumTilesY, 1);
     }
     begin.CommandList->PopMarker();
 }

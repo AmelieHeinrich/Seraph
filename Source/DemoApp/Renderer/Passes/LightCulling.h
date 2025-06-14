@@ -9,7 +9,7 @@
 
 constexpr const char* LIGHT_CULL_TILE_BUFFER = "LightCulling/TileBuffer";
 constexpr const char* LIGHT_CULL_TILE_INDICES_BUFFER = "LightCulling/TileIndicesBuffer";
-constexpr uint MAX_LIGHT_PER_TILE = 512;
+constexpr uint MAX_LIGHT_PER_TILE = 1024;
 constexpr uint TILE_WIDTH = 16;
 constexpr uint TILE_HEIGHT = 16;
 

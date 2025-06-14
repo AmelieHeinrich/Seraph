@@ -17,11 +17,11 @@ VulkanBufferView::VulkanBufferView(VulkanDevice* device, RHIBufferViewDesc desc)
             mBindless.Index = mParentDevice->GetBindlessManager()->WriteBufferCBV(this);
             break;
         }
-        case RHIBufferViewType::kStorage: {
+        case RHIBufferViewType::kStructured: {
             mBindless.Index = mParentDevice->GetBindlessManager()->WriteBufferSRV(this);
             break;
         }
-        case RHIBufferViewType::kStructured: {
+        case RHIBufferViewType::kStorage: {
             mBindless.Index = mParentDevice->GetBindlessManager()->WriteBufferUAV(this);
             break;
         }

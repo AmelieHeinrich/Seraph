@@ -67,32 +67,40 @@ bool SphereFrustumTest(float3 center, float radius, FrustumPlane plane)
     return true;
 }
 
-[shader("compute")]
-[numthreads(32, 32, 1)]
-void CSMain(uint3 tid: SV_DispatchThreadID)
+groupshared uint gSharedBin[MAX_LIGHTS_PER_TILE];
+groupshared uint gSharedCount;
+
+[numthreads(128, 1, 1)]
+void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 gid : SV_GroupID)
 {
-    // Check
-    if (tid.x >= Push.NumTilesX || tid.y >= Push.NumTilesY)
+    if (gid.x >= Push.NumTilesX || gid.y >= Push.NumTilesY)
         return;
 
-    // Get resources
+    // Map 1D index to 2D tile coordinates
+    uint tx = gid.x;
+    uint ty = gid.y;
+    uint tileIndex = ty * Push.NumTilesX + tx;
+
+    // Reset shared count
+    if (gtid.x == 0)
+        gSharedCount = 0;
+    GroupMemoryBarrierWithGroupSync();
+
+    // Load camera/light data
     Camera camera = BindlessCBV_Camera.Load(Push.CameraIndex);
-    StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.PointLightCount);
+    StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.LightIndex);
     RWStructuredBuffer<TileData> tiles = BindlessUAV_TileData.Load(Push.TileArray);
     RWStructuredBuffer<uint> bins = BindlessUAV_uint.Load(Push.BinsArray);
 
-    // Get tile index
-    uint tx = tid.x;
-    uint ty = tid.y;
-    uint tileIndex = ty * Push.NumTilesX + tx;
     tiles[tileIndex].Offset = tileIndex * MAX_LIGHTS_PER_TILE;
 
-    // Generate tile data
-    int x0 = max(tx * Push.TileWidth, 0u);
-    int y0 = max(ty * Push.TileHeight, 0u);
+    // Compute tile screen bounds
+    int x0 = tx * Push.TileWidth;
+    int y0 = ty * Push.TileHeight;
     int x1 = min(x0 + Push.TileWidth, Push.Width);
     int y1 = min(y0 + Push.TileHeight, Push.Height);
 
+    // Reconstruct tile frustum (same as before)
     float2 ndcTL = PixelToNDC(x0, y0);
     float2 ndcTR = PixelToNDC(x1, y0);
     float2 ndcBR = PixelToNDC(x1, y1);
@@ -107,18 +115,19 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     float3 v6 = NDCToView(ndcBR, 1.0f, camera.InvProj).rgb;
     float3 v7 = NDCToView(ndcBL, 1.0f, camera.InvProj).rgb;
 
-    FrustumPlane left   = MakePlane(v0, v3, v7);
-    FrustumPlane right  = MakePlane(v2, v1, v5);
-    FrustumPlane top    = MakePlane(v1, v0, v4);
+    FrustumPlane left = MakePlane(v0, v3, v7);
+    FrustumPlane right = MakePlane(v2, v1, v5);
+    FrustumPlane top = MakePlane(v1, v0, v4);
     FrustumPlane bottom = MakePlane(v3, v2, v6);
-    FrustumPlane near   = MakePlane(v0, v1, v2);
-    FrustumPlane far    = MakePlane(v5, v4, v7);
+    FrustumPlane near = MakePlane(v0, v1, v2);
+    FrustumPlane far = MakePlane(v5, v4, v7);
 
-    // Cull lights
-    uint count = 0;
-    for (uint i = 0; i < Push.PointLightCount; i++) {
-        if (count >= MAX_LIGHTS_PER_TILE) break;
+    // Each thread handles part of the light list
+    uint threadID = gtid.x;
+    uint numThreads = 128;
 
+    for (uint i = threadID; i < Push.PointLightCount; i += numThreads)
+    {
         PointLight light = pointLights[i];
         float3 viewPos = mul(camera.View, float4(light.Position, 1.0)).xyz;
         bool visible = SphereFrustumTest(viewPos, light.Radius, left)
@@ -127,10 +136,24 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
                     && SphereFrustumTest(viewPos, light.Radius, bottom)
                     && SphereFrustumTest(viewPos, light.Radius, near)
                     && SphereFrustumTest(viewPos, light.Radius, far);
+
         if (visible) {
-            bins[tiles[tileIndex].Offset + count] = i;
-            count++;
+            uint idx;
+            InterlockedAdd(gSharedCount, 1, idx);
+            if (idx < MAX_LIGHTS_PER_TILE)
+                gSharedBin[idx] = i;
         }
     }
-    tiles[tileIndex].Count = count;
+
+    GroupMemoryBarrierWithGroupSync();
+
+    uint lightCount = min(gSharedCount, MAX_LIGHTS_PER_TILE);
+    for (uint i = threadID; i < lightCount; i += numThreads) {
+        bins[tiles[tileIndex].Offset + i] = gSharedBin[i];
+    }
+    
+    if (threadID == 0)
+    {
+        tiles[tileIndex].Count = lightCount;
+    }
 }

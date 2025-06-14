@@ -92,15 +92,16 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     float3 cameraPosition = camera.Position.xyz;
     float4 worldPosition = GetWorldFromDepth(uv, viewDepth, camera.InvViewProj);
     float3 materialColor = albedo.Load(tid).rgb;
-    float3 N = normal.Load(tid).rgb;
+    float3 N = normalize(normal.Load(tid).rgb);
     float metallic = pbr.Load(tid).r;
     float roughness = pbr.Load(tid).g;
 
     // Math!
     float3 V = normalize(cameraPosition - worldPosition.xyz);
-    float3 finalColor = materialColor * GetTileColor(tile.Count) * 0.05;
+    float3 finalColor = 0;
     for (int i = 0; i < tile.Count; i++) {
-        PointLight light = pointLights[tile.Offset + i];
+        uint lightIndex = bins[tile.Offset + i];
+        PointLight light = pointLights[lightIndex];
 
         // Light vector and distance
         float3 lightVector = light.Position - worldPosition.xyz;
@@ -128,9 +129,6 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
         // Lambertian
         float3 kD = (1.0 - F) * (1.0 - metallic);
         float3 diffuse = kD * materialColor / PI;
-
-        // Constant ambient just in case
-        float3 ambient = 0.04;
 
         // Apply attenuation to final contribution
         float3 distributedEnergy = ((diffuse + specular) * NdotL);

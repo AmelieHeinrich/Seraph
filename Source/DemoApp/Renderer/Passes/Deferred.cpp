@@ -74,7 +74,8 @@ void Deferred::Render(RenderPassBegin& begin)
             RendererViewRecycler::GetSRV(pbr.Texture)->GetBindlessHandle(),
 
             RendererViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
-            mWidth, mHeight,
+            mWidth,
+            mHeight,
             begin.RenderScene->GetLights().GetPointLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
 
             static_cast<uint>(begin.RenderScene->GetLights().PointLights.size()),
