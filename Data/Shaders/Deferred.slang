@@ -25,11 +25,43 @@ struct PushConstants
     
     uint PointLightCount;
     uint CameraDataSRV;
-    uint2 Pad; //
+    uint TileWidth;
+    uint TileHeight;
+
+    uint NumTilesX;
+    uint BinsArray;
+    uint TilesArray;
+    uint Pad;
 };
-DEFINE_CBV_ARRAY(Camera);
+
+DEFINE_SRV_ARRAY(uint);
+DEFINE_SRV_ARRAY(TileData);
 DEFINE_SRV_ARRAY(PointLight);
+DEFINE_CBV_ARRAY(Camera);
 PUSH_CONSTANTS(PushConstants, Push);
+
+float3 GetTileColor(uint tileLightCount)
+{
+    float t = MAX_LIGHTS_PER_TILE > 0 ? clamp(float(tileLightCount) / float(MAX_LIGHTS_PER_TILE), 0.0f, 1.0f) : 0.0f;
+
+    // Blue → Green → Yellow → Red
+    if (t < 0.33f) {
+        // Blue to Green
+        float localT = t / 0.33f;
+        return lerp(float3(0, 0, 1), float3(0, 1, 0), localT);
+    }
+    else if (t < 0.66f) {
+        // Green to Yellow
+        float localT = (t - 0.33f) / 0.33f;
+        return lerp(float3(0, 1, 0), float3(1, 1, 0), localT);
+    }
+    else {
+        // Yellow to Red
+        float localT = (t - 0.66f) / 0.34f;
+        return lerp(float3(1, 1, 0), float3(1, 0, 0), localT);
+    }
+    return float3(0, 0, 1);
+}
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
@@ -44,7 +76,15 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     Texture2D<float2> pbr = BindlessTexture2DFloat2.Load(Push.PBR);
     RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.Output);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.PointLightArray);
+    StructuredBuffer<TileData> tiles = BindlessSRV_TileData.Load(Push.TilesArray);
+    StructuredBuffer<uint> bins = BindlessSRV_uint.Load(Push.BinsArray);
     Camera camera = BindlessCBV_Camera.Load(Push.CameraDataSRV);
+
+    // Get current tile
+    uint tileX = tid.x / Push.TileWidth;
+    uint tileY = tid.y / Push.TileHeight;
+    uint tileIndex = tileY * Push.NumTilesX + tileX;
+    TileData tile = tiles[tileIndex];
 
     // Load Basic data
     float viewDepth = depth.Load(tid);
@@ -58,9 +98,9 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
 
     // Math!
     float3 V = normalize(cameraPosition - worldPosition.xyz);
-    float3 finalColor = 0;
-    for (int i = 0; i < Push.PointLightCount; i++) {
-        PointLight light = pointLights[i];
+    float3 finalColor = materialColor * GetTileColor(tile.Count) * 0.05;
+    for (int i = 0; i < tile.Count; i++) {
+        PointLight light = pointLights[tile.Offset + i];
 
         // Light vector and distance
         float3 lightVector = light.Position - worldPosition.xyz;

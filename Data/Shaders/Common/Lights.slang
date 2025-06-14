@@ -7,7 +7,8 @@
 
 module Lights;
 
-static const uint MAX_POINT_LIGHTS = 16384;
+static public const uint MAX_POINT_LIGHTS = 16384;
+static public const uint MAX_LIGHTS_PER_TILE = 512;
 
 public struct PointLight
 {
@@ -16,4 +17,11 @@ public struct PointLight
 
     public float3 Color;
     public float Intensity;
+};
+
+public struct TileData
+{
+    public uint Offset;
+    public uint Count;
+    public uint2 Pad;
 };

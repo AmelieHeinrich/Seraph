@@ -55,7 +55,7 @@ static const uint INVALID_DESCRIPTOR = 0x00000000;
 
 #define DEFINE_UAV_ARRAY(type)                                                                                \
     public struct BindlessUAV_##type {                                                                                                         \
-        static type Load(uint index) {                                                                                                     \
+        static RWStructuredBuffer<type> Load(uint index) {                                                                                                     \
             return defaultGetDescriptorFromHandle(DescriptorHandle<RWStructuredBuffer<type>>(uint2(index, 0))); \
         }                                                                                                   \
     };

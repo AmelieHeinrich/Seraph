@@ -38,7 +38,7 @@ Application::Application(const ApplicationSpecs& specs)
     mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
 
     Random rng;
-    for (int i = 0; i < 128; i++) {
+    for (int i = 0; i < 1024; i++) {
         mScene->GetLights().AddPointLight(
             rng.Vec3(glm::vec3(-10.0f, 0.0f, -5.0f), glm::vec3(10.0f, 7.0f, 5.0f)),
             rng.Float(0.5f, 2.0f),
