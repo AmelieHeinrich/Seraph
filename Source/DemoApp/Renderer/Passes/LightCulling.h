@@ -23,6 +23,11 @@ public:
     void Render(RenderPassBegin& begin) override;
     void UI(RenderPassBegin& begin) override;
 private:
+    glm::vec2 PixelToNDC(int x, int y);
+    StaticArray<glm::vec3, 8> GetTileCorners(const StaticArray<glm::vec2, 4>& corners, glm::mat4 invProj);
+    bool CheckAABBSphere(glm::vec3 min, glm::vec3 max, glm::vec3 sphereCenter, float sphereRadius);
+    glm::vec3 GetTileColor(uint tileLightCount, uint maxLightCount);
+
     inline int GetTileIndex(int x, int y) const
     {
         return y * mNumTilesX + x;
@@ -37,7 +42,6 @@ private:
     // Settings
     bool mFreezeTiles = false;
     bool mDrawTiles = true;
-    int mSelectedTileSize = 1;
-    glm::mat4 mLastInvProj;
+    int mSelectedTileSize = 0;
     glm::mat4 mLastViewToWorld;
 };

@@ -10,6 +10,8 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
+#include <imgui/imgui.h>
+
 Debug::Data Debug::sData;
 
 glm::vec3 GetNormalizedPerpendicular(glm::vec3 base)
@@ -38,8 +40,11 @@ Debug::Debug(IRHIDevice* device, uint width, uint height)
     desc.DepthEnabled = true;
     desc.DepthFormat = RHITextureFormat::kD32_FLOAT;
     desc.DepthOperation = RHIDepthOperation::kLess;
-
     sData.Pipeline = device->CreateGraphicsPipeline(desc);
+
+    desc.DepthEnabled = false;
+    sData.NoDepthPipeline = device->CreateGraphicsPipeline(desc);
+
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         sData.TransferBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kStaging));
         sData.VertexBuffer[i] = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(LineVertex) * MAX_LINES, sizeof(LineVertex), RHIBufferUsage::kShaderRead));
@@ -118,16 +123,26 @@ void Debug::RenderLines(RenderPassBegin& begin)
         RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kColorWrite);
         RendererResource& depthTexture = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kDepthWrite);
 
-        RHIRenderBegin renderBegin(mWidth, mHeight, { RHIRenderAttachment(RendererViewRecycler::GetRTV(ldr.Texture), false) }, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture), false));
+        IRHIGraphicsPipeline* pipeline = sData.UseDepth ? sData.Pipeline : sData.NoDepthPipeline;
+        RHIRenderAttachment depthAttachment = sData.UseDepth ? RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture), false) : RHIRenderAttachment{};
+        RHIRenderBegin renderBegin(mWidth, mHeight, { RHIRenderAttachment(RendererViewRecycler::GetRTV(ldr.Texture), false) }, depthAttachment);
 
         begin.CommandList->BeginRendering(renderBegin);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
-        begin.CommandList->SetGraphicsPipeline(sData.Pipeline);
-        begin.CommandList->SetGraphicsConstants(sData.Pipeline, &constants, sizeof(constants));
+        begin.CommandList->SetGraphicsPipeline(pipeline);
+        begin.CommandList->SetGraphicsConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Draw(sData.Lines.size() * 2, 1, 0, 0);
         begin.CommandList->EndRendering();
     }
     begin.CommandList->PopMarker();
+}
+
+void Debug::UI(RenderPassBegin& begin)
+{
+    if (ImGui::TreeNodeEx("Debug", ImGuiTreeNodeFlags_Framed)) {
+        ImGui::Checkbox("Use Depth Buffer", &sData.UseDepth);
+        ImGui::TreePop();
+    }
 }
 
 void Debug::DrawLine(glm::vec3 from, glm::vec3 to, glm::vec3 color)
@@ -291,6 +306,21 @@ void Debug::DrawRings(glm::vec3 center, float radius, glm::vec3 color, int level
     DrawRing(center, glm::vec3(1.0f, 0.0f, 0.0f), radius, color, level);
     DrawRing(center, glm::vec3(0.0f, 1.0f, 0.0f), radius, color, level);
     DrawRing(center, glm::vec3(0.0f, 0.0f, 1.0f), radius, color, level);
+}
+
+void Debug::DrawTile(glm::mat4 transform, glm::vec3 min, glm::vec3 max, glm::vec3 color)
+{
+    // Get the four corners of the near face (z = min.z)
+    glm::vec3 v1 = glm::vec3(transform * glm::vec4(min.x, min.y, max.z, 1.0)); // bottom-left
+    glm::vec3 v3 = glm::vec3(transform * glm::vec4(min.x, max.y, max.z, 1.0)); // top-left
+    glm::vec3 v5 = glm::vec3(transform * glm::vec4(max.x, min.y, max.z, 1.0)); // bottom-right
+    glm::vec3 v7 = glm::vec3(transform * glm::vec4(max.x, max.y, max.z, 1.0)); // top-right
+
+    // Draw the quad edges (counter-clockwise)
+    DrawLine(v1, v5, color); // bottom edge
+    DrawLine(v5, v7, color); // right edge
+    DrawLine(v7, v3, color); // top edge
+    DrawLine(v3, v1, color); // left edge
 }
 
 void Debug::DrawWireUnitSphereRecursive(glm::mat4 matrix, glm::vec3 inColor, glm::vec3 inDir1, glm::vec3 inDir2, glm::vec3 inDir3, int inLevel)

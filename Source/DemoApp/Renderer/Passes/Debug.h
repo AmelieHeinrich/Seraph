@@ -21,6 +21,7 @@ public:
     ~Debug();
 
     void Render(RenderPassBegin& begin) override;
+    void UI(RenderPassBegin& begin) override;
 
     static void DrawLine(glm::vec3 from, glm::vec3 to, glm::vec3 color = glm::vec3(1.0f));
     static void DrawTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 color = glm::vec3(1.0f));
@@ -33,6 +34,7 @@ public:
     static void DrawSphere(glm::vec3 center, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 3);
     static void DrawRing(glm::vec3 center, glm::vec3 normal, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 32);
     static void DrawRings(glm::vec3 center, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 32);
+    static void DrawTile(glm::mat4 transform, glm::vec3 min, glm::vec3 max, glm::vec3 color = glm::vec3(1.0f));
 
 private:
     static constexpr uint MAX_LINES = 8192 * 16;
@@ -55,8 +57,11 @@ private:
     {
         Array<Line> Lines;
         IRHIGraphicsPipeline* Pipeline;
+        IRHIGraphicsPipeline* NoDepthPipeline;
         StaticArray<IRHIBuffer*, FRAMES_IN_FLIGHT> TransferBuffer;
         StaticArray<IRHIBuffer*, FRAMES_IN_FLIGHT> VertexBuffer;
+
+        bool UseDepth = false;
     } sData;
 
     uint64 mLineCount = 0;
