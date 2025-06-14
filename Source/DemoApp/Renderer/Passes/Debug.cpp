@@ -250,6 +250,28 @@ void Debug::DrawFrustum(glm::mat4 projview, glm::vec3 color)
     }
 }
 
+void Debug::DrawFrustumCorners(const glm::mat4& viewToWorld, const StaticArray<glm::vec3, 8>& corners, glm::vec3 color)
+{
+    auto W = [&](const glm::vec3& v) {
+        return glm::vec3(viewToWorld * glm::vec4(v, 1.0f));
+    };
+
+    // Connect edges of the frustum
+    DrawLine(W(corners[0]), W(corners[1]), color); // near top
+    DrawLine(W(corners[1]), W(corners[2]), color); // near right
+    DrawLine(W(corners[2]), W(corners[3]), color); // near bottom
+    DrawLine(W(corners[3]), W(corners[0]), color); // near left
+
+    DrawLine(W(corners[4]), W(corners[5]), color); // far top
+    DrawLine(W(corners[5]), W(corners[6]), color); // far right
+    DrawLine(W(corners[6]), W(corners[7]), color); // far bottom
+    DrawLine(W(corners[7]), W(corners[4]), color); // far left
+
+    // Connect near to far
+    for (int i = 0; i < 4; ++i)
+        DrawLine(W(corners[i]), W(corners[i + 4]), color);
+}
+
 void Debug::DrawCoordinateSystem(glm::mat4 transform, float size)
 {
     glm::vec3 translation = glm::vec3(transform[0][3], transform[1][3], transform[2][3]);
@@ -308,19 +330,19 @@ void Debug::DrawRings(glm::vec3 center, float radius, glm::vec3 color, int level
     DrawRing(center, glm::vec3(0.0f, 0.0f, 1.0f), radius, color, level);
 }
 
-void Debug::DrawTile(glm::mat4 transform, glm::vec3 min, glm::vec3 max, glm::vec3 color)
+void Debug::DrawQuad(glm::mat4 transform, const StaticArray<glm::vec3, 4>& corners, glm::vec3 color)
 {
-    // Get the four corners of the near face (z = min.z)
-    glm::vec3 v1 = glm::vec3(transform * glm::vec4(min.x, min.y, max.z, 1.0)); // bottom-left
-    glm::vec3 v3 = glm::vec3(transform * glm::vec4(min.x, max.y, max.z, 1.0)); // top-left
-    glm::vec3 v5 = glm::vec3(transform * glm::vec4(max.x, min.y, max.z, 1.0)); // bottom-right
-    glm::vec3 v7 = glm::vec3(transform * glm::vec4(max.x, max.y, max.z, 1.0)); // top-right
+    // Transform the 4 corners to world space
+    glm::vec3 v0 = glm::vec3(transform * glm::vec4(corners[0], 1.0f));
+    glm::vec3 v1 = glm::vec3(transform * glm::vec4(corners[1], 1.0f));
+    glm::vec3 v2 = glm::vec3(transform * glm::vec4(corners[2], 1.0f));
+    glm::vec3 v3 = glm::vec3(transform * glm::vec4(corners[3], 1.0f));
 
-    // Draw the quad edges (counter-clockwise)
-    DrawLine(v1, v5, color); // bottom edge
-    DrawLine(v5, v7, color); // right edge
-    DrawLine(v7, v3, color); // top edge
-    DrawLine(v3, v1, color); // left edge
+    // Draw the quad edges (assumes corners ordered consistently)
+    DrawLine(v0, v1, color);
+    DrawLine(v1, v2, color);
+    DrawLine(v2, v3, color);
+    DrawLine(v3, v0, color);
 }
 
 void Debug::DrawWireUnitSphereRecursive(glm::mat4 matrix, glm::vec3 inColor, glm::vec3 inDir1, glm::vec3 inDir2, glm::vec3 inDir3, int inLevel)

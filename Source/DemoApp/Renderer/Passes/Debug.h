@@ -30,14 +30,15 @@ public:
     static void DrawBox(glm::mat4 transform, glm::vec3 min, glm::vec3 max, glm::vec3 color = glm::vec3(1.0f));
     static void DrawFrustum(glm::mat4 view, glm::mat4 projection, glm::vec3 color = glm::vec3(1.0f));
     static void DrawFrustum(glm::mat4 projview, glm::vec3 color = glm::vec3(1.0f));
+    static void DrawFrustumCorners(const glm::mat4& viewToWorld, const StaticArray<glm::vec3, 8>& corners, glm::vec3 color = glm::vec3(1.0f));
     static void DrawCoordinateSystem(glm::mat4 transform, float size);
     static void DrawSphere(glm::vec3 center, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 3);
     static void DrawRing(glm::vec3 center, glm::vec3 normal, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 32);
     static void DrawRings(glm::vec3 center, float radius, glm::vec3 color = glm::vec3(1.0f), int level = 32);
-    static void DrawTile(glm::mat4 transform, glm::vec3 min, glm::vec3 max, glm::vec3 color = glm::vec3(1.0f));
+    static void DrawQuad(glm::mat4 transform, const StaticArray<glm::vec3, 4>& corners, glm::vec3 color = glm::vec3(1.0f));
 
 private:
-    static constexpr uint MAX_LINES = 8192 * 16;
+    static constexpr uint MAX_LINES = 16384 * 16;
 
     void CopyToVB(RenderPassBegin& begin);
     void RenderLines(RenderPassBegin& begin);
