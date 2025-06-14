@@ -8,10 +8,14 @@
 #include <random>
 #include <glm/glm.hpp>
 
-class Random {
+class Random
+{
 public:
     Random()
         : rng(std::random_device{}()) {}
+
+    Random(uint seed)
+        : rng(seed) {}
 
     float Float(float min, float max) {
         std::uniform_real_distribution<float> dist(min, max);
