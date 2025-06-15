@@ -25,7 +25,7 @@ public:
             1, 2, 3
         };
 
-        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(glm::vec3) + sizeof(glm::vec2), RHIBufferUsage::kVertex));
+        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(float3) + sizeof(float2), RHIBufferUsage::kVertex));
         mIndexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
 
         RHITextureDesc checkerboardDesc = {};

@@ -25,7 +25,7 @@ public:
             1, 2, 3
         };
 
-        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(glm::vec3) * 2, RHIBufferUsage::kVertex));
+        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(float3) * 2, RHIBufferUsage::kVertex));
         mIndexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
 
         Uploader::EnqueueBufferUpload(vertices, sizeof(vertices), mVertexBuffer);

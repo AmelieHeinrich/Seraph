@@ -16,6 +16,9 @@ public:
     ~Deferred();
 
     void Render(RenderPassBegin& begin) override;
+    void UI(RenderPassBegin& begin) override;
 private:
     IRHIComputePipeline* mPipeline;
+
+    bool mShowTileHeatmap = false;
 };

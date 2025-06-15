@@ -15,7 +15,7 @@ struct CameraData
     glm::mat4 InvView;
     glm::mat4 InvProj;
     glm::mat4 InvViewProj;
-    glm::vec4 Position;
+    float4 Position;
 };
 
 struct RenderPassBegin

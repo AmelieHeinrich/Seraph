@@ -18,13 +18,13 @@ public:
             0, 1, 2
         };
 
-        glm::vec3 vertices[] = {
-            glm::vec3{  0.0f, -0.5f, 1.0f },
-            glm::vec3{ -0.5f,  0.5f, 1.0f },
-            glm::vec3{  0.5f,  0.5f, 1.0f }
+        float3 vertices[] = {
+            float3{  0.0f, -0.5f, 1.0f },
+            float3{ -0.5f,  0.5f, 1.0f },
+            float3{  0.5f,  0.5f, 1.0f }
         };
 
-        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(glm::vec3), RHIBufferUsage::kVertex));
+        mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(float3), RHIBufferUsage::kVertex));
         mIndexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
         mBLAS = mStarters.Device->CreateBLAS(RHIBLASDesc(mVertexBuffer, mIndexBuffer));
         mTLAS = mStarters.Device->CreateTLAS();

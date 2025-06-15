@@ -116,14 +116,14 @@ void Model::ProcessNode(cgltf_node* node, int parentIndex)
     glm::mat4 scaleMatrix(1.0f);
 
     if (node->has_translation) {
-        glm::vec3 translation = glm::vec3(node->translation[0], node->translation[1], node->translation[2]);
+        float3 translation = float3(node->translation[0], node->translation[1], node->translation[2]);
         translationMatrix = glm::translate(glm::mat4(1.0f), translation);
     }
     if (node->has_rotation) {
         rotationMatrix = glm::mat4_cast(glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
     }
     if (node->has_scale) {
-        glm::vec3 scale = glm::vec3(node->scale[0], node->scale[1], node->scale[2]);
+        float3 scale = float3(node->scale[0], node->scale[1], node->scale[2]);
         scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
     }
 
@@ -182,23 +182,23 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
     for (int i = 0; i < vertexCount; i++) {
         StaticModelVertex vertex = {};
 
-        glm::vec3 rawPos(0.0f);
+        float3 rawPos(0.0f);
         if (!cgltf_accessor_read_float(posAttribute->data, i, glm::value_ptr(rawPos), 4)) {
-            rawPos = glm::vec3(0.0f);
+            rawPos = float3(0.0f);
         }
-        vertex.Position = glm::vec3(localTransform * glm::vec4(rawPos, 1.0f));
+        vertex.Position = float3(localTransform * float4(rawPos, 1.0f));
         
         if (uvAttribute) {
             if (!cgltf_accessor_read_float(uvAttribute->data, i, glm::value_ptr(vertex.Texcoord), 4)) {
-                vertex.Texcoord = glm::vec2(0.0f);
+                vertex.Texcoord = float2(0.0f);
             }
         } else {
-            vertex.Texcoord = glm::vec2(0.0f);
+            vertex.Texcoord = float2(0.0f);
         }
        
-        glm::vec3 rawNormal(0.0f, 0.0f, 1.0f);
+        float3 rawNormal(0.0f, 0.0f, 1.0f);
         if (!cgltf_accessor_read_float(normAttribute->data, i, glm::value_ptr(rawNormal), 4)) {
-            rawNormal = glm::vec3(0.0f, 0.0f, 1.0f);
+            rawNormal = float3(0.0f, 0.0f, 1.0f);
         }
         vertex.Normal = glm::normalize(glm::mat3(glm::transpose(glm::inverse(localTransform))) * rawNormal);
 
@@ -249,7 +249,7 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
 	context.m_pUserData = &modelPrimitive;
 	if (genTangSpaceDefault(&context) == false) {
         for (auto& vertex : modelPrimitive.Vertices) {
-            vertex.Tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+            vertex.Tangent = float4(1.0f, 0.0f, 0.0f, 1.0f);
         }
 	}
 

@@ -6,6 +6,7 @@
 #include "Camera.h"
 
 #include <imgui/imgui.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 void Camera::Begin()
 {
@@ -43,9 +44,9 @@ void Camera::Update(float dt, int width, int height)
     mForward.z = glm::sin(glm::radians(mYaw)) * glm::cos(glm::radians(mPitch));
     mForward = glm::normalize(mForward);
 
-    mRight = glm::normalize(glm::cross(mForward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    mRight = glm::normalize(glm::cross(mForward, float3(0.0f, 1.0f, 0.0f)));
     mUp = glm::normalize(glm::cross(mRight, mForward));
 
-    mView = glm::lookAt(mPosition, mPosition + mForward, glm::vec3(0.0f, 1.0f, 0.0f));
+    mView = glm::lookAt(mPosition, mPosition + mForward, float3(0.0f, 1.0f, 0.0f));
     mProjection = glm::perspective(glm::radians(90.0f), (float)width / (float)height, CAMERA_NEAR, CAMERA_FAR);
 }

@@ -17,7 +17,7 @@ struct LightTile
 {
     uint Offset;
     uint Count;
-    glm::uvec2 Pad;
+    uint2 Pad;
 };
 
 class LightCulling : public RenderPass

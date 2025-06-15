@@ -8,12 +8,25 @@
 module Lights;
 
 static public const uint MAX_POINT_LIGHTS = 16384;
+static public const uint MAX_SPOT_LIGHTS = 16384;
 static public const uint MAX_LIGHTS_PER_TILE = 1024;
 
 public struct PointLight
 {
     public float3 Position;
     public float Radius;
+
+    public float3 Color;
+    public float Intensity;
+};
+
+public struct SpotLight
+{
+    public float3 Position;
+    public float Size;
+
+    public float3 Forward;
+    public float Angle;
 
     public float3 Color;
     public float Intensity;

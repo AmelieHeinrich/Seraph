@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <Core/Types.h>
 
 constexpr float CAMERA_NEAR = 0.1f;
 constexpr float CAMERA_FAR = 150.0f;
@@ -22,14 +21,14 @@ public:
 
     glm::mat4 View() const { return mView; }
     glm::mat4 Projection() const { return mProjection; }
-    glm::vec3 Position() const { return mPosition; }
+    float3 Position() const { return mPosition; }
 private:
     glm::mat4 mView = glm::mat4(1.0f);
     glm::mat4 mProjection = glm::mat4(1.0f);
-    glm::vec3 mPosition = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 mForward = glm::vec3(0.0f);
-    glm::vec3 mUp = glm::vec3(0.0f);
-    glm::vec3 mRight = glm::vec3(0.0f);
+    float3 mPosition = float3(0.0f, 0.0f, 1.0f);
+    float3 mForward = float3(0.0f);
+    float3 mUp = float3(0.0f);
+    float3 mRight = float3(0.0f);
 
     // To calculate forward
     float mPitch = 0.0f;

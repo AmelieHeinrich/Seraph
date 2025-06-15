@@ -7,6 +7,8 @@
 #include "GBuffer.h"
 #include "LightCulling.h"
 
+#include <imgui/imgui.h>
+
 Deferred::Deferred(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
@@ -24,7 +26,7 @@ Deferred::Deferred(IRHIDevice* device, uint width, uint height)
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 16;
+    desc.PushConstantSize = sizeof(uint) * 20;
     mPipeline = mParentDevice->CreateComputePipeline(desc);
 }
 
@@ -67,6 +69,10 @@ void Deferred::Render(RenderPassBegin& begin)
             BindlessHandle binsArray;
             BindlessHandle tilesArray;
             uint pad;
+
+            BindlessHandle slArray;
+            uint slCount;
+            uint2 Pad;
         } constants = {
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
@@ -86,7 +92,11 @@ void Deferred::Render(RenderPassBegin& begin)
             (mWidth + TILE_WIDTH - 1) / TILE_WIDTH,
             RendererViewRecycler::GetSRV(tileIndicesBuffer.Buffer)->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(tileBuffer.Buffer)->GetBindlessHandle(),
-            0
+            mShowTileHeatmap,
+
+            begin.RenderScene->GetLights().GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
+            static_cast<uint>(begin.RenderScene->GetLights().SpotLights.size()),
+            {}
         };
     
         begin.CommandList->SetComputePipeline(mPipeline);
@@ -94,4 +104,12 @@ void Deferred::Render(RenderPassBegin& begin)
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
     }
     begin.CommandList->PopMarker();
+}
+
+void Deferred::UI(RenderPassBegin& begin)
+{
+    if (ImGui::TreeNodeEx("Deferred", ImGuiTreeNodeFlags_Framed)) {
+        ImGui::Checkbox("Show Tile Heatmap", &mShowTileHeatmap);
+        ImGui::TreePop();
+    }
 }

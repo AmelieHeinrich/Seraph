@@ -22,23 +22,23 @@ public:
         return dist(rng);
     }
 
-    glm::vec2 Vec2(const glm::vec2& min, const glm::vec2& max) {
-        return glm::vec2(
+    float2 Vec2(const float2& min, const float2& max) {
+        return float2(
             Float(min.x, max.x),
             Float(min.y, max.y)
         );
     }
 
-    glm::vec3 Vec3(const glm::vec3& min, const glm::vec3& max) {
-        return glm::vec3(
+    float3 Vec3(const float3& min, const float3& max) {
+        return float3(
             Float(min.x, max.x),
             Float(min.y, max.y),
             Float(min.z, max.z)
         );
     }
 
-    glm::vec4 Vec4(const glm::vec4& min, const glm::vec4& max) {
-        return glm::vec4(
+    float4 Vec4(const float4& min, const float4& max) {
+        return float4(
             Float(min.x, max.x),
             Float(min.y, max.y),
             Float(min.z, max.z),

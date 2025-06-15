@@ -11,6 +11,6 @@
 
 struct FrustumPlane
 {
-    glm::vec3 Normal;
+    float3 Normal;
     float Distance;
 };

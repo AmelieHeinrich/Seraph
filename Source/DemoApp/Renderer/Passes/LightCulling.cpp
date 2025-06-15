@@ -33,7 +33,7 @@ LightCulling::LightCulling(IRHIDevice* device, uint width, uint height)
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 12;
+    desc.PushConstantSize = sizeof(uint) * 16;
     mCullPipeline = mParentDevice->CreateComputePipeline(desc);
 }
 
@@ -68,7 +68,10 @@ void LightCulling::Render(RenderPassBegin& begin)
             uint Width;
             uint Height;
             uint PointLightCount;
-            uint Pad;
+            uint SpotLightCount;
+
+            BindlessHandle SpotLightArray;
+            uint3 Pad;
         } constants = {
             begin.RenderScene->GetLights().GetPointLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
@@ -83,7 +86,10 @@ void LightCulling::Render(RenderPassBegin& begin)
             mWidth,
             mHeight,
             static_cast<uint>(begin.RenderScene->GetLights().PointLights.size()),
-            0
+            static_cast<uint>(begin.RenderScene->GetLights().SpotLights.size()),
+
+            begin.RenderScene->GetLights().GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
+            {}
         };
             
         begin.CommandList->SetComputePipeline(mCullPipeline);

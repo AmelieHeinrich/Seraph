@@ -13,9 +13,9 @@
 struct Entity
 {
     glm::mat4 Transform;
-    glm::vec3 Position;
+    float3 Position;
     glm::quat Rotation;
-    glm::vec3 Scale;
+    float3 Scale;
 
     Asset::Handle Model;
 };
