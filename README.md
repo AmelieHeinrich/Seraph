@@ -15,11 +15,17 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 - Asset compression and caching
 - Deferred shading
 - PBR workflow with Lambertian Diffuse & Cook-Torrance BRDF
+- Tiled light culling
+
+## Planned
+
+- Clustered light culling
+- SSAO, GTAO, RTAO
 
 ## Screenshots
 
 ### Most recent screenshot of the demo app
-![](.github/june14.png)
+![](.github/june15.png)
 
 ### Test suite
 ![](.github/tests.png)
