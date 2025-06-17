@@ -20,7 +20,8 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 ## Planned
 
 - Clustered light culling
-- SSAO, GTAO, RTAO
+- SSR
+- SSAO
 
 ## Screenshots
 
