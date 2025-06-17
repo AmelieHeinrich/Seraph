@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 
+#define CODE_BLOCK(message)
+
 using int8 = int8_t;
 using int16 = int16_t;
 using int32 = int32_t;

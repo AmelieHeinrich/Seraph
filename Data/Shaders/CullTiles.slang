@@ -139,14 +139,14 @@ void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 
     float2 ndcBL = PixelToNDC(x0, y1);
 
     // Get frustum corners
-    float3 v0 = NDCToView(ndcTL, 0.0f, camera.InvProj).rgb;
-    float3 v1 = NDCToView(ndcTR, 0.0f, camera.InvProj).rgb;
-    float3 v2 = NDCToView(ndcBR, 0.0f, camera.InvProj).rgb;
-    float3 v3 = NDCToView(ndcBL, 0.0f, camera.InvProj).rgb;
-    float3 v4 = NDCToView(ndcTL, 1.0f, camera.InvProj).rgb;
-    float3 v5 = NDCToView(ndcTR, 1.0f, camera.InvProj).rgb;
-    float3 v6 = NDCToView(ndcBR, 1.0f, camera.InvProj).rgb;
-    float3 v7 = NDCToView(ndcBL, 1.0f, camera.InvProj).rgb;
+    float3 v0 = NDCToView(ndcTL, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
+    float3 v1 = NDCToView(ndcTR, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
+    float3 v2 = NDCToView(ndcBR, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
+    float3 v3 = NDCToView(ndcBL, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
+    float3 v4 = NDCToView(ndcTL, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
+    float3 v5 = NDCToView(ndcTR, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
+    float3 v6 = NDCToView(ndcBR, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
+    float3 v7 = NDCToView(ndcBL, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
 
     // Make frustum planes for point lights
     FrustumPlane left = MakePlane(v0, v3, v7);
@@ -183,8 +183,9 @@ void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 
         if (visible) {
             uint idx;
             InterlockedAdd(gSharedCount, 1, idx);
-            if (idx < MAX_LIGHTS_PER_TILE)
-                gSharedBin[idx] = i;
+            if (gSharedCount >= MAX_LIGHTS_PER_TILE)
+                return;
+            gSharedBin[idx] = i;
         }
     }
 
@@ -204,8 +205,9 @@ void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 
         if (visible) {
             uint idx;
             InterlockedAdd(gSharedCount, 1, idx);
-            if (idx < MAX_LIGHTS_PER_TILE)
-                gSharedBin[idx] = i | (1u << 31);
+            if (gSharedCount >= MAX_LIGHTS_PER_TILE)
+                return;
+            gSharedBin[idx] = i | (1u << 31);
         }
     }
 

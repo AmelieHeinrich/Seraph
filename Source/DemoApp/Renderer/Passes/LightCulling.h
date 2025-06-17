@@ -17,7 +17,8 @@ struct LightTile
 {
     uint Offset;
     uint Count;
-    uint2 Pad;
+    float MinDepth;
+    float MaxDepth;
 };
 
 class LightCulling : public RenderPass
@@ -29,9 +30,13 @@ public:
     void Render(RenderPassBegin& begin) override;
     void UI(RenderPassBegin& begin) override;
 private:
-    IRHIComputePipeline* mCullPipeline;
+    void GenerateTiles(RenderPassBegin& begin);
+    void CullTiles(RenderPassBegin& begin);
 
 private:
+    IRHIComputePipeline* mGeneratePipeline;
+    IRHIComputePipeline* mCullPipeline;
+
     uint mNumTilesX;
     uint mNumTilesY;
 };

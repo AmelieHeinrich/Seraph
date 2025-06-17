@@ -36,5 +36,6 @@ public struct TileData
 {
     public uint Offset;
     public uint Count;
-    public uint2 Pad;
+    public float MinDepth;
+    public float MaxDepth;
 };

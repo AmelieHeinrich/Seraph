@@ -127,6 +127,10 @@ void D3D12CommandList::Barrier(const RHIBufferBarrier& barrier)
     bufBarrier.Offset = 0;
     bufBarrier.Size = barrier.Buffer->GetDesc().Size;
 
+    if (bufBarrier.AccessBefore == bufBarrier.AccessAfter) {
+        return;
+    }
+
     D3D12_BARRIER_GROUP group = {};
     group.Type = D3D12_BARRIER_TYPE_BUFFER;
     group.NumBarriers = 1;
@@ -479,7 +483,7 @@ void D3D12CommandList::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint insta
 
 void D3D12CommandList::PushMarker(const String& name)
 {
-    PIXBeginEvent(mList, PIX_COLOR_DEFAULT, name.data());
+    PIXBeginEvent(mList, PIX_COLOR_DEFAULT, name.c_str());
 }
 
 void D3D12CommandList::PopMarker()

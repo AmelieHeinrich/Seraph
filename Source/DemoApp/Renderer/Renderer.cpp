@@ -23,8 +23,8 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 
     // Setup Normal Path
     mPasses[RenderPath::kBasic] = {
-        std::make_shared<LightCulling>(device, width, height),
         std::make_shared<GBuffer>(device, width, height),
+        std::make_shared<LightCulling>(device, width, height),
         std::make_shared<Deferred>(device, width, height),
         std::make_shared<Tonemapping>(device, width, height),
         std::make_shared<Debug>(device, width, height),

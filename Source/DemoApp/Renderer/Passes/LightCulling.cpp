@@ -29,12 +29,23 @@ LightCulling::LightCulling(IRHIDevice* device, uint width, uint height)
     ));
 
     // Create pipeline
-    CompiledShader shader = ShaderCompiler::Compile("TiledCull", { "CSMain" });
+    CODE_BLOCK("Create generate shader") {
+        CompiledShader shader = ShaderCompiler::Compile("GenerateTiles", { "CSMain" });
 
-    RHIComputePipelineDesc desc = {};
-    desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 16;
-    mCullPipeline = mParentDevice->CreateComputePipeline(desc);
+        RHIComputePipelineDesc desc = {};
+        desc.ComputeBytecode = shader.Entries["CSMain"];
+        desc.PushConstantSize = sizeof(uint) * 8;
+        mGeneratePipeline = mParentDevice->CreateComputePipeline(desc);
+    }
+
+    CODE_BLOCK("Create generate shader") {
+        CompiledShader shader = ShaderCompiler::Compile("CullTiles", { "CSMain" });
+
+        RHIComputePipelineDesc desc = {};
+        desc.ComputeBytecode = shader.Entries["CSMain"];
+        desc.PushConstantSize = sizeof(uint) * 16;
+        mCullPipeline = mParentDevice->CreateComputePipeline(desc);
+    }
 }
 
 LightCulling::~LightCulling()
@@ -43,6 +54,55 @@ LightCulling::~LightCulling()
 }
 
 void LightCulling::Render(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("Tiled Light Culling");
+    GenerateTiles(begin);
+    CullTiles(begin);
+    begin.CommandList->PopMarker();
+}
+
+void LightCulling::GenerateTiles(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("Generate Tiles");
+    {
+        // Pass
+        RendererResource& tileBuffer = RendererResourceManager::Import(LIGHT_CULL_TILE_BUFFER, begin.CommandList, RendererImportType::kShaderWrite);
+        RendererResource& depthBuffer = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
+    
+        struct PushConstants {
+            BindlessHandle TileArray;
+            uint TileWidth;
+            uint TileHeight;
+            BindlessHandle DepthMap;
+
+            uint NumTilesX;
+            uint NumTilesY;
+            uint Width;
+            uint Height;
+        } constants = {
+            RendererViewRecycler::GetUAV(tileBuffer.Buffer)->GetBindlessHandle(),
+            TILE_WIDTH,
+            TILE_HEIGHT,
+            RendererViewRecycler::GetTextureView(RHITextureViewDesc(depthBuffer.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+
+            mNumTilesX,
+            mNumTilesY,
+            mWidth,
+            mHeight
+        };
+
+        begin.CommandList->SetComputePipeline(mGeneratePipeline);
+        begin.CommandList->SetComputeConstants(mGeneratePipeline, &constants, sizeof(constants));
+        begin.CommandList->Dispatch(mNumTilesX, mNumTilesY, 1);
+
+        // Insert manual UAV barrier
+        RHIMemoryBarrier barrier(RHIResourceAccess::kShaderWrite, RHIResourceAccess::kShaderWrite, RHIPipelineStage::kComputeShader, RHIPipelineStage::kComputeShader);
+        begin.CommandList->Barrier(barrier);
+    }
+    begin.CommandList->PopMarker();
+}
+
+void LightCulling::CullTiles(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Cull Lights");
     {
