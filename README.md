@@ -22,6 +22,22 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 - Clustered light culling
 - SSR
 - SSAO
+- Compute pathtracer
+- CSM/Point/Spot Shadows
+- TAA
+- Bloom
+- Auto Exposure
+- Bokeh DOF
+- Motion Blur
+- Mesh shaders & GPU driven culling
+- Deferred texturing
+- GPU particles
+- SVGF
+- RTAO
+- RT shadows
+- RT reflections
+- DLSS/FSR/XeSS upscaling
+- Metal backend
 
 ## Screenshots
 
