@@ -23,7 +23,6 @@ target("Seraph")
     if is_mode("debug") then
         set_symbols("debug")
         set_optimize("none")
-        add_defines("NDEBUG")
     else
         set_symbols("hidden")
         set_optimize("fastest")
@@ -40,12 +39,11 @@ target("DemoApp")
     add_headerfiles("DemoApp/**.h")
     add_includedirs(".", "Seraph")
     add_deps("Seraph", "PIX")
-    add_defines("ENABLE_PIX", "GLM_FORCE_DEPTH_ZERO_TO_ONE")
+    add_defines("GLM_FORCE_DEPTH_ZERO_TO_ONE")
 
     if is_mode("debug") then
         set_symbols("debug")
         set_optimize("none")
-        add_defines("NDEBUG")
     else
         set_symbols("hidden")
         set_optimize("fastest")
@@ -66,7 +64,6 @@ target("Tests")
     if is_mode("debug") then
         set_symbols("debug")
         set_optimize("none")
-        add_defines("NDEBUG")
     else
         set_symbols("hidden")
         set_optimize("fastest")

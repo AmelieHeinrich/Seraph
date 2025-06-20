@@ -6,7 +6,6 @@
 #include "D3D12BLAS.h"
 #include "D3D12Device.h"
 
-// KILL YOURSELF WINDOWS.H
 #undef max
 
 D3D12BLAS::D3D12BLAS(D3D12Device* device, RHIBLASDesc desc)

@@ -26,10 +26,11 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 - CSM/Point/Spot Shadows
 - TAA
 - Bloom
+- Mesh shaders & GPU driven culling
+- Visibility Buffer
 - Auto Exposure
 - Bokeh DOF
 - Motion Blur
-- Mesh shaders & GPU driven culling
 - Deferred texturing
 - GPU particles
 - SVGF
