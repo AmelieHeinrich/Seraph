@@ -12,7 +12,7 @@
 Scene::Scene(IRHIDevice* device)
     : mLights(device), mDevice(device)
 {
-    mInstanceBuffer = device->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance) * MAX_TLAS_INSTANCES, sizeof(TLASInstance), RHIBufferUsage::kStaging));
+    mInstanceBuffer = device->CreateBuffer(RHIBufferDesc(sizeof(TLASInstance) * MAX_TLAS_INSTANCES, sizeof(TLASInstance), RHIBufferUsage::kConstant));
     mTLAS = device->CreateTLAS();
 }
 
