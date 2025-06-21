@@ -13,9 +13,9 @@
 struct Entity
 {
     glm::mat4 Transform;
-    float3 Position;
-    glm::quat Rotation;
-    float3 Scale;
+    float3 Position = glm::vec3(0.0f);
+    glm::quat Rotation = glm::identity<glm::quat>();
+    float3 Scale = glm::vec3(1.0f);
 
     Asset::Handle Model;
 };
@@ -31,9 +31,17 @@ public:
 
     LightList& GetLights() { return mLights; }
     Array<Entity>& GetEntities() { return mEntities; }
+
+    Array<TLASInstance>& GetTLASInstances() { return mInstances; }
+    IRHITLAS* GetTLAS() { return mTLAS; }
+    IRHIBuffer* GetInstanceBuffer() { return mInstanceBuffer; }
 private:
     IRHIDevice* mDevice;
 
     Array<Entity> mEntities;
     LightList mLights;
+
+    Array<TLASInstance> mInstances;
+    IRHIBuffer* mInstanceBuffer;
+    IRHITLAS* mTLAS;
 };

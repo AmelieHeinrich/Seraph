@@ -23,7 +23,7 @@ Pathtracer::Pathtracer(IRHIDevice* device, uint width, uint height)
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 4;
+    desc.PushConstantSize = sizeof(uint) * 8;
     mPipeline = mParentDevice->CreateComputePipeline(desc);
 }
 
@@ -35,8 +35,42 @@ Pathtracer::~Pathtracer()
 void Pathtracer::Render(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Pathtracer");
+    BuildTLAS(begin);
+    Pathtrace(begin);
+    begin.CommandList->PopMarker();
+}
+
+void Pathtracer::BuildTLAS(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("Build TLAS");
     CODE_BLOCK("Execute") {
+        RHIBufferBarrier beforeBarrier(begin.RenderScene->GetTLAS()->GetMemory());
+        beforeBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureRead;
+        beforeBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureWrite;
+        beforeBarrier.SourceStage = RHIPipelineStage::kComputeShader;
+        beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite;
+
+        RHIBufferBarrier afterBarrier(begin.RenderScene->GetTLAS()->GetMemory());
+        afterBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureWrite;
+        afterBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureRead;
+        afterBarrier.SourceStage = RHIPipelineStage::kAccelStructureWrite;
+        afterBarrier.DestStage = RHIPipelineStage::kComputeShader;
+
+        begin.CommandList->Barrier(beforeBarrier);
+        begin.CommandList->BuildTLAS(begin.RenderScene->GetTLAS(), RHIASBuildMode::kRebuild, begin.RenderScene->GetTLASInstances().size(), begin.RenderScene->GetInstanceBuffer());
+        begin.CommandList->Barrier(afterBarrier);
+    }
+    begin.CommandList->PopMarker();
+}
+
+void Pathtracer::Pathtrace(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("Trace Rays");
+    CODE_BLOCK("Execute") {
+        RendererResource& cameraBuffer = RendererResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
+        RendererResource& depth = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& albedo = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& normal = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& output = RendererResourceManager::Import(PATHTRACER_HDR_TEXTURE_ID, begin.CommandList, RendererImportType::kShaderWrite);
 
         struct PushConstants {
@@ -44,11 +78,21 @@ void Pathtracer::Render(RenderPassBegin& begin)
             uint Height;
             BindlessHandle Output;
             BindlessHandle Albedo;
+
+            BindlessHandle Camera;
+            BindlessHandle Depth;
+            BindlessHandle AccelerationStructure;
+            BindlessHandle Normal;
         } constants = {
             mWidth,
             mHeight,
             RendererViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
-            RendererViewRecycler::GetSRV(albedo.Texture)->GetBindlessHandle()
+            RendererViewRecycler::GetSRV(albedo.Texture)->GetBindlessHandle(),
+
+            cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
+            RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+            begin.RenderScene->GetTLAS()->GetBindlessHandle(),
+            RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle()
         };
 
         begin.CommandList->SetComputePipeline(mPipeline);

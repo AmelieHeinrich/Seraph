@@ -11,7 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Application::Application(const ApplicationSpecs& specs)
-    : mSpecs(specs)
+    : mSpecs(specs), mPath(RenderPath::kPathtracer)
 {
     mStringBackend = specs.Backend == RHIBackend::kVulkan ? "Vulkan" : "D3D12";
 
@@ -39,7 +39,7 @@ Application::Application(const ApplicationSpecs& specs)
     mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
 
     Random rng(12345);
-    for (int i = 0; i < 8192; i++) {
+    for (int i = 0; i < 2048; i++) {
         mScene->GetLights().AddPointLight(
             rng.Vec3(float3(-10.0f, 0.0f, -7.0f), float3(10.0f, 10.0f, 7.0f)),
             rng.Float(0.5f, 2.0f),
@@ -108,7 +108,7 @@ void Application::Run()
         begin.CommandList->Begin();
 
         // Render
-        mRenderer->Render(RenderPath::kPathtracer, begin);
+        mRenderer->Render(mPath, begin);
         
         // ImGui
         begin.CommandList->PushMarker("ImGui");
@@ -181,12 +181,14 @@ void Application::UI(RenderPassBegin& begin)
             ImGui::Text("Debug Menu: F1");
             ImGui::Text("Screenshot: F2");
             ImGui::Text("Hide Overlay: F3");
+            if (ImGui::RadioButton("Rasterized", mPath == RenderPath::kBasic)) mPath = RenderPath::kBasic;
+            if (ImGui::RadioButton("Pathtraced", mPath == RenderPath::kPathtracer)) mPath = RenderPath::kPathtracer;
             ImGui::End();
         }
 
         // Renderer settings
         if (mRendererSettingsOpened) {
-            mRenderer->UI(RenderPath::kBasic, begin);
+            mRenderer->UI(mPath, begin);
         }
     }
 }

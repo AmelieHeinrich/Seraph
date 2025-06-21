@@ -43,6 +43,8 @@ private:
     Renderer* mRenderer;
     Scene* mScene;
 
+    RenderPath mPath;
+
 private:
     // UI stuff
     void SetUITheme();

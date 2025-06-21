@@ -19,49 +19,49 @@ namespace MikkT
 {
     int getNumFaces(const SMikkTSpaceContext* context)
     {
-    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
-    	return static_cast<int>(mesh->IndexCount / 3);
+        auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+        return static_cast<int>(mesh->IndexCount / 3);
     }
 
     int getNumVerticesOfFace(const SMikkTSpaceContext* context, int faceIdx)
     {
-    	return 3; // We're always using triangles
+        return 3; // We're always using triangles
     }
 
     void getPosition(const SMikkTSpaceContext* context, float outpos[], int faceIdx, int vertIdx)
     {
-    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
-    	auto& pos = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Position;
-    	outpos[0] = pos.x;
-    	outpos[1] = pos.y;
-    	outpos[2] = pos.z;
+        auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+        auto& pos = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Position;
+        outpos[0] = pos.x;
+        outpos[1] = pos.y;
+        outpos[2] = pos.z;
     }
 
     void getNormal(const SMikkTSpaceContext* context, float outnormal[], int faceIdx, int vertIdx)
     {
-    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
-    	auto& normal = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Normal;
-    	outnormal[0] = normal.x;
-    	outnormal[1] = normal.y;
-    	outnormal[2] = normal.z;
+        auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+        auto& normal = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Normal;
+        outnormal[0] = normal.x;
+        outnormal[1] = normal.y;
+        outnormal[2] = normal.z;
     }
 
     void getTexCoord(const SMikkTSpaceContext* context, float outuv[], int faceIdx, int vertIdx)
     {
-    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
-    	auto& uv = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Texcoord;
-    	outuv[0] = uv.x;
-    	outuv[1] = uv.y;
+        auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+        auto& uv = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Texcoord;
+        outuv[0] = uv.x;
+        outuv[1] = uv.y;
     }
 
     void setTSpaceBasic(const SMikkTSpaceContext* context, const float inTangent[], float sign, int faceIdx, int vertIdx)
     {
-    	auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
-    	auto& tangent = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Tangent;
-    	tangent.x = inTangent[0];
-    	tangent.y = inTangent[1];
-    	tangent.z = inTangent[2];
-    	tangent.w = -1.0f * sign;
+        auto mesh = static_cast<ModelPrimitive*>(context->m_pUserData);
+        auto& tangent = mesh->Vertices[mesh->Indices[faceIdx * 3 + vertIdx]].Tangent;
+        tangent.x = inTangent[0];
+        tangent.y = inTangent[1];
+        tangent.z = inTangent[2];
+        tangent.w = -1.0f * sign;
     }
 }
 
@@ -227,6 +227,10 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
     
             modelMaterial.PBR = AssetManager::Get(path, AssetType::kTexture);
         }
+
+        if (material->alpha_mode == cgltf_alpha_mode_blend) {
+            modelMaterial.AlphaTested = true;
+        }
     }
 
     modelPrimitive.VertexBuffer = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(StaticModelVertex) * vertexCount, sizeof(StaticModelVertex), RHIBufferUsage::kVertex | RHIBufferUsage::kShaderRead));
@@ -237,21 +241,21 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
     modelPrimitive.IndexCount = indexCount;
 
     SMikkTSpaceInterface mikktInterface = {};
-	mikktInterface.m_getNumFaces = &MikkT::getNumFaces;
-	mikktInterface.m_getNumVerticesOfFace = &MikkT::getNumVerticesOfFace;
-	mikktInterface.m_getPosition = &MikkT::getPosition;
-	mikktInterface.m_getNormal = &MikkT::getNormal;
-	mikktInterface.m_getTexCoord = &MikkT::getTexCoord;
-	mikktInterface.m_setTSpaceBasic = &MikkT::setTSpaceBasic;
+    mikktInterface.m_getNumFaces = &MikkT::getNumFaces;
+    mikktInterface.m_getNumVerticesOfFace = &MikkT::getNumVerticesOfFace;
+    mikktInterface.m_getPosition = &MikkT::getPosition;
+    mikktInterface.m_getNormal = &MikkT::getNormal;
+    mikktInterface.m_getTexCoord = &MikkT::getTexCoord;
+    mikktInterface.m_setTSpaceBasic = &MikkT::setTSpaceBasic;
 
-	SMikkTSpaceContext context = {};
-	context.m_pInterface = &mikktInterface;
-	context.m_pUserData = &modelPrimitive;
-	if (genTangSpaceDefault(&context) == false) {
+    SMikkTSpaceContext context = {};
+    context.m_pInterface = &mikktInterface;
+    context.m_pUserData = &modelPrimitive;
+    if (genTangSpaceDefault(&context) == false) {
         for (auto& vertex : modelPrimitive.Vertices) {
             vertex.Tangent = float4(1.0f, 0.0f, 0.0f, 1.0f);
         }
-	}
+    }
 
     Uploader::EnqueueBufferUpload(modelPrimitive.Vertices.data(), sizeof(StaticModelVertex) * vertexCount, modelPrimitive.VertexBuffer);
     Uploader::EnqueueBufferUpload(modelPrimitive.Indices.data(), sizeof(uint) * indexCount, modelPrimitive.IndexBuffer);

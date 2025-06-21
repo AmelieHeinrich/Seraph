@@ -11,7 +11,7 @@
 #include "Bindless.h"
 #include "Buffer.h"
 
-constexpr uint MAX_TLAS_INSTANCES = 8092;
+constexpr uint MAX_TLAS_INSTANCES = 16000;
 constexpr uint TLAS_INSTANCE_OPAQUE = 0x00000004;
 constexpr uint TLAS_INSTANCE_NON_OPAQUE = 0x00000008;
 

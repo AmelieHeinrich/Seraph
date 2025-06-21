@@ -26,6 +26,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
         mGBuffer,
         mPathtracer,
         mTonemapping,
+        mDebug,
         mCopyToSwapchain
     };
 

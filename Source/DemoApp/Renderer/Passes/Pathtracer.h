@@ -17,5 +17,9 @@ public:
 
     void Render(RenderPassBegin& begin) override;
 private:
+    void BuildTLAS(RenderPassBegin& begin);
+    void Pathtrace(RenderPassBegin& begin);
+
+private:
     IRHIComputePipeline* mPipeline;
 };
