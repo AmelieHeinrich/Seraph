@@ -40,8 +40,8 @@ void Deferred::Render(RenderPassBegin& begin)
     begin.CommandList->PushMarker("Deferred");
     {
         RendererResource& cameraBuffer = RendererResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
-        RendererResource& tileBuffer = RendererResourceManager::Import(LIGHT_CULL_TILE_BUFFER, begin.CommandList, RendererImportType::kShaderRead);
-        RendererResource& tileIndicesBuffer = RendererResourceManager::Import(LIGHT_CULL_TILE_INDICES_BUFFER, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& tileBuffer = RendererResourceManager::Import(LIGHT_CULL_CLUSTER_BUFFER, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& tileIndicesBuffer = RendererResourceManager::Import(LIGHT_CULL_CLUSTER_INDICES_BUFFER, begin.CommandList, RendererImportType::kShaderRead);
 
         RendererResource& depth = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& normal = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kShaderRead);
@@ -72,7 +72,8 @@ void Deferred::Render(RenderPassBegin& begin)
 
             BindlessHandle slArray;
             uint slCount;
-            uint2 Pad;
+            uint clusterZ;
+            uint clusterY;
         } constants = {
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
@@ -86,17 +87,18 @@ void Deferred::Render(RenderPassBegin& begin)
 
             static_cast<uint>(begin.RenderScene->GetLights().PointLights.size()),
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
-            TILE_WIDTH,
-            TILE_HEIGHT,
+            CLUSTER_WIDTH,
+            CLUSTER_HEIGHT,
 
-            (mWidth + TILE_WIDTH - 1) / TILE_WIDTH,
+            (mWidth + CLUSTER_WIDTH - 1) / CLUSTER_WIDTH,
             RendererViewRecycler::GetSRV(tileIndicesBuffer.Buffer)->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(tileBuffer.Buffer)->GetBindlessHandle(),
             mShowTileHeatmap,
 
             begin.RenderScene->GetLights().GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
             static_cast<uint>(begin.RenderScene->GetLights().SpotLights.size()),
-            {}
+            CLUSTER_DEPTH,
+            (mHeight + CLUSTER_HEIGHT - 1) / CLUSTER_HEIGHT
         };
     
         begin.CommandList->SetComputePipeline(mPipeline);

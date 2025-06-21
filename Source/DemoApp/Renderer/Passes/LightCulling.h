@@ -7,13 +7,14 @@
 
 #include <DemoApp/Renderer/RenderPass.h>
 
-constexpr const char* LIGHT_CULL_TILE_BUFFER = "LightCulling/TileBuffer";
-constexpr const char* LIGHT_CULL_TILE_INDICES_BUFFER = "LightCulling/TileIndicesBuffer";
-constexpr uint MAX_LIGHT_PER_TILE = 1024;
-constexpr uint TILE_WIDTH = 16;
-constexpr uint TILE_HEIGHT = 16;
+constexpr const char* LIGHT_CULL_CLUSTER_BUFFER = "LightCulling/TileBuffer";
+constexpr const char* LIGHT_CULL_CLUSTER_INDICES_BUFFER = "LightCulling/TileIndicesBuffer";
+constexpr uint MAX_LIGHTS_PER_CLUSTER = 1024;
+constexpr uint CLUSTER_WIDTH = 16;
+constexpr uint CLUSTER_HEIGHT = 9;
+constexpr uint CLUSTER_DEPTH = 24;
 
-struct LightTile
+struct LightCluster
 {
     uint Offset;
     uint Count;
@@ -30,13 +31,13 @@ public:
     void Render(RenderPassBegin& begin) override;
     void UI(RenderPassBegin& begin) override;
 private:
-    void GenerateTiles(RenderPassBegin& begin);
-    void CullTiles(RenderPassBegin& begin);
+    void GenerateClusters(RenderPassBegin& begin);
+    void CullClusters(RenderPassBegin& begin);
 
 private:
-    IRHIComputePipeline* mGeneratePipeline;
     IRHIComputePipeline* mCullPipeline;
 
-    uint mNumTilesX;
-    uint mNumTilesY;
+    uint mNumClustersX;
+    uint mNumClustersY;
+    uint mNumClustersZ;
 };

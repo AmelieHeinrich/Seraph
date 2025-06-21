@@ -19,13 +19,13 @@ struct PushConstants
 {
     uint LightIndex;
     uint CameraIndex;
-    uint TileArray;
+    uint ClusterArray;
     uint BinsArray;
 
-    uint TileWidth;
-    uint TileHeight;
-    uint NumTilesX;
-    uint NumTilesY;
+    uint ClusterWidth;
+    uint ClusterHeight;
+    uint NumClustersX;
+    uint NumClustersY;
 
     uint Width;
     uint Height;
@@ -33,11 +33,12 @@ struct PushConstants
     uint SpotLightCount;
 
     uint SpotLightArray;
-    uint3 Pad;
+    uint NumClustersZ;
+    uint2 Pad;
 };
 
 DEFINE_UAV_ARRAY(uint);
-DEFINE_UAV_ARRAY(TileData);
+DEFINE_UAV_ARRAY(ClusterData);
 DEFINE_SRV_ARRAY(PointLight);
 DEFINE_SRV_ARRAY(SpotLight);
 DEFINE_CBV_ARRAY(Camera);
@@ -98,19 +99,20 @@ bool TestConeVsSphere(float3 origin, float3 forward, float size, float angle, fl
     return !(angleCull || frontCull || backCull);
 }
 
-groupshared uint gSharedBin[MAX_LIGHTS_PER_TILE];
+groupshared uint gSharedBin[MAX_LIGHTS_PER_CLUSTER];
 groupshared uint gSharedCount;
 
-[numthreads(128, 1, 1)]
-void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 gid : SV_GroupID)
+[numthreads(256, 1, 1)]
+void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 gid: SV_GroupID)
 {
-    if (gid.x >= Push.NumTilesX || gid.y >= Push.NumTilesY)
+    if (gid.x >= Push.NumClustersX || gid.y >= Push.NumClustersY || gid.z >= Push.NumClustersZ)
         return;
 
-    // Map 1D index to 2D tile coordinates
-    uint tx = gid.x;
-    uint ty = gid.y;
-    uint tileIndex = ty * Push.NumTilesX + tx;
+    // Map 3D cluster ID to 1D index
+    uint cx = gid.x;
+    uint cy = gid.y;
+    uint cz = gid.z;
+    uint clusterIndex = cz * Push.NumClustersX * Push.NumClustersY + cy * Push.NumClustersX + cx;
 
     // Reset shared count
     if (gtid.x == 0)
@@ -121,34 +123,46 @@ void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 
     Camera camera = BindlessCBV_Camera.Load(Push.CameraIndex);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.LightIndex);
     StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight.Load(Push.SpotLightArray);
-    RWStructuredBuffer<TileData> tiles = BindlessUAV_TileData.Load(Push.TileArray);
+    RWStructuredBuffer<ClusterData> clusters = BindlessUAV_ClusterData.Load(Push.ClusterArray);
     RWStructuredBuffer<uint> bins = BindlessUAV_uint.Load(Push.BinsArray);
 
-    tiles[tileIndex].Offset = tileIndex * MAX_LIGHTS_PER_TILE;
+    clusters[clusterIndex].Offset = clusterIndex * MAX_LIGHTS_PER_CLUSTER;
 
-    // Compute tile screen bounds
-    int x0 = tx * Push.TileWidth;
-    int y0 = ty * Push.TileHeight;
-    int x1 = min(x0 + Push.TileWidth, Push.Width);
-    int y1 = min(y0 + Push.TileHeight, Push.Height);
+    // Compute cluster screen-space bounds
+    int x0 = cx * Push.ClusterWidth;
+    int y0 = cy * Push.ClusterHeight;
+    int x1 = min(x0 + Push.ClusterWidth, Push.Width);
+    int y1 = min(y0 + Push.ClusterHeight, Push.Height);
 
-    // Reconstruct tile frustum (same as before)
+    float logZScale = log(CAMERA_FAR / CAMERA_NEAR) / Push.NumClustersZ;
+    float clusterNearZ = CAMERA_NEAR * exp(logZScale * float(cz));
+    float clusterFarZ = CAMERA_NEAR * exp(logZScale * float(cz + 1));
+
+    // Convert to NDC
+    float4 projNear = mul(camera.Proj, float4(0, 0, -clusterNearZ, 1));
+    float ndcNearZ = projNear.z / projNear.w;
+    float4 projFar = mul(camera.Proj, float4(0, 0, -clusterFarZ, 1));
+    float ndcFarZ = projFar.z / projFar.w;
+
+    float minZ = ndcNearZ;
+    float maxZ = ndcFarZ;
+
+    // Reconstruct cluster frustum corners (8 corners total)
     float2 ndcTL = PixelToNDC(x0, y0);
     float2 ndcTR = PixelToNDC(x1, y0);
     float2 ndcBR = PixelToNDC(x1, y1);
     float2 ndcBL = PixelToNDC(x0, y1);
 
-    // Get frustum corners
-    float3 v0 = NDCToView(ndcTL, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
-    float3 v1 = NDCToView(ndcTR, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
-    float3 v2 = NDCToView(ndcBR, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
-    float3 v3 = NDCToView(ndcBL, tiles[tileIndex].MinDepth, camera.InvProj).rgb;
-    float3 v4 = NDCToView(ndcTL, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
-    float3 v5 = NDCToView(ndcTR, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
-    float3 v6 = NDCToView(ndcBR, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
-    float3 v7 = NDCToView(ndcBL, tiles[tileIndex].MaxDepth, camera.InvProj).rgb;
+    float3 v0 = NDCToView(ndcTL, minZ, camera.InvProj).rgb;
+    float3 v1 = NDCToView(ndcTR, minZ, camera.InvProj).rgb;
+    float3 v2 = NDCToView(ndcBR, minZ, camera.InvProj).rgb;
+    float3 v3 = NDCToView(ndcBL, minZ, camera.InvProj).rgb;
+    float3 v4 = NDCToView(ndcTL, maxZ, camera.InvProj).rgb;
+    float3 v5 = NDCToView(ndcTR, maxZ, camera.InvProj).rgb;
+    float3 v6 = NDCToView(ndcBR, maxZ, camera.InvProj).rgb;
+    float3 v7 = NDCToView(ndcBL, maxZ, camera.InvProj).rgb;
 
-    // Make frustum planes for point lights
+    // Construct cluster frustum planes
     FrustumPlane left = MakePlane(v0, v3, v7);
     FrustumPlane right = MakePlane(v2, v1, v5);
     FrustumPlane top = MakePlane(v1, v0, v4);
@@ -156,23 +170,21 @@ void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 
     FrustumPlane near = MakePlane(v0, v1, v2);
     FrustumPlane far = MakePlane(v5, v4, v7);
 
-    // Make bounding sphere for spot lights
+    // Bounding sphere for cluster (for cone light culling)
     float3 center = (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7) / 8.0f;
     float radius = 0.0f;
     float3 corners[8] = { v0, v1, v2, v3, v4, v5, v6, v7 };
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
         radius = max(radius, length(corners[i] - center));
-    }
-    float4 sphere = float4(center, radius);
+    float4 clusterBoundingSphere = float4(center, radius);
 
-    // Each thread handles part of the light list
-    uint threadID = gtid.x;
-    uint numThreads = 128;
-
-    for (uint i = threadID; i < Push.PointLightCount; i += numThreads)
+    // Cull point lights
+    uint threadCount = 256;
+    for (uint i = gtid.x; i < Push.PointLightCount; i += threadCount)
     {
         PointLight light = pointLights[i];
         float3 viewPos = mul(camera.View, float4(light.Position, 1.0)).xyz;
+
         bool visible = SphereFrustumTest(viewPos, light.Radius, left)
                     && SphereFrustumTest(viewPos, light.Radius, right)
                     && SphereFrustumTest(viewPos, light.Radius, top)
@@ -183,43 +195,40 @@ void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 
         if (visible) {
             uint idx;
             InterlockedAdd(gSharedCount, 1, idx);
-            if (gSharedCount >= MAX_LIGHTS_PER_TILE)
-                return;
-            gSharedBin[idx] = i;
+            if (idx < MAX_LIGHTS_PER_CLUSTER)
+                gSharedBin[idx] = i;
         }
     }
 
-    for (uint i = threadID; i < Push.SpotLightCount; i += numThreads)
+    // Cull spot lights
+    for (uint i = gtid.x; i < Push.SpotLightCount; i += threadCount)
     {
         SpotLight light = spotLights[i];
         float3 viewOrigin = mul(camera.View, float4(light.Position, 1.0)).xyz;
         float3 viewForward = normalize(mul((float3x3)camera.View, light.Forward));
-        float4 boundingSphere = ConeBoundingSphere(viewOrigin, viewForward, light.Size, light.Angle);
+        float4 coneSphere = ConeBoundingSphere(viewOrigin, viewForward, light.Size, light.Angle);
 
-        bool visible = SphereFrustumTest(boundingSphere.xyz, boundingSphere.w, left)
-                    && SphereFrustumTest(boundingSphere.xyz, boundingSphere.w, right)
-                    && SphereFrustumTest(boundingSphere.xyz, boundingSphere.w, top)
-                    && SphereFrustumTest(boundingSphere.xyz, boundingSphere.w, bottom)
-                    && SphereFrustumTest(boundingSphere.xyz, boundingSphere.w, near)
-                    && SphereFrustumTest(boundingSphere.xyz, boundingSphere.w, far);
+        bool visible = SphereFrustumTest(coneSphere.xyz, coneSphere.w, left)
+                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, right)
+                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, top)
+                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, bottom)
+                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, near)
+                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, far);
+
         if (visible) {
             uint idx;
             InterlockedAdd(gSharedCount, 1, idx);
-            if (gSharedCount >= MAX_LIGHTS_PER_TILE)
-                return;
-            gSharedBin[idx] = i | (1u << 31);
+            if (idx < MAX_LIGHTS_PER_CLUSTER)
+                gSharedBin[idx] = i | (1u << 31); // use MSB to tag as spotlight
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    uint lightCount = min(gSharedCount, MAX_LIGHTS_PER_TILE);
-    for (uint i = threadID; i < lightCount; i += numThreads) {
-        bins[tiles[tileIndex].Offset + i] = gSharedBin[i];
-    }
-    
-    if (threadID == 0)
-    {
-        tiles[tileIndex].Count = lightCount;
-    }
+    uint lightCount = min(gSharedCount, MAX_LIGHTS_PER_CLUSTER);
+    for (uint i = gtid.x; i < lightCount; i += 128)
+        bins[clusters[clusterIndex].Offset + i] = gSharedBin[i];
+
+    if (gtid.x == 0)
+        clusters[clusterIndex].Count = lightCount;
 }

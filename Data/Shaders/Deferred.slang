@@ -25,29 +25,30 @@ struct PushConstants
     
     uint PointLightCount;
     uint CameraDataSRV;
-    uint TileWidth;
-    uint TileHeight; //
+    uint ClusterWidth;
+    uint ClusterHeight; //
 
-    uint NumTilesX;
+    uint NumClustersX;
     uint BinsArray;
-    uint TilesArray;
-    uint ShowTileHeatmap; //
+    uint ClusterArray;
+    uint ShowClusterHeatmap; //
 
     uint SpotLightArray;
     uint SpotLightCount;
-    uint2 Pad; //
+    uint NumClustersZ;
+    uint NumClustersY;
 };
 
 DEFINE_SRV_ARRAY(uint);
-DEFINE_SRV_ARRAY(TileData);
+DEFINE_SRV_ARRAY(ClusterData);
 DEFINE_SRV_ARRAY(PointLight);
 DEFINE_SRV_ARRAY(SpotLight);
 DEFINE_CBV_ARRAY(Camera);
 PUSH_CONSTANTS(PushConstants, Push);
 
-float3 GetTileColor(uint tileLightCount)
+float3 GetClusterColor(uint tileLightCount)
 {
-    float t = MAX_LIGHTS_PER_TILE > 0 ? clamp(float(tileLightCount) / float(MAX_LIGHTS_PER_TILE), 0.0f, 1.0f) : 0.0f;
+    float t = MAX_LIGHTS_PER_CLUSTER > 0 ? clamp(float(tileLightCount) / float(MAX_LIGHTS_PER_CLUSTER), 0.0f, 1.0f) : 0.0f;
 
     // Blue → Green → Yellow → Red
     if (t < 0.33f) {
@@ -99,7 +100,7 @@ float3 EvaluatePointLight(PointLight light, float3 V, float4 worldPosition, floa
     // Apply attenuation to final contribution
     float3 distributedEnergy = ((diffuse + specular) * NdotL);
     float3 incomingRadiance = attenuation * light.Color * light.Intensity;
-    return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowTileHeatmap));
+    return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowClusterHeatmap));
 }
 
 float3 EvaluateSpotLight(SpotLight light, float3 V, float4 worldPosition, float3 N, float3 materialColor, float metallic, float roughness)
@@ -147,14 +148,15 @@ float3 EvaluateSpotLight(SpotLight light, float3 V, float4 worldPosition, float3
 
     float3 distributedEnergy = (diffuse + specular) * NdotL;
     float3 incomingRadiance = attenuation * light.Color * light.Intensity;
-    return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowTileHeatmap));
+    return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowClusterHeatmap));
 }
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID)
 {
-    if (tid.x >= Push.Width || tid.y >= Push.Height) return;
+    if (tid.x >= Push.Width || tid.y >= Push.Height)
+        return;
 
     // Resources
     Texture2D<float> depth = BindlessTexture2DFloat.Load(Push.Depth);
@@ -164,31 +166,40 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.Output);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.PointLightArray);
     StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight.Load(Push.SpotLightArray);
-    StructuredBuffer<TileData> tiles = BindlessSRV_TileData.Load(Push.TilesArray);
+    StructuredBuffer<ClusterData> clusters = BindlessSRV_ClusterData.Load(Push.ClusterArray);
     StructuredBuffer<uint> bins = BindlessSRV_uint.Load(Push.BinsArray);
     Camera camera = BindlessCBV_Camera.Load(Push.CameraDataSRV);
 
-    // Get current tile
-    uint tileX = tid.x / Push.TileWidth;
-    uint tileY = tid.y / Push.TileHeight;
-    uint tileIndex = tileY * Push.NumTilesX + tileX;
-    TileData tile = tiles[tileIndex];
-
-    // Load Basic data
+    // Load depth and compute view-space position
     float viewDepth = depth.Load(tid);
     float2 uv = TexelToUV(tid.xy, float2(Push.Width, Push.Height));
-    float3 cameraPosition = camera.Position.xyz;
     float4 worldPosition = GetWorldFromDepth(uv, viewDepth, camera.InvViewProj);
+    float3 viewPos = mul(camera.View, worldPosition).xyz;
+
+    // Determine cluster indices from screen coordinates and view depth
+    uint clusterX = tid.x / Push.ClusterWidth;
+    uint clusterY = tid.y / Push.ClusterHeight;
+
+    // Logarithmic depth slicing
+    float invLogZScale = 1.0f / (log(CAMERA_FAR / CAMERA_NEAR) / Push.NumClustersZ);
+    float z = -viewPos.z;
+    uint clusterZ = (uint)clamp(log(z / CAMERA_NEAR) * invLogZScale, 0.0f, float(Push.NumClustersZ - 1));
+
+    uint clusterIndex = clusterZ * Push.NumClustersX * Push.NumClustersY + clusterY * Push.NumClustersX + clusterX;
+    ClusterData cluster = clusters[clusterIndex];
+
+    // Load material info
+    float3 cameraPosition = camera.Position.xyz;
     float3 materialColor = albedo.Load(tid).rgb;
     float3 N = normalize(normal.Load(tid).rgb);
     float metallic = pbr.Load(tid).r;
     float roughness = pbr.Load(tid).g;
 
-    // Math!
+    // Lighting computation
     float3 V = normalize(cameraPosition - worldPosition.xyz);
-    float3 finalColor = GetTileColor(tile.Count) * Push.ShowTileHeatmap;
-    for (int i = 0; i < tile.Count; i++) {
-        uint encoded = bins[tile.Offset + i];
+    float3 finalColor = GetClusterColor(cluster.Count) * Push.ShowClusterHeatmap; // Optional heatmap
+    for (int i = 0; i < cluster.Count; ++i) {
+        uint encoded = bins[cluster.Offset + i];
         bool isSpot = (encoded & (1u << 31)) != 0;
         uint lightIndex = encoded & 0x7FFFFFFF;
 
