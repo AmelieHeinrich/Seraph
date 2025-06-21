@@ -107,10 +107,8 @@ void Application::Run()
         begin.CommandList->Reset();
         begin.CommandList->Begin();
 
-        Debug::DrawSphere(glm::vec3(0.0f), 2, glm::vec3(1.0f));
-
         // Render
-        mRenderer->Render(RenderPath::kBasic, begin);
+        mRenderer->Render(RenderPath::kPathtracer, begin);
         
         // ImGui
         begin.CommandList->PushMarker("ImGui");

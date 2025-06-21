@@ -16,6 +16,8 @@ public:
     ~Tonemapping();
 
     void Render(RenderPassBegin& begin) override;
+    void Configure(RenderPath path) override;
 private:
+    const char* mInputID;
     IRHIComputePipeline* mPipeline;
 };

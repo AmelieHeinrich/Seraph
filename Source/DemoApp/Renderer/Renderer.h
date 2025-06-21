@@ -7,11 +7,13 @@
 
 #include "RenderPass.h"
 
-enum class RenderPath
-{
-    kBasic,
-    kPathtracer
-};
+#include "Passes/Pathtracer.h"
+#include "Passes/LightCulling.h"
+#include "Passes/GBuffer.h"
+#include "Passes/Deferred.h"
+#include "Passes/Tonemapping.h"
+#include "Passes/Debug.h"
+#include "Passes/CopyToSwapchain.h"
 
 class Renderer
 {
@@ -22,5 +24,13 @@ public:
     void Render(RenderPath path, RenderPassBegin& begin);
     void UI(RenderPath path, RenderPassBegin& begin);
 private:
+    SharedPtr<Pathtracer> mPathtracer;
+    SharedPtr<GBuffer> mGBuffer;
+    SharedPtr<LightCulling> mLightCulling;
+    SharedPtr<Deferred> mDeferred;
+    SharedPtr<Tonemapping> mTonemapping;
+    SharedPtr<Debug> mDebug;
+    SharedPtr<CopyToSwapchain> mCopyToSwapchain;
+
     UnorderedMap<RenderPath, Array<SharedPtr<RenderPass>>> mPasses;
 };

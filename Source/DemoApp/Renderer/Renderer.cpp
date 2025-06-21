@@ -5,13 +5,6 @@
 
 #include "Renderer.h"
 
-#include "Passes/LightCulling.h"
-#include "Passes/GBuffer.h"
-#include "Passes/Deferred.h"
-#include "Passes/Tonemapping.h"
-#include "Passes/Debug.h"
-#include "Passes/CopyToSwapchain.h"
-
 #include <ImGui/imgui.h>
 
 Renderer::Renderer(IRHIDevice* device, uint width, uint height)
@@ -19,16 +12,31 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::Initialize(device);
     RendererViewRecycler::Initialize(device);
 
+    // Create passes
+    mPathtracer = std::make_shared<Pathtracer>(device, width, height);
+    mGBuffer = std::make_shared<GBuffer>(device, width, height);
+    mLightCulling = std::make_shared<LightCulling>(device, width, height);
+    mDeferred = std::make_shared<Deferred>(device, width, height);
+    mTonemapping = std::make_shared<Tonemapping>(device, width, height);
+    mDebug = std::make_shared<Debug>(device, width, height);
+    mCopyToSwapchain = std::make_shared<CopyToSwapchain>(device, width, height);
+
     // Setup Pathtracer
+    mPasses[RenderPath::kPathtracer] = {
+        mGBuffer,
+        mPathtracer,
+        mTonemapping,
+        mCopyToSwapchain
+    };
 
     // Setup Normal Path
     mPasses[RenderPath::kBasic] = {
-        std::make_shared<GBuffer>(device, width, height),
-        std::make_shared<LightCulling>(device, width, height),
-        std::make_shared<Deferred>(device, width, height),
-        std::make_shared<Tonemapping>(device, width, height),
-        std::make_shared<Debug>(device, width, height),
-        std::make_shared<CopyToSwapchain>(device, width, height)
+        mGBuffer,
+        mLightCulling,
+        mDeferred,
+        mTonemapping,
+        mDebug,
+        mCopyToSwapchain
     };
 }
 
@@ -46,6 +54,7 @@ Renderer::~Renderer()
 void Renderer::Render(RenderPath path, RenderPassBegin& begin)
 {
     for (auto& pass : mPasses[path]) {
+        pass->Configure(path);
         pass->Render(begin);
     }
 }

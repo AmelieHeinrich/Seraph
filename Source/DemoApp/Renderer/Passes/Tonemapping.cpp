@@ -6,6 +6,7 @@
 #include "Tonemapping.h"
 #include "Deferred.h"
 #include "GBuffer.h"
+#include "Pathtracer.h"
 
 Tonemapping::Tonemapping(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
@@ -33,11 +34,17 @@ Tonemapping::~Tonemapping()
     delete mPipeline;
 }
 
+void Tonemapping::Configure(RenderPath path)
+{
+    if (path == RenderPath::kBasic) mInputID = DEFERRED_HDR_TEXTURE_ID;
+    else mInputID = PATHTRACER_HDR_TEXTURE_ID;
+}
+
 void Tonemapping::Render(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Tonemapping");
     {
-        RendererResource& hdr = RendererResourceManager::Import(DEFERRED_HDR_TEXTURE_ID, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& hdr = RendererResourceManager::Import(mInputID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kShaderWrite);
 
         struct Constants {

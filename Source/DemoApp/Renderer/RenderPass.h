@@ -7,6 +7,12 @@
 
 #include <Seraph/Seraph.h>
 
+enum class RenderPath
+{
+    kBasic,
+    kPathtracer
+};
+
 struct CameraData
 {
     glm::mat4 View;
@@ -36,6 +42,7 @@ public:
 
     virtual void Render(RenderPassBegin& begin) = 0;
     virtual void UI(RenderPassBegin& begin) {}
+    virtual void Configure(RenderPath path) {}
 protected:
     IRHIDevice* mParentDevice;
     uint mWidth;
