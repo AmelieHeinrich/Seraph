@@ -17,10 +17,13 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 - PBR workflow with Lambertian Diffuse & Cook-Torrance BRDF
 - Tiled light culling
 
-## Planned
+## Currently working on
 
 - Clustered light culling
 - Compute pathtracer
+
+## Planned
+
 - SSR
 - SSAO
 - CSM/Point/Spot Shadows

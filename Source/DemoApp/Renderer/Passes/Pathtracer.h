@@ -7,6 +7,17 @@
 
 #include <DemoApp/Renderer/RenderPass.h>
 
+/*
+ * TODO LIST:
+ * - Construct instance and material data into structured buffers
+ * - Test for alpha cutout in simple visibility test
+ * - Skybox
+ * - Include basic diffuse lobe for pathtracing
+ * - Accumulate over time, reset when camera moves
+ * - Sample diffuse lobe
+ * - Sample light
+ */
+
 constexpr const char* PATHTRACER_HDR_TEXTURE_ID = "Pathtracer/HDR";
 
 class Pathtracer : public RenderPass
