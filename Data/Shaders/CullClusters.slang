@@ -5,15 +5,11 @@
 
 #include "Common/Bindless.slang"
 
+#define LIGHTS_PER_THREAD 128
+
 import Common.Camera;
 import Common.Lights;
 import Common.Math;
-
-struct FrustumPlane
-{
-    float3 Normal;
-    float Distance;
-};
 
 struct PushConstants
 {
@@ -58,17 +54,15 @@ float4 NDCToView(float2 ndc, float z, column_major float4x4 invProj)
     return view / view.w;
 }
 
-FrustumPlane MakePlane(float3 a, float3 b, float3 c)
+float4 MakePlane(float3 a, float3 b, float3 c)
 {
-    FrustumPlane output = {};
-    output.Normal = normalize(cross(b - a, c - a));
-    output.Distance = -dot(output.Normal, a);
-    return output;
+    float3 normal = normalize(cross(b - a, c - a));
+    return float4(normal, -dot(normal, a));
 }
 
-bool SphereFrustumTest(float3 center, float radius, FrustumPlane plane)
+bool SphereFrustumTest(float3 center, float radius, float4 plane)
 {
-    float distance = dot(plane.Normal, center) + plane.Distance;
+    float distance = dot(plane.xyz, center) + plane.w;
     if (distance < -radius) return false;
     return true;
 }
@@ -86,149 +80,119 @@ float4 ConeBoundingSphere(float3 origin, float3 forward, float size, float angle
     return boundingSphere;
 }
 
-bool TestConeVsSphere(float3 origin, float3 forward, float size, float angle, float4 testSphere)
+bool SphereAABBIntersect(float3 center, float radius, float3 aabbMin, float3 aabbMax)
 {
-    const float3 V = testSphere.xyz - origin;
-    const float VlenSq = dot(V, V);
-    const float V1len = dot(V, forward);
-    const float distanceClosestPoint = cos(angle) * sqrt(VlenSq - V1len * V1len) - V1len * sin(angle);
-
-    const bool angleCull = distanceClosestPoint > testSphere.w;
-    const bool frontCull = V1len > testSphere.w + size;
-    const bool backCull = V1len < -testSphere.w;
-    return !(angleCull || frontCull || backCull);
+    float3 clamped = clamp(center, aabbMin, aabbMax);
+    float distSq = dot(center - clamped, center - clamped);
+    return distSq <= radius * radius;
 }
 
-groupshared uint gSharedBin[MAX_LIGHTS_PER_CLUSTER];
-groupshared uint gSharedCount;
+groupshared uint gClusterOffset;
+groupshared float4 gAABBMin;
+groupshared float4 gAABBMax;
+groupshared Camera gCamera;
+groupshared ClusterData gCluster;
 
-[numthreads(256, 1, 1)]
+[shader("compute")]
+[numthreads(LIGHTS_PER_THREAD, 1, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID, uint3 gtid: SV_GroupThreadID, uint3 gid: SV_GroupID)
 {
     if (gid.x >= Push.NumClustersX || gid.y >= Push.NumClustersY || gid.z >= Push.NumClustersZ)
         return;
 
-    // Map 3D cluster ID to 1D index
     uint cx = gid.x;
     uint cy = gid.y;
     uint cz = gid.z;
     uint clusterIndex = cz * Push.NumClustersX * Push.NumClustersY + cy * Push.NumClustersX + cx;
 
-    // Reset shared count
-    if (gtid.x == 0)
-        gSharedCount = 0;
-    GroupMemoryBarrierWithGroupSync();
-
-    // Load camera/light data
-    Camera camera = BindlessCBV_Camera.Load(Push.CameraIndex);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.LightIndex);
     StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight.Load(Push.SpotLightArray);
     RWStructuredBuffer<ClusterData> clusters = BindlessUAV_ClusterData.Load(Push.ClusterArray);
     RWStructuredBuffer<uint> bins = BindlessUAV_uint.Load(Push.BinsArray);
 
-    clusters[clusterIndex].Offset = clusterIndex * MAX_LIGHTS_PER_CLUSTER;
+    // Initialize planes
+    if (gtid.x == 0) {
+        gCamera = BindlessCBV_Camera.Load(Push.CameraIndex);
+        gClusterOffset = clusterIndex * MAX_LIGHTS_PER_CLUSTER;
+        gCluster.Count = 0;
+        gCluster.Offset = gClusterOffset;
 
-    // Compute cluster screen-space bounds
-    int x0 = cx * Push.ClusterWidth;
-    int y0 = cy * Push.ClusterHeight;
-    int x1 = min(x0 + Push.ClusterWidth, Push.Width);
-    int y1 = min(y0 + Push.ClusterHeight, Push.Height);
+        int x0 = cx * Push.ClusterWidth;
+        int y0 = cy * Push.ClusterHeight;
+        int x1 = min(x0 + Push.ClusterWidth, Push.Width);
+        int y1 = min(y0 + Push.ClusterHeight, Push.Height);
 
-    float logZScale = log(CAMERA_FAR / CAMERA_NEAR) / Push.NumClustersZ;
-    float clusterNearZ = CAMERA_NEAR * exp(logZScale * float(cz));
-    float clusterFarZ = CAMERA_NEAR * exp(logZScale * float(cz + 1));
+        float logZScale = log(CAMERA_FAR / CAMERA_NEAR) / Push.NumClustersZ;
+        float clusterNearZ = CAMERA_NEAR * exp(logZScale * float(cz));
+        float clusterFarZ = CAMERA_NEAR * exp(logZScale * float(cz + 1));
 
-    // Convert to NDC
-    float4 projNear = mul(camera.Proj, float4(0, 0, -clusterNearZ, 1));
-    float ndcNearZ = projNear.z / projNear.w;
-    float4 projFar = mul(camera.Proj, float4(0, 0, -clusterFarZ, 1));
-    float ndcFarZ = projFar.z / projFar.w;
+        float4 projNear = mul(gCamera.Proj, float4(0, 0, -clusterNearZ, 1));
+        float ndcNearZ = projNear.z / projNear.w;
+        float4 projFar = mul(gCamera.Proj, float4(0, 0, -clusterFarZ, 1));
+        float ndcFarZ = projFar.z / projFar.w;
 
-    float minZ = ndcNearZ;
-    float maxZ = ndcFarZ;
+        float minZ = ndcNearZ;
+        float maxZ = ndcFarZ;
 
-    // Reconstruct cluster frustum corners (8 corners total)
-    float2 ndcTL = PixelToNDC(x0, y0);
-    float2 ndcTR = PixelToNDC(x1, y0);
-    float2 ndcBR = PixelToNDC(x1, y1);
-    float2 ndcBL = PixelToNDC(x0, y1);
+        float2 ndcTL = PixelToNDC(x0, y0);
+        float2 ndcTR = PixelToNDC(x1, y0);
+        float2 ndcBR = PixelToNDC(x1, y1);
+        float2 ndcBL = PixelToNDC(x0, y1);
 
-    float3 v0 = NDCToView(ndcTL, minZ, camera.InvProj).rgb;
-    float3 v1 = NDCToView(ndcTR, minZ, camera.InvProj).rgb;
-    float3 v2 = NDCToView(ndcBR, minZ, camera.InvProj).rgb;
-    float3 v3 = NDCToView(ndcBL, minZ, camera.InvProj).rgb;
-    float3 v4 = NDCToView(ndcTL, maxZ, camera.InvProj).rgb;
-    float3 v5 = NDCToView(ndcTR, maxZ, camera.InvProj).rgb;
-    float3 v6 = NDCToView(ndcBR, maxZ, camera.InvProj).rgb;
-    float3 v7 = NDCToView(ndcBL, maxZ, camera.InvProj).rgb;
+        float4 v0 = NDCToView(ndcTL, minZ, gCamera.InvProj);
+        float4 v1 = NDCToView(ndcTR, minZ, gCamera.InvProj);
+        float4 v2 = NDCToView(ndcBR, minZ, gCamera.InvProj);
+        float4 v3 = NDCToView(ndcBL, minZ, gCamera.InvProj);
+        float4 v4 = NDCToView(ndcTL, maxZ, gCamera.InvProj);
+        float4 v5 = NDCToView(ndcTR, maxZ, gCamera.InvProj);
+        float4 v6 = NDCToView(ndcBR, maxZ, gCamera.InvProj);
+        float4 v7 = NDCToView(ndcBL, maxZ, gCamera.InvProj);
 
-    // Construct cluster frustum planes
-    FrustumPlane left = MakePlane(v0, v3, v7);
-    FrustumPlane right = MakePlane(v2, v1, v5);
-    FrustumPlane top = MakePlane(v1, v0, v4);
-    FrustumPlane bottom = MakePlane(v3, v2, v6);
-    FrustumPlane near = MakePlane(v0, v1, v2);
-    FrustumPlane far = MakePlane(v5, v4, v7);
+        float3 minCorner = min(min(min(v0.xyz, v1.xyz), min(v2.xyz, v3.xyz)),
+                               min(min(v4.xyz, v5.xyz), min(v6.xyz, v7.xyz)));
+        float3 maxCorner = max(max(max(v0.xyz, v1.xyz), max(v2.xyz, v3.xyz)),
+                               max(max(v4.xyz, v5.xyz), max(v6.xyz, v7.xyz)));
 
-    // Bounding sphere for cluster (for cone light culling)
-    float3 center = (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7) / 8.0f;
-    float radius = 0.0f;
-    float3 corners[8] = { v0, v1, v2, v3, v4, v5, v6, v7 };
-    for (int i = 0; i < 8; ++i)
-        radius = max(radius, length(corners[i] - center));
-    float4 clusterBoundingSphere = float4(center, radius);
+        gAABBMin = float4(minCorner, 1.0);
+        gAABBMax = float4(maxCorner, 1.0);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
 
     // Cull point lights
-    uint threadCount = 256;
-    for (uint i = gtid.x; i < Push.PointLightCount; i += threadCount)
-    {
+    for (uint i = gtid.x; i < Push.PointLightCount; i += LIGHTS_PER_THREAD) {
         PointLight light = pointLights[i];
-        float3 viewPos = mul(camera.View, float4(light.Position, 1.0)).xyz;
+        float4 viewPos = mul(gCamera.View, float4(light.Position, 1.0));
 
-        bool visible = SphereFrustumTest(viewPos, light.Radius, left)
-                    && SphereFrustumTest(viewPos, light.Radius, right)
-                    && SphereFrustumTest(viewPos, light.Radius, top)
-                    && SphereFrustumTest(viewPos, light.Radius, bottom)
-                    && SphereFrustumTest(viewPos, light.Radius, near)
-                    && SphereFrustumTest(viewPos, light.Radius, far);
-
-        if (visible) {
+        if (SphereAABBIntersect(viewPos.xyz, light.Radius, gAABBMin.xyz, gAABBMax.xyz)) {
             uint idx;
-            InterlockedAdd(gSharedCount, 1, idx);
-            if (idx < MAX_LIGHTS_PER_CLUSTER)
-                gSharedBin[idx] = i;
+            InterlockedAdd(gCluster.Count, 1, idx);
+            if (idx < MAX_LIGHTS_PER_CLUSTER) {
+                bins[gClusterOffset + idx] = i;
+            }
         }
     }
 
     // Cull spot lights
-    for (uint i = gtid.x; i < Push.SpotLightCount; i += threadCount)
-    {
+    for (uint i = gtid.x; i < Push.SpotLightCount; i += LIGHTS_PER_THREAD) {
         SpotLight light = spotLights[i];
-        float3 viewOrigin = mul(camera.View, float4(light.Position, 1.0)).xyz;
-        float3 viewForward = normalize(mul((float3x3)camera.View, light.Forward));
-        float4 coneSphere = ConeBoundingSphere(viewOrigin, viewForward, light.Size, light.Angle);
+        float4 viewOrigin = mul(gCamera.View, float4(light.Position, 1.0));
+        float3 viewForward = normalize(mul((float3x3)gCamera.View, light.Forward));
+        float4 coneSphere = ConeBoundingSphere(viewOrigin.xyz, viewForward, light.Size, light.Angle);
 
-        bool visible = SphereFrustumTest(coneSphere.xyz, coneSphere.w, left)
-                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, right)
-                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, top)
-                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, bottom)
-                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, near)
-                    && SphereFrustumTest(coneSphere.xyz, coneSphere.w, far);
-
-        if (visible) {
+        if (SphereAABBIntersect(coneSphere.xyz, coneSphere.w, gAABBMin.xyz, gAABBMax.xyz)) {
             uint idx;
-            InterlockedAdd(gSharedCount, 1, idx);
-            if (idx < MAX_LIGHTS_PER_CLUSTER)
-                gSharedBin[idx] = i | (1u << 31); // use MSB to tag as spotlight
+            InterlockedAdd(gCluster.Count, 1, idx);
+            if (idx < MAX_LIGHTS_PER_CLUSTER) {
+                bins[gClusterOffset + idx] = i | (1u << 31);
+            }
         }
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    uint lightCount = min(gSharedCount, MAX_LIGHTS_PER_CLUSTER);
-    for (uint i = gtid.x; i < lightCount; i += 128)
-        bins[clusters[clusterIndex].Offset + i] = gSharedBin[i];
-
-    if (gtid.x == 0)
-        clusters[clusterIndex].Count = lightCount;
+    if (gtid.x == 0) {
+        clusters[clusterIndex].Count = gCluster.Count;
+        clusters[clusterIndex].Offset = gClusterOffset;
+    }
 }

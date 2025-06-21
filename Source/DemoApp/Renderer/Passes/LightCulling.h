@@ -12,7 +12,7 @@ constexpr const char* LIGHT_CULL_CLUSTER_INDICES_BUFFER = "LightCulling/TileIndi
 constexpr uint MAX_LIGHTS_PER_CLUSTER = 1024;
 constexpr uint CLUSTER_WIDTH = 16;
 constexpr uint CLUSTER_HEIGHT = 9;
-constexpr uint CLUSTER_DEPTH = 24;
+constexpr uint CLUSTER_DEPTH = 8;
 
 struct LightCluster
 {
