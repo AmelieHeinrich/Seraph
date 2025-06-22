@@ -20,6 +20,22 @@ struct Entity
     Asset::Handle Model;
 };
 
+struct SceneInstance
+{
+    BindlessHandle VertexBuffer;
+    BindlessHandle IndexBuffer;
+    uint MaterialIndex;
+    uint Pad;
+};
+
+struct SceneMaterial
+{
+    BindlessHandle AlbedoIndex;
+    BindlessHandle NormalIndex;
+    BindlessHandle PBRIndex;
+    uint Pad;
+};
+
 class Scene
 {
 public:
@@ -35,6 +51,9 @@ public:
     Array<TLASInstance>& GetTLASInstances() { return mInstances; }
     IRHITLAS* GetTLAS() { return mTLAS; }
     IRHIBuffer* GetInstanceBuffer() { return mInstanceBuffer; }
+
+    IRHIBuffer* GetSceneInstanceBuffer() { return mSceneInstances; }
+    IRHIBuffer* GetSceneMaterialBuffer() { return mSceneMaterials; }
 private:
     IRHIDevice* mDevice;
 
@@ -44,4 +63,10 @@ private:
     Array<TLASInstance> mInstances;
     IRHIBuffer* mInstanceBuffer;
     IRHITLAS* mTLAS;
+
+    IRHIBuffer* mSceneInstanceTransfer;
+    IRHIBuffer* mSceneInstances;
+
+    IRHIBuffer* mSceneMaterialTransfer;
+    IRHIBuffer* mSceneMaterials;
 };

@@ -9,12 +9,11 @@
 
 /*
  * TODO LIST:
- * - Construct instance and material data into structured buffers
  * - Test for alpha cutout in simple visibility test
  * - Skybox
- * - Include basic diffuse lobe for pathtracing
+ * - Sample lambertian diffuse lobe for pathtracing
  * - Accumulate over time, reset when camera moves
- * - Sample diffuse lobe
+ * - Sample specular lobe
  * - Sample light
  */
 
