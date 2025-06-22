@@ -23,7 +23,7 @@ Pathtracer::Pathtracer(IRHIDevice* device, uint width, uint height)
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];
-    desc.PushConstantSize = sizeof(uint) * 8;
+    desc.PushConstantSize = sizeof(uint) * 12;
     mPipeline = mParentDevice->CreateComputePipeline(desc);
 }
 
@@ -72,6 +72,7 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
         RendererResource& albedo = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& normal = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& output = RendererResourceManager::Import(PATHTRACER_HDR_TEXTURE_ID, begin.CommandList, RendererImportType::kShaderWrite);
+        RendererResource& sampler = RendererResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
 
         struct PushConstants {
             uint Width;
@@ -83,6 +84,11 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
             BindlessHandle Depth;
             BindlessHandle AccelerationStructure;
             BindlessHandle Normal;
+
+            BindlessHandle SceneInstances;
+            BindlessHandle SceneMaterials;
+            BindlessHandle Sampler;
+            uint Pad;
         } constants = {
             mWidth,
             mHeight,
@@ -92,7 +98,12 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             begin.RenderScene->GetTLAS()->GetBindlessHandle(),
-            RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle()
+            RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
+
+            RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneInstanceBuffer())->GetBindlessHandle(),
+            RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneMaterialBuffer())->GetBindlessHandle(),
+            sampler.Sampler->GetBindlessHandle(),
+            0
         };
 
         begin.CommandList->SetComputePipeline(mPipeline);
