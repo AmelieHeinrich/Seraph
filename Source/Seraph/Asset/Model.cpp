@@ -90,6 +90,19 @@ Model::Model(IRHIDevice* device, const String& path)
     for (int i = 0; i < scene->nodes_count; i++) {
         ProcessNode(scene->nodes[i], 0);
     }
+
+    Array<SceneMaterial> sceneMaterials;
+    for (auto& material : mMaterials) {
+        SceneMaterial sceneMat = {
+            material.Albedo ? material.Albedo->TextureOrImage.View->GetBindlessHandle() : BindlessHandle{},
+            material.Normal ? material.Normal->TextureOrImage.View->GetBindlessHandle() : BindlessHandle{},
+            material.PBR    ? material.PBR->TextureOrImage.View->GetBindlessHandle()    : BindlessHandle{},
+            0
+        };
+        sceneMaterials.push_back(sceneMat);
+    }
+    mMaterialBuffer = mParentDevice->CreateBuffer(RHIBufferDesc(sizeof(SceneMaterial) * mMaterials.size(), sizeof(SceneMaterial), RHIBufferUsage::kShaderRead));
+    Uploader::EnqueueBufferUpload(sceneMaterials.data(), mMaterialBuffer->GetDesc().Size, mMaterialBuffer);
 }
 
 Model::~Model()
@@ -106,6 +119,7 @@ Model::~Model()
         if (material.Normal) AssetManager::Release(material.Normal);
         if (material.Albedo) AssetManager::Release(material.Albedo);
     }
+    delete mMaterialBuffer;
 }
 
 void Model::ProcessNode(cgltf_node* node, int parentIndex)
@@ -228,7 +242,7 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
             modelMaterial.PBR = AssetManager::Get(path, AssetType::kTexture);
         }
 
-        if (material->alpha_mode == cgltf_alpha_mode_blend) {
+        if (material->alpha_mode != cgltf_alpha_mode_opaque) {
             modelMaterial.AlphaTested = true;
         }
     }

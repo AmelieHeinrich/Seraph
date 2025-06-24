@@ -30,7 +30,7 @@ struct SceneInstance
     uint VertexBuffer;
     uint IndexBuffer;
     uint MaterialIndex;
-    uint Pad;
+    uint MaterialBuffer;
 };
 DEFINE_SRV_ARRAY(SceneInstance);
 
@@ -56,9 +56,8 @@ struct PushConstants
     uint Normal;
 
     uint SceneInstances;
-    uint SceneMaterials;
     uint Sampler;
-    uint Pad;
+    uint2 Pad;
 };
 DEFINE_CBV_ARRAY(Camera);
 PUSH_CONSTANTS(PushConstants, Push);
@@ -76,9 +75,8 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     Texture2D<float> depth = BindlessTexture2DFloat.Load(Push.Depth);
     RaytracingAccelerationStructure rtAS = BindlessAccelerationStructure.Load(Push.AS);
     StructuredBuffer<SceneInstance> instances = BindlessSRV_SceneInstance.Load(Push.SceneInstances);
-    StructuredBuffer<SceneMaterial> materials = BindlessSRV_SceneMaterial.Load(Push.SceneMaterials);
-    Camera camera = BindlessCBV_Camera.Load(Push.Camera);
     SamplerState sampler = BindlessSampler.Load(Push.Sampler);
+    Camera camera = BindlessCBV_Camera.Load(Push.Camera);
 
     // Work
     float4 normal = normalTexture.Load(tid);
@@ -100,14 +98,16 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     while (q.Proceed())
     {
         if (q.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE) {
-            uint instanceIndex = q.CommittedInstanceIndex();
-            uint primIndex = q.CommittedPrimitiveIndex();
-            float2 bary = q.CommittedTriangleBarycentrics();
+            uint instanceIndex = q.CandidateInstanceIndex();
+            uint primIndex = q.CandidatePrimitiveIndex();
+            float2 bary = q.CandidateTriangleBarycentrics();
 
             SceneInstance instance = instances[instanceIndex];
-            SceneMaterial material = materials[instance.MaterialIndex];
             StructuredBuffer<VertexInput> vertices = BindlessSRV_VertexInput.Load(instance.VertexBuffer);
             StructuredBuffer<uint> indices = BindlessSRV_uint.Load(instance.IndexBuffer);
+            StructuredBuffer<SceneMaterial> materials = BindlessSRV_SceneMaterial.Load(instance.MaterialBuffer);
+
+            SceneMaterial material = materials[instance.MaterialIndex];
             Texture2D<float4> albedo = BindlessTexture2DFloat4.Load(material.Albedo);
 
             uint3 triangle = uint3(
@@ -126,10 +126,11 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
                 bary.y
             );
             float2 uv = v0.Texcoord * interpolate.x + v1.Texcoord * interpolate.y + v2.Texcoord * interpolate.z;
- 
+
             float4 color = albedo.SampleLevel(sampler, uv, 0.0);
-            if (color.a > 0.25)
+            if (color.a > 0.25) {
                 q.CommitNonOpaqueTriangleHit();
+            }
         }
     }
 

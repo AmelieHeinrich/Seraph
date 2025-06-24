@@ -86,9 +86,8 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
             BindlessHandle Normal;
 
             BindlessHandle SceneInstances;
-            BindlessHandle SceneMaterials;
             BindlessHandle Sampler;
-            uint Pad;
+            uint2 Pad;
         } constants = {
             mWidth,
             mHeight,
@@ -101,9 +100,8 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
 
             RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneInstanceBuffer())->GetBindlessHandle(),
-            RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneMaterialBuffer())->GetBindlessHandle(),
             sampler.Sampler->GetBindlessHandle(),
-            0
+            {}
         };
 
         begin.CommandList->SetComputePipeline(mPipeline);

@@ -16,7 +16,7 @@ VulkanBLAS::VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc)
     mGeometry = {};
     mGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     mGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    mGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    mGeometry.flags = 0;
     mGeometry.geometry.triangles = {
         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
         nullptr,

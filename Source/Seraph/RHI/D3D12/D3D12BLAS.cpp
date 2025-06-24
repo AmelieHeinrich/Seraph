@@ -14,7 +14,7 @@ D3D12BLAS::D3D12BLAS(D3D12Device* device, RHIBLASDesc desc)
     
     mGeometry = {};
     mGeometry.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    mGeometry.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+    mGeometry.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
     mGeometry.Triangles.VertexBuffer.StartAddress = desc.VertexBuffer->GetAddress();
     mGeometry.Triangles.VertexBuffer.StrideInBytes = desc.VertexBuffer->GetDesc().Stride;
     mGeometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT; // Position format

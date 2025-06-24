@@ -25,15 +25,7 @@ struct SceneInstance
     BindlessHandle VertexBuffer;
     BindlessHandle IndexBuffer;
     uint MaterialIndex;
-    uint Pad;
-};
-
-struct SceneMaterial
-{
-    BindlessHandle AlbedoIndex;
-    BindlessHandle NormalIndex;
-    BindlessHandle PBRIndex;
-    uint Pad;
+    BindlessHandle MaterialBuffer;
 };
 
 class Scene
@@ -53,7 +45,6 @@ public:
     IRHIBuffer* GetInstanceBuffer() { return mInstanceBuffer; }
 
     IRHIBuffer* GetSceneInstanceBuffer() { return mSceneInstances; }
-    IRHIBuffer* GetSceneMaterialBuffer() { return mSceneMaterials; }
 private:
     IRHIDevice* mDevice;
 
@@ -66,7 +57,4 @@ private:
 
     IRHIBuffer* mSceneInstanceTransfer;
     IRHIBuffer* mSceneInstances;
-
-    IRHIBuffer* mSceneMaterialTransfer;
-    IRHIBuffer* mSceneMaterials;
 };

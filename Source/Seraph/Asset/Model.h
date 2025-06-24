@@ -58,6 +58,14 @@ struct ModelNode
     String Name;
 };
 
+struct SceneMaterial
+{
+    BindlessHandle AlbedoIndex;
+    BindlessHandle NormalIndex;
+    BindlessHandle PBRIndex;
+    uint Pad;
+};
+
 class Model
 {
 public:
@@ -66,9 +74,13 @@ public:
 
     Array<ModelNode>& GetNodes() { return mNodes; }
     Array<ModelMaterial>& GetMaterials() { return mMaterials; }
+
+    IRHIBuffer* GetMaterialBuffer() { return mMaterialBuffer; }
 private:
     void ProcessNode(cgltf_node* node, int parentIndex);
     void ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::mat4 localTransform);
+
+    IRHIBuffer* mMaterialBuffer;
 
     IRHIDevice* mParentDevice;
     String mDirectory;

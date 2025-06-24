@@ -18,7 +18,6 @@ Scene::Scene(IRHIDevice* device)
     mTLAS = device->CreateTLAS();
 
     mSceneInstances = device->CreateBuffer(RHIBufferDesc(sizeof(SceneInstance) * MAX_TLAS_INSTANCES, sizeof(SceneInstance), RHIBufferUsage::kShaderRead | RHIBufferUsage::kConstant));
-    mSceneMaterials = device->CreateBuffer(RHIBufferDesc(sizeof(SceneMaterial) * MAX_TLAS_INSTANCES, sizeof(SceneMaterial), RHIBufferUsage::kShaderRead | RHIBufferUsage::kConstant));
 }
 
 Scene::~Scene()
@@ -31,7 +30,6 @@ Scene::~Scene()
     delete mTLAS;
     delete mInstanceBuffer;
     delete mSceneInstances;
-    delete mSceneMaterials;
 }
 
 void Scene::Update(uint frameIndex)
@@ -47,7 +45,6 @@ void Scene::Update(uint frameIndex)
 
     // Material deduplication map
     std::unordered_map<size_t, uint> materialMap;
-    Array<SceneMaterial> materials;
     Array<SceneInstance> instances;
 
     mInstances.clear();
@@ -59,28 +56,6 @@ void Scene::Update(uint frameIndex)
             for (auto& primitive : node.Primitives) {
                 const ModelMaterial& mat = model->GetMaterials()[primitive.MaterialIndex];
 
-                // Create a unique hash for the material
-                size_t hash = std::hash<uint64>{}((uint64)mat.Albedo) ^
-                              std::hash<uint64>{}((uint64)mat.Normal) ^
-                              std::hash<uint64>{}((uint64)mat.PBR);
-
-                uint materialIndex;
-                auto it = materialMap.find(hash);
-                if (it == materialMap.end()) {
-                    materialIndex = static_cast<uint>(materials.size());
-                    materialMap[hash] = materialIndex;
-
-                    SceneMaterial sceneMat = {
-                        mat.Albedo ? mat.Albedo->TextureOrImage.View->GetBindlessHandle() : BindlessHandle{},
-                        mat.Normal ? mat.Normal->TextureOrImage.View->GetBindlessHandle() : BindlessHandle{},
-                        mat.PBR    ? mat.PBR->TextureOrImage.View->GetBindlessHandle()    : BindlessHandle{},
-                        0
-                    };
-                    materials.push_back(sceneMat);
-                } else {
-                    materialIndex = it->second;
-                }
-
                 TLASInstance instance = {};
                 instance.AccelerationStructureReference = primitive.BottomLevelAS->GetAddress();
                 instance.Transform = glm::mat3x4(entity.Transform);
@@ -91,8 +66,8 @@ void Scene::Update(uint frameIndex)
                 SceneInstance sceneInstance = {
                     RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
                     RendererViewRecycler::GetSRV(primitive.IndexBuffer)->GetBindlessHandle(),
-                    materialIndex,
-                    0
+                    primitive.MaterialIndex,
+                    RendererViewRecycler::GetSRV(model->GetMaterialBuffer())->GetBindlessHandle()
                 };
                 instances.push_back(sceneInstance);
             }
@@ -108,11 +83,6 @@ void Scene::Update(uint frameIndex)
     ptr = mSceneInstances->Map();
     memcpy(ptr, instances.data(), instances.size() * sizeof(SceneInstance));
     mSceneInstances->Unmap();
-
-    // Upload SceneMaterial data
-    ptr = mSceneMaterials->Map();
-    memcpy(ptr, materials.data(), materials.size() * sizeof(SceneMaterial));
-    mSceneMaterials->Unmap();
 }
 
 Entity* Scene::AddEntity(const String& modelPath)
