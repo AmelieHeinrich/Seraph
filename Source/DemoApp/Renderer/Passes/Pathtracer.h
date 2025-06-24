@@ -9,11 +9,10 @@
 
 /*
  * TODO LIST:
- * - Test for alpha cutout in simple visibility test
- * - Skybox
  * - Sample lambertian diffuse lobe for pathtracing
  * - Accumulate over time, reset when camera moves
  * - Sample specular lobe
+ * - Skybox
  * - Sample light
  */
 

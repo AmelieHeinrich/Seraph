@@ -179,8 +179,9 @@ void Application::UI(RenderPassBegin& begin)
             ImGui::Text("Backend : %s", mStringBackend.c_str());
             ImGui::Separator();
             ImGui::Text("Debug Menu: F1");
-            ImGui::Text("Screenshot: F2");
+            ImGui::Text("Screenshot: (DISABLED)");
             ImGui::Text("Hide Overlay: F3");
+            ImGui::Separator();
             if (ImGui::RadioButton("Rasterized", mPath == RenderPath::kBasic)) mPath = RenderPath::kBasic;
             if (ImGui::RadioButton("Pathtraced", mPath == RenderPath::kPathtracer)) mPath = RenderPath::kPathtracer;
             ImGui::End();
