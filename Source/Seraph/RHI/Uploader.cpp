@@ -91,7 +91,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     
     // 2. Allocate staging buffer
     RHIBufferDesc stagingDesc = {};
-    stagingDesc.Size = totalBufferSize;
+    stagingDesc.Size = Align<uint>(totalBufferSize, sData.Device->GetOptimalRowPitchAlignment());
     stagingDesc.Usage = RHIBufferUsage::kStaging;
     
     UploadRequest request = {};

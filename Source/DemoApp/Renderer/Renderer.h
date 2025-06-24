@@ -8,6 +8,7 @@
 #include "RenderPass.h"
 
 #include "Passes/Pathtracer.h"
+#include "Passes/PathtracerDenoise.h"
 #include "Passes/LightCulling.h"
 #include "Passes/GBuffer.h"
 #include "Passes/Deferred.h"
@@ -25,6 +26,7 @@ public:
     void UI(RenderPath path, RenderPassBegin& begin);
 private:
     SharedPtr<Pathtracer> mPathtracer;
+    SharedPtr<PathtracerDenoise> mPathtracerDenoise;
     SharedPtr<GBuffer> mGBuffer;
     SharedPtr<LightCulling> mLightCulling;
     SharedPtr<Deferred> mDeferred;

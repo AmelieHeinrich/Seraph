@@ -14,6 +14,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 
     // Create passes
     mPathtracer = std::make_shared<Pathtracer>(device, width, height);
+    mPathtracerDenoise = std::make_shared<PathtracerDenoise>(device, width, height);
     mGBuffer = std::make_shared<GBuffer>(device, width, height);
     mLightCulling = std::make_shared<LightCulling>(device, width, height);
     mDeferred = std::make_shared<Deferred>(device, width, height);
@@ -25,6 +26,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
     mPasses[RenderPath::kPathtracer] = {
         mGBuffer,
         mPathtracer,
+        mPathtracerDenoise,
         mTonemapping,
         mDebug,
         mCopyToSwapchain

@@ -17,7 +17,7 @@ public:
     ~Camera() = default;
 
     void Begin();
-    void Update(float dt, int width, int height);
+    void Update(float dt, int width, int height, uint& frameCount);
 
     glm::mat4 View() const { return mView; }
     glm::mat4 Projection() const { return mProjection; }

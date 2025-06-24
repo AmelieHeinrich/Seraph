@@ -6,6 +6,8 @@
 #include "Pathtracer.h"
 #include "GBuffer.h"
 
+#include <ImGui/imgui.h>
+
 Pathtracer::Pathtracer(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
@@ -38,6 +40,14 @@ void Pathtracer::Render(RenderPassBegin& begin)
     BuildTLAS(begin);
     Pathtrace(begin);
     begin.CommandList->PopMarker();
+}
+
+void Pathtracer::UI(RenderPassBegin& begin)
+{
+    if (ImGui::TreeNodeEx("Pathtracer", ImGuiTreeNodeFlags_Framed)) {
+        ImGui::SliderInt("Bounce Count", (int*)&mBounceCount, 1, 4);
+        ImGui::TreePop();
+    }
 }
 
 void Pathtracer::BuildTLAS(RenderPassBegin& begin)
@@ -87,7 +97,8 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
 
             BindlessHandle SceneInstances;
             BindlessHandle Sampler;
-            uint2 Pad;
+            uint FrameCount;
+            uint Pad;
         } constants = {
             mWidth,
             mHeight,
@@ -101,12 +112,17 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
 
             RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneInstanceBuffer())->GetBindlessHandle(),
             sampler.Sampler->GetBindlessHandle(),
-            {}
+            begin.FrameCount,
+            mBounceCount
         };
 
         begin.CommandList->SetComputePipeline(mPipeline);
         begin.CommandList->SetComputeConstants(mPipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
+
+        // Insert manual UAV barrier
+        RHIMemoryBarrier barrier(RHIResourceAccess::kShaderWrite, RHIResourceAccess::kShaderWrite, RHIPipelineStage::kComputeShader, RHIPipelineStage::kComputeShader);
+        begin.CommandList->Barrier(barrier);
     }
     begin.CommandList->PopMarker();
 }

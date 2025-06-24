@@ -9,8 +9,6 @@
 
 /*
  * TODO LIST:
- * - Sample lambertian diffuse lobe for pathtracing
- * - Accumulate over time, reset when camera moves
  * - Sample specular lobe
  * - Skybox
  * - Sample light
@@ -25,10 +23,12 @@ public:
     ~Pathtracer();
 
     void Render(RenderPassBegin& begin) override;
+    void UI(RenderPassBegin& begin) override;
 private:
     void BuildTLAS(RenderPassBegin& begin);
     void Pathtrace(RenderPassBegin& begin);
 
 private:
     IRHIComputePipeline* mPipeline;
+    uint mBounceCount = 1;
 };

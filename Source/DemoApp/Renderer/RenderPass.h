@@ -26,6 +26,7 @@ struct CameraData
 
 struct RenderPassBegin
 {
+    uint FrameCount;
     uint FrameIndex;
     IRHITexture* SwapchainTexture;
     IRHITextureView* SwapchainTextureView;

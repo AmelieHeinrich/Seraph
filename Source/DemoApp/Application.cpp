@@ -87,6 +87,7 @@ void Application::Run()
 
         // Begin fill info
         RenderPassBegin begin;
+        begin.FrameCount = mFrameCount;
         begin.FrameIndex = mF2FSync->BeginSynchronize();
         begin.CommandList = mCommandBuffers[begin.FrameIndex];
         begin.SwapchainTexture = mSurface->GetTexture(begin.FrameIndex);
@@ -127,9 +128,10 @@ void Application::Run()
 
         // Update
         if (!mUIOpened) {
-            mCamera.Update(delta, 16, 9);
+            mCamera.Update(delta, 16, 9, mFrameCount);
         }
         mScene->Update(begin.FrameIndex);
+        mFrameCount++;
     }
 }
 

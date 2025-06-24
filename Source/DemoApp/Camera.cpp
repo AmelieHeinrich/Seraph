@@ -15,18 +15,22 @@ void Camera::Begin()
     mLastY = pos.y;
 }
 
-void Camera::Update(float dt, int width, int height)
+void Camera::Update(float dt, int width, int height, uint& frameCount)
 {
     if (ImGui::IsKeyDown(ImGuiKey_Z)) {
+        frameCount = 0;
         mPosition -= mForward * dt * 3.0f;
     }
     if (ImGui::IsKeyDown(ImGuiKey_S)) {
+        frameCount = 0;
         mPosition += mForward * dt * 3.0f;
     }
     if (ImGui::IsKeyDown(ImGuiKey_Q)) {
+        frameCount = 0;
         mPosition += mRight * dt * 3.0f;
     }
     if (ImGui::IsKeyDown(ImGuiKey_D)) {
+        frameCount = 0;
         mPosition -= mRight * dt * 3.0f;
     }
 
@@ -34,6 +38,9 @@ void Camera::Update(float dt, int width, int height)
         ImVec2 pos = ImGui::GetMousePos();
         float dx = (pos.x - mLastX) * 0.1f;
         float dy = (pos.y - mLastY) * 0.1f;
+        if (fabs(dx) > 0.001 || fabs(dy) > 0.001) {
+            frameCount = 0;
+        }
 
         mYaw += dx;
         mPitch -= dy;

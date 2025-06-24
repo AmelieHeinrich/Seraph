@@ -44,6 +44,7 @@ private:
     Scene* mScene;
 
     RenderPath mPath;
+    uint mFrameCount = 0;
 
 private:
     // UI stuff
