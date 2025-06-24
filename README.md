@@ -49,4 +49,4 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 ![](.github/june15.png)
 
 ### Test suite
-![](.github/tests.png)
+![](.github/test2.png)

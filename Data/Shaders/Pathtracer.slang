@@ -128,7 +128,7 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
             float2 uv = v0.Texcoord * interpolate.x + v1.Texcoord * interpolate.y + v2.Texcoord * interpolate.z;
 
             float4 color = albedo.SampleLevel(sampler, uv, 0.0);
-            if (color.a > 0.25) {
+            if (color.a > 0.50) {
                 q.CommitNonOpaqueTriangleHit();
             }
         }
