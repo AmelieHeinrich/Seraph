@@ -17,17 +17,22 @@ void Camera::Begin()
 
 void Camera::Update(float dt, int width, int height)
 {
+    float speed = 3.0f;
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+        speed = 20.0f;
+    }
+
     if (ImGui::IsKeyDown(ImGuiKey_Z)) {
-        mPosition -= mForward * dt * 3.0f;
+        mPosition -= mForward * dt * speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_S)) {
-        mPosition += mForward * dt * 3.0f;
+        mPosition += mForward * dt * speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_Q)) {
-        mPosition += mRight * dt * 3.0f;
+        mPosition += mRight * dt * speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_D)) {
-        mPosition -= mRight * dt * 3.0f;
+        mPosition -= mRight * dt * speed;
     }
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {

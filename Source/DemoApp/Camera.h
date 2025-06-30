@@ -8,7 +8,7 @@
 #include <Core/Types.h>
 
 constexpr float CAMERA_NEAR = 0.1f;
-constexpr float CAMERA_FAR = 150.0f;
+constexpr float CAMERA_FAR = 300.0f;
 
 class Camera
 {

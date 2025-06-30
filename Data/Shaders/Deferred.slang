@@ -159,47 +159,53 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     // Resources
     Texture2D<float> depth = BindlessTexture2DFloat.Load(Push.Depth);
     Texture2D<float4> normal = BindlessTexture2DFloat4.Load(Push.Normal);
-    Texture2D<float4> albedo = BindlessTexture2DFloat4.Load(Push.Albedo);
-    Texture2D<float2> pbr = BindlessTexture2DFloat2.Load(Push.PBR);
     RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.Output);
-    StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.PointLightArray);
-    StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight.Load(Push.SpotLightArray);
-    StructuredBuffer<TileData> tiles = BindlessSRV_TileData.Load(Push.TilesArray);
-    StructuredBuffer<uint> bins = BindlessSRV_uint.Load(Push.BinsArray);
     Camera camera = BindlessCBV_Camera.Load(Push.CameraDataSRV);
 
-    // Get current tile
-    uint tileX = tid.x / Push.TileWidth;
-    uint tileY = tid.y / Push.TileHeight;
-    uint tileIndex = tileY * Push.NumTilesX + tileX;
-    TileData tile = tiles[tileIndex];
-
-    // Load Basic data
+    // Load depth & reconstruct world position
     float viewDepth = depth.Load(tid);
     float2 uv = TexelToUV(tid.xy, float2(Push.Width, Push.Height));
-    float3 cameraPosition = camera.Position.xyz;
     float4 worldPosition = GetWorldFromDepth(uv, viewDepth, camera.InvViewProj);
-    float3 materialColor = albedo.Load(tid).rgb;
+
     float3 N = normalize(normal.Load(tid).rgb);
-    float metallic = pbr.Load(tid).r;
-    float roughness = pbr.Load(tid).g;
 
-    // Math!
-    float3 V = normalize(cameraPosition - worldPosition.xyz);
-    float3 finalColor = GetTileColor(tile.Count) * Push.ShowTileHeatmap;
-    for (int i = 0; i < tile.Count; i++) {
-        uint encoded = bins[tile.Offset + i];
-        bool isSpot = (encoded & (1u << 31)) != 0;
-        uint lightIndex = encoded & 0x7FFFFFFF;
+    // Extract height and offset so everything is positive
+    float heightOffset = 30.0;
+    float height = worldPosition.y + heightOffset;
 
-        float3 contrib = float3(0, 0, 0);
-        if (isSpot) {
-            contrib = EvaluateSpotLight(spotLights[lightIndex], V, worldPosition, N, materialColor, metallic, roughness);
-        } else {
-            contrib = EvaluatePointLight(pointLights[lightIndex], V, worldPosition, N, materialColor, metallic, roughness);
-        }
-        finalColor += contrib;
+    // Height thresholds
+    float lowHeight = 0.0;    // green start
+    float midHeight = 13.3f;  // dirt start
+    float highHeight = 25.6f; // rock start
+    float snowHeight = 40.0f; // snow start
+
+    // Terrain colors
+    float3 green = float3(0.1, 0.6, 0.1); // grass
+    float3 brown = float3(0.4, 0.3, 0.1); // dirt
+    float3 gray = float3(0.5, 0.5, 0.5);  // rock
+    float3 white = float3(1.0, 1.0, 1.0); // snow
+
+    float3 baseColor;
+
+    // Multi-layered color blending
+    if (height < midHeight) {
+        float t = saturate((height - lowHeight) / (midHeight - lowHeight));
+        baseColor = lerp(green, brown, t);
+    } else if (height < highHeight) {
+        float t = saturate((height - midHeight) / (highHeight - midHeight));
+        baseColor = lerp(brown, gray, t);
+    } else if (height < snowHeight) {
+        float t = saturate((height - highHeight) / (snowHeight - highHeight));
+        baseColor = lerp(gray, white, t);
+    } else {
+        baseColor = white;
     }
+
+    // Lighting
+    float3 lightDir = normalize(float3(0.3, 1.0, 0.2)); // from above at an angle
+    float NdotL = max(dot(N, lightDir), 0.0);
+    float ambient = 0.1;
+    float3 finalColor = (NdotL * 0.9) * baseColor;
 
     output[tid.xy] = float4(finalColor, 1.0);
 }

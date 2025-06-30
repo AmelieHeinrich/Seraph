@@ -108,8 +108,6 @@ FragmentOutput FSMain(VertexOutput input)
 
     FragmentOutput output = {};
     output.Albedo = texture.Sample(sampler, input.UV);
-    if (output.Albedo.a < 0.25)
-        discard;
     output.Normal = float4(GetNormal(input), 1.0f);
     output.PBR = GetPBR(input);
     return output;

@@ -22,6 +22,12 @@ public:
     ~GBuffer();
 
     void Render(RenderPassBegin& begin) override;
+    void UI(RenderPassBegin& begin) override;
 private:
     IRHIGraphicsPipeline* mPipeline;
+    IRHIGraphicsPipeline* mWirePipeline;
+    bool mWireframe = false;
+
+    IRHIBuffer* mTerrainVB;
+    IRHIBuffer* mTerrainIB;
 };

@@ -36,18 +36,6 @@ Application::Application(const ApplicationSpecs& specs)
     mRenderer = new Renderer(mDevice, mSpecs.WindowWidth, mSpecs.WindowHeight);
 
     mScene = new Scene(mDevice);
-    mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
-
-    Random rng(12345);
-    for (int i = 0; i < 8192; i++) {
-        mScene->GetLights().AddPointLight(
-            rng.Vec3(float3(-10.0f, 0.0f, -7.0f), float3(10.0f, 10.0f, 7.0f)),
-            rng.Float(0.5f, 2.0f),
-            rng.Vec3(float3(0.0f, 0.0f, 0.0f), float3(1.0f, 1.0f, 1.0f)),
-            rng.Float(1.0f, 5.0f)
-        );
-    }
-
     Uploader::Flush();
 
     SetUITheme();
@@ -106,8 +94,6 @@ void Application::Run()
 
         begin.CommandList->Reset();
         begin.CommandList->Begin();
-
-        Debug::DrawSphere(glm::vec3(0.0f), 2, glm::vec3(1.0f));
 
         // Render
         mRenderer->Render(RenderPath::kBasic, begin);
