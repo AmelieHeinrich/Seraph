@@ -35,13 +35,15 @@ struct PushConstants
 
     uint SpotLightArray;
     uint SpotLightCount;
-    uint2 Pad; //
+    uint SunArray;
+    uint Pad;
 };
 
 DEFINE_SRV_ARRAY(uint);
 DEFINE_SRV_ARRAY(TileData);
 DEFINE_SRV_ARRAY(PointLight);
 DEFINE_SRV_ARRAY(SpotLight);
+DEFINE_SRV_ARRAY(DirectionalLight);
 DEFINE_CBV_ARRAY(Camera);
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -150,6 +152,35 @@ float3 EvaluateSpotLight(SpotLight light, float3 V, float4 worldPosition, float3
     return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowTileHeatmap));
 }
 
+float3 EvaluateDirectionalLight(DirectionalLight light, float3 V, float4 worldPosition, float3 N, float3 materialColor, float metallic, float roughness)
+{
+    float3 L = -light.Direction;
+
+    // Cook-Torrance
+    float3 H = normalize(V + L);
+    float NdotL = max(dot(N, L), 0.0001);
+    float NdotV = max(dot(N, V), 0.0001);
+    float HdotV = max(dot(H, V), 0.0001);
+
+    float D = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), materialColor, metallic);
+    float3 F = FresnelSchlick(HdotV, F0);
+
+    float3 numerator = D * G * F;
+    float denominator = 4 * NdotL * NdotV + 0.0001;
+    float3 specular = numerator / denominator;
+
+    // Lambertian
+    float3 kD = (1.0 - F) * (1.0 - metallic);
+    float3 diffuse = kD * materialColor / PI;
+
+    // Apply attenuation to final contribution
+    float3 distributedEnergy = ((diffuse + specular) * NdotL);
+    float3 incomingRadiance = light.Color * light.Intensity;
+    return (distributedEnergy * incomingRadiance);
+}
+
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID)
@@ -164,6 +195,7 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.Output);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.PointLightArray);
     StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight.Load(Push.SpotLightArray);
+    StructuredBuffer<DirectionalLight> sun = BindlessSRV_DirectionalLight.Load(Push.SunArray);
     StructuredBuffer<TileData> tiles = BindlessSRV_TileData.Load(Push.TilesArray);
     StructuredBuffer<uint> bins = BindlessSRV_uint.Load(Push.BinsArray);
     Camera camera = BindlessCBV_Camera.Load(Push.CameraDataSRV);
@@ -187,6 +219,8 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     // Math!
     float3 V = normalize(cameraPosition - worldPosition.xyz);
     float3 finalColor = GetTileColor(tile.Count) * Push.ShowTileHeatmap;
+
+    finalColor += EvaluateDirectionalLight(sun[0], V, worldPosition, N, materialColor, metallic, roughness);
     for (int i = 0; i < tile.Count; i++) {
         uint encoded = bins[tile.Offset + i];
         bool isSpot = (encoded & (1u << 31)) != 0;

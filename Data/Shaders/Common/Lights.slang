@@ -32,6 +32,15 @@ public struct SpotLight
     public float Intensity;
 };
 
+public struct DirectionalLight
+{
+    public float3 Direction;
+    public float Intensity;
+
+    public float3 Color;
+    public float Pad;
+};
+
 public struct TileData
 {
     public uint Offset;

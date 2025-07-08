@@ -72,7 +72,8 @@ void Deferred::Render(RenderPassBegin& begin)
 
             BindlessHandle slArray;
             uint slCount;
-            uint2 Pad;
+            BindlessHandle sunArray;
+            uint pad1;
         } constants = {
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
@@ -96,7 +97,8 @@ void Deferred::Render(RenderPassBegin& begin)
 
             begin.RenderScene->GetLights().GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
             static_cast<uint>(begin.RenderScene->GetLights().SpotLights.size()),
-            {}
+            begin.RenderScene->GetLights().GetSunBufferView(begin.FrameIndex)->GetBindlessHandle(),
+            0
         };
     
         begin.CommandList->SetComputePipeline(mPipeline);

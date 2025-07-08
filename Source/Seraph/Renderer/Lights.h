@@ -32,6 +32,15 @@ struct SpotLight
     float Intensity;
 };
 
+struct DirectionalLight
+{
+    float3 Direction;
+    float Intensity;
+
+    float3 Color;
+    float Pad;
+};
+
 class LightList
 {
 public:
@@ -64,16 +73,23 @@ public:
 
     Array<PointLight> PointLights;
     Array<SpotLight> SpotLights;
+    DirectionalLight Sun;
 
     IRHIBuffer* GetPointLightBuffer(uint frameIndex) { return mPointLightBuffer[frameIndex]; }
     IRHIBufferView* GetPointLightBufferView(uint frameIndex) { return mPointLightBufferView[frameIndex]; }
 
     IRHIBuffer* GetSpotLightBuffer(uint frameIndex) { return mSpotLightBuffer[frameIndex]; }
     IRHIBufferView* GetSpotLightBufferView(uint frameIndex) { return mSpotLightBufferView[frameIndex]; }
+
+    IRHIBuffer* GetSunBuffer(uint frameIndex) { return mSunBuffer[frameIndex]; }
+    IRHIBufferView* GetSunBufferView(uint frameIndex) { return mSunBufferView[frameIndex]; }
 private:
     IRHIBuffer* mPointLightBuffer[FRAMES_IN_FLIGHT];
     IRHIBufferView* mPointLightBufferView[FRAMES_IN_FLIGHT];
 
     IRHIBuffer* mSpotLightBuffer[FRAMES_IN_FLIGHT];
     IRHIBufferView* mSpotLightBufferView[FRAMES_IN_FLIGHT];
+
+    IRHIBuffer* mSunBuffer[FRAMES_IN_FLIGHT];
+    IRHIBufferView* mSunBufferView[FRAMES_IN_FLIGHT];
 };

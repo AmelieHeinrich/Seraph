@@ -11,7 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Application::Application(const ApplicationSpecs& specs)
-    : mSpecs(specs), mPath(RenderPath::kPathtracer)
+    : mSpecs(specs), mPath(RenderPath::kBasic)
 {
     mStringBackend = specs.Backend == RHIBackend::kVulkan ? "Vulkan" : "D3D12";
 
@@ -37,16 +37,12 @@ Application::Application(const ApplicationSpecs& specs)
 
     mScene = new Scene(mDevice);
     mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
-
-    Random rng(12345);
-    for (int i = 0; i < 2048; i++) {
-        mScene->GetLights().AddPointLight(
-            rng.Vec3(float3(-10.0f, 0.0f, -7.0f), float3(10.0f, 10.0f, 7.0f)),
-            rng.Float(0.5f, 2.0f),
-            rng.Vec3(float3(0.0f, 0.0f, 0.0f), float3(1.0f, 1.0f, 1.0f)),
-            rng.Float(1.0f, 5.0f)
-        );
-    }
+    mScene->GetLights().Sun = {
+        .Direction = float3(0.0f, -1.0f, 0.1f),
+        .Intensity = 1.0f,
+        .Color = float3(1.0f),
+        .Pad = 0.0f
+    };
 
     Uploader::Flush();
 

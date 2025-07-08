@@ -15,12 +15,19 @@ LightList::LightList(IRHIDevice* device)
         mSpotLightBuffer[i] = device->CreateBuffer(RHIBufferDesc(sizeof(PointLight) * MAX_POINT_LIGHTS, sizeof(PointLight), RHIBufferUsage::kStaging | RHIBufferUsage::kShaderRead));
         mSpotLightBuffer[i]->SetName("Spot Light Buffer");
         mSpotLightBufferView[i] = device->CreateBufferView(RHIBufferViewDesc(mSpotLightBuffer[i], RHIBufferViewType::kStructured));
+
+        mSunBuffer[i] = device->CreateBuffer(RHIBufferDesc(sizeof(DirectionalLight), sizeof(DirectionalLight), RHIBufferUsage::kStaging | RHIBufferUsage::kShaderRead));
+        mSunBuffer[i]->SetName("Sun Buffer");
+        mSunBufferView[i] = device->CreateBufferView(RHIBufferViewDesc(mSunBuffer[i], RHIBufferViewType::kStructured));
     }
 }
 
 LightList::~LightList()
 {
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+        delete mSunBuffer[i];
+        delete mSunBufferView[i];
+
         delete mSpotLightBuffer[i];
         delete mSpotLightBufferView[i];
 
@@ -38,4 +45,8 @@ void LightList::Update(uint frameIndex)
     mem = mSpotLightBuffer[frameIndex]->Map();
     memcpy(mem, SpotLights.data(), SpotLights.size() * sizeof(SpotLight));
     mSpotLightBuffer[frameIndex]->Unmap();
+
+    mem = mSunBuffer[frameIndex]->Map();
+    memcpy(mem, &Sun, sizeof(Sun));
+    mSunBuffer[frameIndex]->Unmap();
 }
