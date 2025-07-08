@@ -125,10 +125,11 @@ struct RHIRenderAttachment
 {
     IRHITextureView* View;
     bool Clear;
+    float3 ClearValue;
 
     RHIRenderAttachment() = default;
-    RHIRenderAttachment(IRHITextureView* view, bool clear = true)
-        : View(view), Clear(clear) {}
+    RHIRenderAttachment(IRHITextureView* view, bool clear = true, float3 clearValue = float3(0))
+        : View(view), Clear(clear), ClearValue(clearValue) {}
 };
 
 struct RHIRenderBegin

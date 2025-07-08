@@ -8,6 +8,17 @@ The Vulkan backend requires VK_EXT_mutable_descriptor.
 If you have an NVIDIA card, both backends are tested and thus work.
 If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 
+## Screenshots
+
+### Tiled Light Culling
+![](.github/june15.png)
+
+### Raytraced Hard Shadows
+![](.github/july7.png)
+
+### Test Suite
+![](.github/test2.png)
+
 ## Notable Features
 
 - Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders, GPU readback
@@ -16,37 +27,10 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 - Deferred shading
 - PBR workflow with Lambertian Diffuse & Cook-Torrance BRDF
 - Tiled light culling
-
-## Currently working on
-
-- Clustered light culling
-- Compute pathtracer
+- Raytraced hard shadows
 
 ## Planned
 
-- SSR
-- SSAO
-- CSM/Point/Spot Shadows
-- TAA
-- Bloom
-- Mesh shaders & GPU driven culling
-- Visibility Buffer
-- Auto Exposure
-- Bokeh DOF
-- Motion Blur
-- Deferred texturing
-- GPU particles
-- SVGF
-- RTAO
-- RT shadows
-- RT reflections
-- DLSS/FSR/XeSS upscaling
-- Metal backend
-
-## Screenshots
-
-### Most recent screenshot of the demo app
-![](.github/june15.png)
-
-### Test suite
-![](.github/test2.png)
+- CSM
+- Raytraced soft shadows
+- SVGF denoising

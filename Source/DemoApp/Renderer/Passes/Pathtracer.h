@@ -25,7 +25,6 @@ public:
     void Render(RenderPassBegin& begin) override;
     void UI(RenderPassBegin& begin) override;
 private:
-    void BuildTLAS(RenderPassBegin& begin);
     void Pathtrace(RenderPassBegin& begin);
 
 private:

@@ -71,7 +71,7 @@ void VulkanCommandList::BeginRendering(const RHIRenderBegin& begin)
         colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachment.loadOp = rt.Clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f }; // Customize if needed
+        colorAttachment.clearValue.color = { rt.ClearValue.x, rt.ClearValue.y, rt.ClearValue.z, 1.0f };
 
         colorAttachments.push_back(colorAttachment);
     }

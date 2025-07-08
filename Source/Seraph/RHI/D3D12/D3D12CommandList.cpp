@@ -70,7 +70,7 @@ void D3D12CommandList::BeginRendering(const RHIRenderBegin& begin)
         D3D12TextureView* view = static_cast<D3D12TextureView*>(target.View);
         cpus.push_back(view->GetAlloc().CPU);
 
-        float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        float color[] = { target.ClearValue.x, target.ClearValue.y, target.ClearValue.z, 1.0f };
         if (target.Clear) mList->ClearRenderTargetView(view->GetAlloc().CPU, color, 0, nullptr);
     }
     D3D12_CPU_DESCRIPTOR_HANDLE depth_cpu = {};

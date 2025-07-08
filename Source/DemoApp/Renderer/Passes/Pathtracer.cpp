@@ -37,7 +37,6 @@ Pathtracer::~Pathtracer()
 void Pathtracer::Render(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Pathtracer");
-    BuildTLAS(begin);
     Pathtrace(begin);
     begin.CommandList->PopMarker();
 }
@@ -48,29 +47,6 @@ void Pathtracer::UI(RenderPassBegin& begin)
         ImGui::SliderInt("Bounce Count", (int*)&mBounceCount, 1, 4);
         ImGui::TreePop();
     }
-}
-
-void Pathtracer::BuildTLAS(RenderPassBegin& begin)
-{
-    begin.CommandList->PushMarker("Build TLAS");
-    CODE_BLOCK("Execute") {
-        RHIBufferBarrier beforeBarrier(begin.RenderScene->GetTLAS()->GetMemory());
-        beforeBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureRead;
-        beforeBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureWrite;
-        beforeBarrier.SourceStage = RHIPipelineStage::kComputeShader;
-        beforeBarrier.DestStage = RHIPipelineStage::kAccelStructureWrite;
-
-        RHIBufferBarrier afterBarrier(begin.RenderScene->GetTLAS()->GetMemory());
-        afterBarrier.SourceAccess = RHIResourceAccess::kAccelerationStructureWrite;
-        afterBarrier.DestAccess = RHIResourceAccess::kAccelerationStructureRead;
-        afterBarrier.SourceStage = RHIPipelineStage::kAccelStructureWrite;
-        afterBarrier.DestStage = RHIPipelineStage::kComputeShader;
-
-        begin.CommandList->Barrier(beforeBarrier);
-        begin.CommandList->BuildTLAS(begin.RenderScene->GetTLAS(), RHIASBuildMode::kRebuild, begin.RenderScene->GetTLASInstances().size(), begin.RenderScene->GetInstanceBuffer());
-        begin.CommandList->Barrier(afterBarrier);
-    }
-    begin.CommandList->PopMarker();
 }
 
 void Pathtracer::Pathtrace(RenderPassBegin& begin)

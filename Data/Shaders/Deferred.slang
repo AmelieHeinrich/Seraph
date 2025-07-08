@@ -36,7 +36,7 @@ struct PushConstants
     uint SpotLightArray;
     uint SpotLightCount;
     uint SunArray;
-    uint Pad;
+    uint ShadowMask;
 };
 
 DEFINE_SRV_ARRAY(uint);
@@ -192,6 +192,7 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     Texture2D<float4> normal = BindlessTexture2DFloat4.Load(Push.Normal);
     Texture2D<float4> albedo = BindlessTexture2DFloat4.Load(Push.Albedo);
     Texture2D<float2> pbr = BindlessTexture2DFloat2.Load(Push.PBR);
+    Texture2D<float> shadowMask = BindlessTexture2DFloat.Load(Push.ShadowMask);
     RWTexture2D<float4> output = BindlessRWTexture2DFloat4.Load(Push.Output);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight.Load(Push.PointLightArray);
     StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight.Load(Push.SpotLightArray);
@@ -220,7 +221,7 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     float3 V = normalize(cameraPosition - worldPosition.xyz);
     float3 finalColor = GetTileColor(tile.Count) * Push.ShowTileHeatmap;
 
-    finalColor += EvaluateDirectionalLight(sun[0], V, worldPosition, N, materialColor, metallic, roughness);
+    finalColor += EvaluateDirectionalLight(sun[0], V, worldPosition, N, materialColor, metallic, roughness) * shadowMask.Load(tid);
     for (int i = 0; i < tile.Count; i++) {
         uint encoded = bins[tile.Offset + i];
         bool isSpot = (encoded & (1u << 31)) != 0;

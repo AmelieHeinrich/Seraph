@@ -6,6 +6,7 @@
 #include "Deferred.h"
 #include "GBuffer.h"
 #include "LightCulling.h"
+#include "Shadows.h"
 
 #include <imgui/imgui.h>
 
@@ -48,6 +49,7 @@ void Deferred::Render(RenderPassBegin& begin)
         RendererResource& albedo = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& pbr = RendererResourceManager::Import(GBUFFER_PBR_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& output = RendererResourceManager::Import(DEFERRED_HDR_TEXTURE_ID, begin.CommandList, RendererImportType::kShaderWrite);
+        RendererResource& shadowMask = RendererResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CommandList, RendererImportType::kShaderRead);
         
         struct Constants {
             BindlessHandle depthHandle;
@@ -73,7 +75,7 @@ void Deferred::Render(RenderPassBegin& begin)
             BindlessHandle slArray;
             uint slCount;
             BindlessHandle sunArray;
-            uint pad1;
+            BindlessHandle shadowMask;
         } constants = {
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
@@ -98,7 +100,7 @@ void Deferred::Render(RenderPassBegin& begin)
             begin.RenderScene->GetLights().GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
             static_cast<uint>(begin.RenderScene->GetLights().SpotLights.size()),
             begin.RenderScene->GetLights().GetSunBufferView(begin.FrameIndex)->GetBindlessHandle(),
-            0
+            RendererViewRecycler::GetSRV(shadowMask.Texture)->GetBindlessHandle()
         };
     
         begin.CommandList->SetComputePipeline(mPipeline);

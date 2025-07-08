@@ -13,9 +13,11 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
     RendererViewRecycler::Initialize(device);
 
     // Create passes
+    mTLASPrepare = std::make_shared<TLASPrepare>(device, width, height);
     mPathtracer = std::make_shared<Pathtracer>(device, width, height);
     mPathtracerDenoise = std::make_shared<PathtracerDenoise>(device, width, height);
     mGBuffer = std::make_shared<GBuffer>(device, width, height);
+    mShadows = std::make_shared<Shadows>(device, width, height);
     mLightCulling = std::make_shared<LightCulling>(device, width, height);
     mDeferred = std::make_shared<Deferred>(device, width, height);
     mTonemapping = std::make_shared<Tonemapping>(device, width, height);
@@ -24,6 +26,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 
     // Setup Pathtracer
     mPasses[RenderPath::kPathtracer] = {
+        mTLASPrepare,
         mGBuffer,
         mPathtracer,
         mPathtracerDenoise,
@@ -34,7 +37,9 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 
     // Setup Normal Path
     mPasses[RenderPath::kBasic] = {
+        mTLASPrepare,
         mGBuffer,
+        mShadows,
         mLightCulling,
         mDeferred,
         mTonemapping,

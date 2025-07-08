@@ -7,10 +7,12 @@
 
 #include "RenderPass.h"
 
+#include "Passes/TLASPrepare.h"
 #include "Passes/Pathtracer.h"
 #include "Passes/PathtracerDenoise.h"
 #include "Passes/LightCulling.h"
 #include "Passes/GBuffer.h"
+#include "Passes/Shadows.h"
 #include "Passes/Deferred.h"
 #include "Passes/Tonemapping.h"
 #include "Passes/Debug.h"
@@ -25,9 +27,11 @@ public:
     void Render(RenderPath path, RenderPassBegin& begin);
     void UI(RenderPath path, RenderPassBegin& begin);
 private:
+    SharedPtr<TLASPrepare> mTLASPrepare;
     SharedPtr<Pathtracer> mPathtracer;
     SharedPtr<PathtracerDenoise> mPathtracerDenoise;
     SharedPtr<GBuffer> mGBuffer;
+    SharedPtr<Shadows> mShadows;
     SharedPtr<LightCulling> mLightCulling;
     SharedPtr<Deferred> mDeferred;
     SharedPtr<Tonemapping> mTonemapping;
