@@ -154,7 +154,7 @@ void CSMain(uint3 dtid: SV_DispatchThreadID)
     float3 L = -sun[0].Direction;
 
     // Logic
-    float attenuation = dot(N, L);
+    float attenuation = clamp(dot(N, L), 0.0, 1.0);
     if (attenuation > 0.0f) {
         // trace
         RayDesc ray;
