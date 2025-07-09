@@ -43,7 +43,7 @@ target("DemoApp")
     add_headerfiles("DemoApp/**.h")
     add_includedirs(".", "Seraph")
     add_deps("Seraph", "PIX")
-    add_defines("GLM_FORCE_DEPTH_ZERO_TO_ONE")
+    add_defines("GLM_FORCE_DEPTH_ZERO_TO_ONE", "ENABLE_PIX")
 
     if is_mode("debug") then
         set_symbols("debug")

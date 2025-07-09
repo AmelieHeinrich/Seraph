@@ -225,7 +225,7 @@ void Shadows::CSM(RenderPassBegin& begin)
 
             begin.CommandList->BeginRendering(renderBegin);
             begin.CommandList->SetGraphicsPipeline(pipeline);
-            begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
+            begin.CommandList->SetViewport(SHADOW_CASCADE_QUALITY, SHADOW_CASCADE_QUALITY, 0, 0);
             for (auto& entity : begin.RenderScene->GetEntities()) {
                 Model* model = entity.Model->Model;
                 for (auto& node : model->GetNodes()) {
@@ -263,6 +263,12 @@ void Shadows::CSM(RenderPassBegin& begin)
     }
     CODE_BLOCK("Populate visibility mask") {
         begin.CommandList->PushMarker("Populate visibility mask");
+
+        // Transition to shader read
+        const char* indexToID[4] = { SHADOWS_CASCADE_0, SHADOWS_CASCADE_1,SHADOWS_CASCADE_2, SHADOWS_CASCADE_3 };
+        for (int i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+            (void)RendererResourceManager::Import(indexToID[i], begin.CommandList, RendererImportType::kShaderRead);
+        }
 
         RendererResource& output = RendererResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CommandList, RendererImportType::kShaderWrite);
         RendererResource& gbufferDepth = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
@@ -373,7 +379,7 @@ void Shadows::UI(RenderPassBegin& begin)
             }
             case ShadowMode::kCSM: {
                 ImGui::SliderFloat("Shadow Split Lambda", &mSplitLambda, 0.01f, 0.99f);
-                ImGui::Checkbox("Freeze & Draw Cascades", &mUpdateCascades);
+                ImGui::Checkbox("Update Cascades", &mUpdateCascades);
                 break;
             }
             default: {

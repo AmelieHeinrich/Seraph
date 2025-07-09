@@ -6,6 +6,7 @@
 module Shadow;
 
 static public const int SHADOW_CASCADE_COUNT = 4;
+static public const int SHADOW_MAP_SIZE = 2048;
 
 public float PCFCascade(
     Texture2D<float> ShadowMap,
@@ -31,9 +32,7 @@ public float PCFCascade(
         return 1.0;
 
     // Compute texel size for PCF kernel sampling
-    uint shadowWidth, shadowHeight;
-    ShadowMap.GetDimensions(shadowWidth, shadowHeight);
-    float2 texelSize = 1.0 / float2(shadowWidth, shadowHeight);
+    float2 texelSize = 1.0 / SHADOW_MAP_SIZE;
 
     // Perform PCF with manual depth comparison
     float shadow = 0.0;
@@ -41,7 +40,7 @@ public float PCFCascade(
 
     for (int x = -kernelSize; x <= kernelSize; x++) {
         for (int y = -kernelSize; y <= kernelSize; y++) {
-            float2 offsetUV = shadowUV + float2(x, y) * texelSize;
+            float2 offsetUV = clamp(shadowUV + (float2(x, y) * texelSize), 0.0, 1.0);
 
             // Sample the depth from the shadow map
             float sampledDepth = ShadowMap.SampleLevel(regularSampler, offsetUV, 0.0);
