@@ -1,0 +1,2 @@
+- Vulkan: Upload buffers size should change, can cause texture data to be uploaded in wrong regin
+- D3D12: PIX markers don't work for literally no reason
