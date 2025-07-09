@@ -23,8 +23,10 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
     // Create pipelines
     CODE_BLOCK("Create Hard RT resources") {
         CompiledShader shader = ShaderCompiler::Compile("Shadows/HardRT", { "CSMain" });
+        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/HardRTNoAlpha", { "CSMain" });
 
         mHardRTShadows = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shader.Entries["CSMain"]));
+        mHardRTShadowsNoAlpha = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shaderNoAlpha.Entries["CSMain"]));
     }
 }
 
@@ -108,8 +110,9 @@ void Shadows::HardRT(RenderPassBegin& begin)
             0
         };
 
-        begin.CommandList->SetComputePipeline(mHardRTShadows);
-        begin.CommandList->SetComputeConstants(mHardRTShadows, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = mAlphaTest ? mHardRTShadows : mHardRTShadowsNoAlpha;
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
     }
     begin.CommandList->PopMarker();
@@ -120,6 +123,7 @@ void Shadows::UI(RenderPassBegin& begin)
     if (ImGui::TreeNodeEx("Shadows", ImGuiTreeNodeFlags_Framed)) {
         const char* modes[] = { "None", "CSM", "Hard RT", "Soft RT" };
         ImGui::Combo("Shadow Technique", (int*)&mMode, modes, 4, 4);
+        ImGui::Checkbox("Alpha Test", &mAlphaTest);
 
         switch (mMode) {
             case ShadowMode::kHardRT: {

@@ -30,8 +30,10 @@ private:
     void HardRT(RenderPassBegin& begin);
 
 private:
-    IRHIComputePipeline* mHardRTShadows;
-    float mNormalBias = 0.001f;
-
+    bool mAlphaTest = true;
     ShadowMode mMode = ShadowMode::kHardRT;
+
+    IRHIComputePipeline* mHardRTShadows;
+    IRHIComputePipeline* mHardRTShadowsNoAlpha;
+    float mNormalBias = 0.001f;
 };
