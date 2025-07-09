@@ -55,7 +55,8 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     sessionDesc.preprocessorMacros = &platformDesc;
 
     Slang::ComPtr<slang::ISession> session = nullptr;
-    sData.GlobalSession->createSession(sessionDesc, session.writeRef());
+    SlangResult err = sData.GlobalSession->createSession(sessionDesc, session.writeRef());
+    ASSERT_EQ(err == SLANG_OK, "Failed to create slang session!");
 
     Slang::ComPtr<slang::IBlob> diagnostics = nullptr;
     Slang::ComPtr<slang::IModule> module(session->loadModule(path.c_str(), diagnostics.writeRef()));
@@ -67,7 +68,8 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     Array<Slang::ComPtr<slang::IEntryPoint>> slangEntryPoints;
     for (String entryPoint : entryPoints) {
         Slang::ComPtr<slang::IEntryPoint> slangEntryPoint;
-        module->findEntryPointByName(entryPoint.c_str(), slangEntryPoint.writeRef());
+        err = module->findEntryPointByName(entryPoint.c_str(), slangEntryPoint.writeRef());
+        ASSERT_EQ(err == SLANG_OK, "Failed to find entry point!");
         slangEntryPoints.push_back(slangEntryPoint);
     }
 
@@ -78,7 +80,8 @@ CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPo
     }
 
     Slang::ComPtr<slang::IComponentType> program = nullptr;
-    session->createCompositeComponentType(components.data(), components.size(), program.writeRef());
+    err = session->createCompositeComponentType(components.data(), components.size(), program.writeRef());
+    ASSERT_EQ(err == SLANG_OK, "Failed to create composite component type!");
 
     Slang::ComPtr<slang::IComponentType> linkedProgram = nullptr;
     Slang::ComPtr<ISlangBlob> diagnosticBlob = nullptr;

@@ -11,9 +11,6 @@ import Common.Math;
 import Common.Compute;
 import Common.Lights;
 
-DEFINE_CBV_ARRAY(Camera);
-DEFINE_SRV_ARRAY(DirectionalLight);
-
 struct Cascade
 {
     uint SRVIndex;
@@ -23,6 +20,9 @@ struct Cascade
     column_major float4x4 View;
     column_major float4x4 Proj;
 };
+
+DEFINE_CBV_ARRAY(Camera);
+DEFINE_SRV_ARRAY(DirectionalLight);
 DEFINE_SRV_ARRAY(Cascade);
 
 struct PushConstants
@@ -48,26 +48,28 @@ float CalculateShadowCascade(float4 world, float3 N, float3 L, int layer)
     Camera camera = BindlessCBV_Camera.Load(Push.CameraIndex);
     StructuredBuffer<Cascade> cascades = BindlessSRV_Cascade.Load(Push.CascadeArrayIndex);
 
-    Cascade cascade = cascades[layer];
-    SamplerState sampler = BindlessSampler.Load(Push.SamplerIndex);
-    Texture2D<float> shadowMap = BindlessTexture2DFloat.Load(cascade.SRVIndex);
+    float distanceToCamera = length(camera.Position.xyz - world.xyz);
+    Cascade cascade0 = cascades[layer];
+    Cascade cascade1 = cascades[min(layer + 1, SHADOW_CASCADE_COUNT - 1)];
 
-    float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
-    if (layer == SHADOW_CASCADE_COUNT) {
-        bias *= 1 / (CAMERA_FAR * 0.5);
-    } else {
-        bias *= 1 / (cascade.Split * 0.5);
-    }
+    SamplerState sampler = BindlessSampler.Load(Push.SamplerIndex);
+    Texture2D<float> shadowMap0 = BindlessTexture2DFloat.Load(cascade0.SRVIndex);
+    Texture2D<float> shadowMap1 = BindlessTexture2DFloat.Load(cascade1.SRVIndex);
+
+    float bias0 = max(0.05 * (1.0 - dot(N, L)), 0.005) / (cascade0.Split * 0.5);
+    float bias1 = max(0.05 * (1.0 - dot(N, L)), 0.005) / (cascade1.Split * 0.5);
 
     int kernelSize = 1;
-    return PCFCascade(shadowMap,
-                      sampler,
-                      world,
-                      L,
-                      cascade.View,
-                      cascade.Proj,
-                      bias,
-                      kernelSize);
+
+    float shadow0 = PCFCascade(shadowMap0, sampler, world, L, cascade0.View, cascade0.Proj, bias0, kernelSize);
+    float shadow1 = PCFCascade(shadowMap1, sampler, world, L, cascade1.View, cascade1.Proj, bias1, kernelSize);
+
+    // Compute blend factor near cascade split
+    float blendRange = 0.1; // 10% of split range
+    float blendStart = cascade0.Split * (1.0 - blendRange);
+    float blendFactor = saturate((distanceToCamera - blendStart) / (cascade0.Split - blendStart));
+
+    return lerp(shadow0, shadow1, blendFactor);
 }
 
 [shader("compute")]

@@ -46,17 +46,18 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
 
         RHIGraphicsPipelineDesc pipelineDesc = {};
         pipelineDesc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
-        pipelineDesc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
+        pipelineDesc.Bytecode[ShaderStage::kFragment] = shader.Entries["PSMain"];
         pipelineDesc.RenderTargetFormats = {};
         pipelineDesc.DepthEnabled = true;
         pipelineDesc.DepthWrite = true;
         pipelineDesc.DepthFormat = RHITextureFormat::kD32_FLOAT;
         pipelineDesc.DepthOperation = RHIDepthOperation::kLess;
+        pipelineDesc.CullMode = RHICullMode::kFront;
         pipelineDesc.PushConstantSize = sizeof(uint) * 4 + sizeof(glm::mat4) * 2;
         mCSMPipeline = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
 
         pipelineDesc.Bytecode[ShaderStage::kVertex] = shaderNoAlpha.Entries["VSMain"];
-        pipelineDesc.Bytecode[ShaderStage::kFragment] = shaderNoAlpha.Entries["FSMain"];
+        pipelineDesc.Bytecode[ShaderStage::kFragment] = shaderNoAlpha.Entries["PSMain"];
         mCSMPipelineNoAlpha = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
 
         mCSMToMaskPipeline = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shaderPopulate.Entries["CSMain"]));

@@ -26,13 +26,10 @@ The Vulkan backend can be a bit finnicky depending on your GPU and is still expe
 - Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders, GPU readback.
 - Test Suite for RHI -- Generates JSON report used to render results in simple web page
 - Asset compression and caching
-- Deferred shading
-- PBR workflow with Lambertian Diffuse & Cook-Torrance BRDF
-- Tiled light culling
-- Raytraced hard shadows
+- Techniques: Tiled light culling, deferred shading
+- Lighting: Microfacet BRDF, CSM, raytraced hard shadows
 
 ## Planned
 
-- CSM
 - Raytraced soft shadows
 - SVGF denoising

@@ -6,7 +6,15 @@
 module Shadow;
 
 static public const int SHADOW_CASCADE_COUNT = 4;
-static public const int SHADOW_MAP_SIZE = 2048;
+static public const int SHADOW_MAP_SIZE = 4096;
+
+static const float3 PCF_POISSON_DISK[20] = {
+    float3(1, 1, 1), float3(1, -1, 1), float3(-1, -1, 1), float3(-1, 1, 1),
+    float3(1, 1, -1), float3(1, -1, -1), float3(-1, -1, -1), float3(-1, 1, -1),
+    float3(1, 1, 0), float3(1, -1, 0), float3(-1, -1, 0), float3(-1, 1, 0),
+    float3(1, 0, 1), float3(-1, 0, 1), float3(1, 0, -1), float3(-1, 0, -1),
+    float3(0, 1, 1), float3(0, -1, 1), float3(0, -1, -1), float3(0, 1, -1)
+};
 
 public float PCFCascade(
     Texture2D<float> ShadowMap,
@@ -16,7 +24,7 @@ public float PCFCascade(
     float4x4 LightView,
     float4x4 LightProj,
     float bias,
-    int kernelSize)
+    int kernelSize) // kernelSize can now be used as scale factor
 {
     // Transform world-space position into light space
     float4 lightSpacePosition = mul(LightView, WorldSpacePosition);
@@ -34,21 +42,20 @@ public float PCFCascade(
     // Compute texel size for PCF kernel sampling
     float2 texelSize = 1.0 / SHADOW_MAP_SIZE;
 
-    // Perform PCF with manual depth comparison
+    // Poisson disk PCF sampling
     float shadow = 0.0;
-    int sampleCount = 0;
+    int sampleCount = 8;
 
-    for (int x = -kernelSize; x <= kernelSize; x++) {
-        for (int y = -kernelSize; y <= kernelSize; y++) {
-            float2 offsetUV = clamp(shadowUV + (float2(x, y) * texelSize), 0.0, 1.0);
+    for (int i = 0; i < sampleCount; i++) {
+        float2 offset = PCF_POISSON_DISK[i].xy * texelSize * kernelSize;
 
-            // Sample the depth from the shadow map
-            float sampledDepth = ShadowMap.SampleLevel(regularSampler, offsetUV, 0.0);
+        float2 offsetUV = clamp(shadowUV + offset, 0.0, 1.0);
 
-            // Manually compare depth with bias
-            shadow += ndcPosition.z - bias > sampledDepth ? 0.0 : 1.0;
-            sampleCount++;
-        }
+        // Sample the depth from the shadow map
+        float sampledDepth = ShadowMap.SampleLevel(regularSampler, offsetUV, 0.0);
+
+        // Manually compare depth with bias
+        shadow += ndcPosition.z - bias > sampledDepth ? 0.0 : 1.0;
     }
 
     shadow /= sampleCount;

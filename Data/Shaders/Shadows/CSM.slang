@@ -59,6 +59,6 @@ void PSMain(VertexOut input)
     SamplerState sampler = BindlessSampler.Load(Push.Sampler);
 
     float4 color = texture.Sample(sampler, input.UV);
-    if (color.a > 0.50)
+    if (color.a < 0.50)
         discard;
 }
