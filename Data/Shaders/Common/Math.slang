@@ -20,3 +20,9 @@ public float4 GetWorldFromDepth(float2 uv, float depth, float4x4 invViewProj)
 
     return worldPos;
 }
+
+public float LinearizeDepth(float depthNDC, float nearZ, float farZ)
+{
+    float zNDC = depthNDC * 2.0f - 1.0f;
+    return (2.0f * nearZ * farZ) / (farZ + nearZ - zNDC * (farZ - nearZ));
+}

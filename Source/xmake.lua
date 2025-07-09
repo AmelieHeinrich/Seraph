@@ -23,8 +23,12 @@ target("Seraph")
     if is_mode("debug") then
         set_symbols("debug")
         set_optimize("none")
-    else
+    elseif is_mode("release") then
         set_symbols("hidden")
+        set_optimize("fastest")
+        set_strip("all")
+    elseif is_mode("releasedbg") then
+        set_symbols("debug")
         set_optimize("fastest")
         set_strip("all")
     end
@@ -44,8 +48,12 @@ target("DemoApp")
     if is_mode("debug") then
         set_symbols("debug")
         set_optimize("none")
-    else
+    elseif is_mode("release") then
         set_symbols("hidden")
+        set_optimize("fastest")
+        set_strip("all")
+    elseif is_mode("releasedbg") then
+        set_symbols("debug")
         set_optimize("fastest")
         set_strip("all")
     end
@@ -64,8 +72,12 @@ target("Tests")
     if is_mode("debug") then
         set_symbols("debug")
         set_optimize("none")
-    else
+    elseif is_mode("release") then
         set_symbols("hidden")
+        set_optimize("fastest")
+        set_strip("all")
+    elseif is_mode("releasedbg") then
+        set_symbols("debug")
         set_optimize("fastest")
         set_strip("all")
     end

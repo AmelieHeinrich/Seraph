@@ -8,6 +8,8 @@ The Vulkan backend requires VK_EXT_mutable_descriptor.
 If you have an NVIDIA card, both backends are tested and thus work.
 If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 
+The Vulkan backend can be a bit finnicky depending on your GPU and is still experimental. You can try to use it, but if you just want to see what the renderer looks like, I recommend running the D3D12 backend.
+
 ## Screenshots
 
 ### Tiled Light Culling
@@ -21,7 +23,7 @@ If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
 
 ## Notable Features
 
-- Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders, GPU readback
+- Complete RHI with D3D12/Vulkan support -- Bindless, raytracing, mesh shaders, GPU readback.
 - Test Suite for RHI -- Generates JSON report used to render results in simple web page
 - Asset compression and caching
 - Deferred shading

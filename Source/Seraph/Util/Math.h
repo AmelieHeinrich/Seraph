@@ -14,3 +14,8 @@ struct FrustumPlane
     float3 Normal;
     float Distance;
 };
+
+namespace Math
+{
+    Array<float4> GetFrustumCorners(glm::mat4 view, glm::mat4 proj);
+}

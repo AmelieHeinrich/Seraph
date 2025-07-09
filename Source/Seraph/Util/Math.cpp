@@ -1,0 +1,35 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-09 18:22:01
+//
+
+#include "Math.h"
+
+namespace Math
+{
+    Array<float4> GetFrustumCorners(glm::mat4 view, glm::mat4 proj)
+    {
+        glm::mat4 inv = glm::inverse(proj * view);
+
+        Array<glm::vec4> corners = {
+            glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
+            glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f),
+            glm::vec4( 1.0f, -1.0f, 0.0f, 1.0f),
+            glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
+            glm::vec4(-1.0f,  1.0f, 1.0f, 1.0f),
+            glm::vec4( 1.0f,  1.0f, 1.0f, 1.0f),
+            glm::vec4( 1.0f, -1.0f, 1.0f, 1.0f),
+            glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),
+        };
+
+        // To convert from world space to NDC space, multiply by the inverse of the camera matrix (projection * view) then perspective divide
+        for (int i = 0; i < 8; i++) {
+            glm::vec4 h = inv * corners[i];
+            h.x /= h.w;
+            h.y /= h.w;
+            h.z /= h.w;
+            corners[i] = h;
+        }
+        return corners;
+    }
+}

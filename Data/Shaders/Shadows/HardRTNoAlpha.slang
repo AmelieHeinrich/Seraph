@@ -66,6 +66,7 @@ struct PushConstants
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void CSMain(uint3 dtid: SV_DispatchThreadID)
 {

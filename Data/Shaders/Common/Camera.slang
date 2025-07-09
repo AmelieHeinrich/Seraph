@@ -5,6 +5,9 @@
 
 module Camera;
 
+static public const float CAMERA_NEAR = 0.1f;
+static public const float CAMERA_FAR = 150.0f;
+
 public struct Camera
 {
     public column_major float4x4 View;
