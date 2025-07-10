@@ -38,11 +38,7 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
     // Shader
-    CompiledShader shader = ShaderCompiler::Compile("GBuffer.hlsl");
-
     RHIGraphicsPipelineDesc pipelineDesc = {};
-    pipelineDesc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
-    pipelineDesc.Bytecode[ShaderStage::kFragment] = shader.Entries["FSMain"];
     pipelineDesc.PushConstantSize = sizeof(BindlessHandle) * 8 + sizeof(glm::mat4) * 2;
     pipelineDesc.RenderTargetFormats = {
         normalDesc.Format,
@@ -54,7 +50,7 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     pipelineDesc.DepthFormat = RHITextureFormat::kD32_FLOAT;
     pipelineDesc.DepthOperation = RHIDepthOperation::kLess;
 
-    mPipeline = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
+    PipelineReloader::SubscribeGraphics("GBuffer.hlsl", pipelineDesc, { "VSMain", "FSMain" });
 
     // Camera CBV
     RendererResourceManager::CreateRingBuffer(GBUFFER_CAMERA_CBV_ID, Align<uint>(sizeof(CameraData), 256));
@@ -62,7 +58,6 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
 
 GBuffer::~GBuffer()
 {
-    delete mPipeline;
 }
 
 void GBuffer::Render(RenderPassBegin& begin)
@@ -89,8 +84,10 @@ void GBuffer::Render(RenderPassBegin& begin)
         };
         RHIRenderBegin renderBegin(mWidth, mHeight, attachments, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture)));
     
+        IRHIGraphicsPipeline* pipeline = PipelineReloader::GetGraphics("GBuffer.hlsl");
+
         begin.CommandList->BeginRendering(renderBegin);
-        begin.CommandList->SetGraphicsPipeline(mPipeline);
+        begin.CommandList->SetGraphicsPipeline(pipeline);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
         for (auto& entity : begin.RenderScene->GetEntities()) {
             Model* model = entity.Model->Model;
@@ -126,7 +123,7 @@ void GBuffer::Render(RenderPassBegin& begin)
                     };
                 
                     begin.CommandList->SetIndexBuffer(primitive.IndexBuffer);
-                    begin.CommandList->SetGraphicsConstants(mPipeline, &constant, sizeof(constant));
+                    begin.CommandList->SetGraphicsConstants(pipeline, &constant, sizeof(constant));
                     begin.CommandList->DrawIndexed(primitive.IndexCount, 1, 0, 0, 0);
                 }
             }

@@ -14,6 +14,4 @@ public:
     ~CopyToSwapchain();
 
     void Render(RenderPassBegin& begin) override;
-private:
-    IRHIGraphicsPipeline* mCopyPipeline;
 };

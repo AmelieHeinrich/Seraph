@@ -34,9 +34,6 @@ private:
     void CullTiles(RenderPassBegin& begin);
 
 private:
-    IRHIComputePipeline* mGeneratePipeline;
-    IRHIComputePipeline* mCullPipeline;
-
     uint mNumTilesX;
     uint mNumTilesY;
 };

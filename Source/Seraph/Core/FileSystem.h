@@ -8,6 +8,9 @@
 #include "Types.h"
 
 #include <JSON/json.hpp>
+#include <filesystem>
+
+using FileTime = std::filesystem::file_time_type;
 
 class FileSystem
 {
@@ -22,7 +25,9 @@ public:
     static String ReadFile(const String& path);
 
     static bool Exists(const String& path);
-    static uint GetFileSize(const String& path);    
+    static uint GetFileSize(const String& path);
+    
+    static FileTime GetWriteTime(const String& path);
 private:
     static struct Data {
         String WorkingDirectory;

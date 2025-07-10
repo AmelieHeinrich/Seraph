@@ -123,6 +123,7 @@ void Application::Run()
         mF2FSync->PresentSurface();
 
         // Update
+        PipelineReloader::ReloadPipelines();
         if (!mUIOpened) {
             mCamera.Update(delta, 16, 9, mFrameCount);
         }

@@ -38,15 +38,16 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
         mCascadeBuffers[i]->SetName("Cascade Buffer");
     }
 
+    for (int i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+        const char* indexToID[4] = { SHADOWS_CASCADE_0, SHADOWS_CASCADE_1,SHADOWS_CASCADE_2, SHADOWS_CASCADE_3 };
+        RendererResource& depthTexture = RendererResourceManager::Get(indexToID[i]);
+
+        mCascades[i].SRVIndex = RendererViewRecycler::GetTextureView(RHITextureViewDesc(depthTexture.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle();
+    }
+
     // Create pipelines
     CODE_BLOCK("Create CSM resources") {
-        CompiledShader shader = ShaderCompiler::Compile("Shadows/CSM.hlsl");
-        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/CSMNoAlpha.hlsl");
-        CompiledShader shaderPopulate = ShaderCompiler::Compile("Shadows/CSMPopulate.hlsl");
-
         RHIGraphicsPipelineDesc pipelineDesc = {};
-        pipelineDesc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
-        pipelineDesc.Bytecode[ShaderStage::kFragment] = shader.Entries["PSMain"];
         pipelineDesc.RenderTargetFormats = {};
         pipelineDesc.DepthEnabled = true;
         pipelineDesc.DepthWrite = true;
@@ -55,20 +56,20 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
         pipelineDesc.DepthOperation = RHIDepthOperation::kLess;
         pipelineDesc.CullMode = RHICullMode::kBack;
         pipelineDesc.PushConstantSize = sizeof(uint) * 4 + sizeof(glm::mat4) * 2;
-        mCSMPipeline = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
 
-        pipelineDesc.Bytecode[ShaderStage::kVertex] = shaderNoAlpha.Entries["VSMain"];
-        pipelineDesc.Bytecode[ShaderStage::kFragment] = shaderNoAlpha.Entries["PSMain"];
-        mCSMPipelineNoAlpha = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
+        RHIComputePipelineDesc computeDesc = {};
+        computeDesc.PushConstantSize = sizeof(uint) * 12;
 
-        mCSMToMaskPipeline = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 16, shaderPopulate.Entries["CSMain"]));
+        PipelineReloader::SubscribeGraphics("Shadows/CSM.hlsl", pipelineDesc, { "VSMain", "PSMain" });
+        PipelineReloader::SubscribeGraphics("Shadows/CSMNoAlpha.hlsl", pipelineDesc, { "VSMain", "PSMain" });
+        PipelineReloader::SubscribeCompute("Shadows/CSMPopulate.hlsl", computeDesc, "CSMain");
     }
     CODE_BLOCK("Create Hard RT resources") {
-        CompiledShader shader = ShaderCompiler::Compile("Shadows/HardRT.hlsl");
-        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/HardRTNoAlpha.hlsl");
+        RHIComputePipelineDesc computeDesc = {};
+        computeDesc.PushConstantSize = sizeof(uint) * 12;
 
-        mHardRTShadows = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shader.Entries["CSMain"]));
-        mHardRTShadowsNoAlpha = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shaderNoAlpha.Entries["CSMain"]));
+        PipelineReloader::SubscribeCompute("Shadows/HardRT.hlsl", computeDesc, "CSMain");
+        PipelineReloader::SubscribeCompute("Shadows/HardRTNoAlpha.hlsl", computeDesc, "CSMain");
     }
 }
 
@@ -77,11 +78,6 @@ Shadows::~Shadows()
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         delete mCascadeBuffers[i];
     }
-    delete mCSMToMaskPipeline;
-    delete mCSMPipelineNoAlpha;
-    delete mCSMPipeline;
-    delete mHardRTShadowsNoAlpha;
-    delete mHardRTShadows;
 }
 
 void Shadows::Render(RenderPassBegin& begin)
@@ -195,16 +191,12 @@ void Shadows::CSM(RenderPassBegin& begin)
             }
 
             // Store results or draw
-            const char* indexToID[4] = { SHADOWS_CASCADE_0, SHADOWS_CASCADE_1,SHADOWS_CASCADE_2, SHADOWS_CASCADE_3 };
-            RendererResource& depthTexture = RendererResourceManager::Get(indexToID[i]);
-
             if (!mUpdateCascades) {
                 Debug::DrawFrustum(mCascades[i].Proj * mCascades[i].View);
             } else {
                 mCascades[i].Split = splits[i + 1];
                 mCascades[i].View = lightView;
                 mCascades[i].Proj = lightProjection;
-                mCascades[i].SRVIndex = RendererViewRecycler::GetTextureView(RHITextureViewDesc(depthTexture.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle();
             }
         }
 
@@ -217,7 +209,9 @@ void Shadows::CSM(RenderPassBegin& begin)
         for (int i = 0; i < SHADOW_CASCADE_COUNT; i++) {
             begin.CommandList->PushMarker("Cascade " + std::to_string(i));
 
-            IRHIGraphicsPipeline* pipeline = mAlphaTest ? mCSMPipeline : mCSMPipelineNoAlpha;
+            IRHIGraphicsPipeline* pipeline = mAlphaTest
+                                           ? PipelineReloader::GetGraphics("Shadows/CSM.hlsl")
+                                           : PipelineReloader::GetGraphics("Shadows/CSMNoAlpha.hlsl");
             const char* indexToID[4] = { SHADOWS_CASCADE_0, SHADOWS_CASCADE_1,SHADOWS_CASCADE_2, SHADOWS_CASCADE_3 };
 
             RendererResource& depthTexture = RendererResourceManager::Import(indexToID[i], begin.CommandList, RendererImportType::kDepthWrite);
@@ -309,8 +303,9 @@ void Shadows::CSM(RenderPassBegin& begin)
             uint2(0)
         };
 
-        begin.CommandList->SetComputePipeline(mCSMToMaskPipeline);
-        begin.CommandList->SetComputeConstants(mCSMToMaskPipeline, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("Shadows/CSMPopulate.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
 
         begin.CommandList->PopMarker();
@@ -360,7 +355,9 @@ void Shadows::HardRT(RenderPassBegin& begin)
             0
         };
 
-        IRHIComputePipeline* pipeline = mAlphaTest ? mHardRTShadows : mHardRTShadowsNoAlpha;
+        IRHIComputePipeline* pipeline = mAlphaTest
+                                      ? PipelineReloader::GetCompute("Shadows/HardRT.hlsl")
+                                      : PipelineReloader::GetCompute("Shadows/HardRTNoAlpha.hlsl");
         begin.CommandList->SetComputePipeline(pipeline);
         begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);

@@ -21,17 +21,14 @@ Pathtracer::Pathtracer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateTexture(PATHTRACER_HDR_TEXTURE_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("Pathtracer.hlsl");
-
     RHIComputePipelineDesc desc = {};
-    desc.ComputeBytecode = shader.Entries["CSMain"];
     desc.PushConstantSize = sizeof(uint) * 12;
-    mPipeline = mParentDevice->CreateComputePipeline(desc);
+
+    PipelineReloader::SubscribeCompute("Pathtracer.hlsl", desc, "CSMain");
 }
 
 Pathtracer::~Pathtracer()
 {
-    delete mPipeline;
 }
 
 void Pathtracer::Render(RenderPassBegin& begin)
@@ -92,8 +89,9 @@ void Pathtracer::Pathtrace(RenderPassBegin& begin)
             mBounceCount
         };
 
-        begin.CommandList->SetComputePipeline(mPipeline);
-        begin.CommandList->SetComputeConstants(mPipeline, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("Pathtracer.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
 
         // Insert manual UAV barrier

@@ -52,16 +52,11 @@ private:
     ShadowMode mMode = ShadowMode::kCSM;
 
     // CSM
-    IRHIGraphicsPipeline* mCSMPipeline;
-    IRHIGraphicsPipeline* mCSMPipelineNoAlpha;
-    IRHIComputePipeline* mCSMToMaskPipeline;
     StaticArray<ShadowCascade, SHADOW_CASCADE_COUNT> mCascades;
     StaticArray<IRHIBuffer*, FRAMES_IN_FLIGHT> mCascadeBuffers;
     float mSplitLambda = 0.95f;
     bool mUpdateCascades = true;
 
     // Hard RT 
-    IRHIComputePipeline* mHardRTShadows;
-    IRHIComputePipeline* mHardRTShadowsNoAlpha;
     float mNormalBias = 0.001f;
 };

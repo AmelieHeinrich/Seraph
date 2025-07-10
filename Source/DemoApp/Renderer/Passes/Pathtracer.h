@@ -28,6 +28,5 @@ private:
     void Pathtrace(RenderPassBegin& begin);
 
 private:
-    IRHIComputePipeline* mPipeline;
     uint mBounceCount = 1;
 };

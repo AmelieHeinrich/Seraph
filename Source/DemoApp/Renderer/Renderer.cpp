@@ -11,6 +11,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
 {
     RendererResourceManager::Initialize(device);
     RendererViewRecycler::Initialize(device);
+    PipelineReloader::Initialize(device);
 
     // Create passes
     mTLASPrepare = std::make_shared<TLASPrepare>(device, width, height);
@@ -46,6 +47,8 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
         mDebug,
         mCopyToSwapchain
     };
+
+    PipelineReloader::ReloadPipelines(true);
 }
 
 Renderer::~Renderer()
@@ -55,6 +58,7 @@ Renderer::~Renderer()
     }
     mPasses.clear();
 
+    PipelineReloader::Shutdown();
     RendererResourceManager::Shutdown();
     RendererViewRecycler::Shutdown();
 }

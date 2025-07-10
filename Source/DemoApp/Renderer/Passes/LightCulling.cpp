@@ -30,27 +30,22 @@ LightCulling::LightCulling(IRHIDevice* device, uint width, uint height)
 
     // Create pipeline
     CODE_BLOCK("Create generate shader") {
-        CompiledShader shader = ShaderCompiler::Compile("GenerateTiles.hlsl");
-
         RHIComputePipelineDesc desc = {};
-        desc.ComputeBytecode = shader.Entries["CSMain"];
         desc.PushConstantSize = sizeof(uint) * 8;
-        mGeneratePipeline = mParentDevice->CreateComputePipeline(desc);
+
+        PipelineReloader::SubscribeCompute("GenerateTiles.hlsl", desc, "CSMain");
     }
 
     CODE_BLOCK("Create generate shader") {
-        CompiledShader shader = ShaderCompiler::Compile("CullTiles.hlsl");
-
         RHIComputePipelineDesc desc = {};
-        desc.ComputeBytecode = shader.Entries["CSMain"];
         desc.PushConstantSize = sizeof(uint) * 16;
-        mCullPipeline = mParentDevice->CreateComputePipeline(desc);
+        
+        PipelineReloader::SubscribeCompute("CullTiles.hlsl", desc, "CSMain");
     }
 }
 
 LightCulling::~LightCulling()
 {
-    delete mCullPipeline;
 }
 
 void LightCulling::Render(RenderPassBegin& begin)
@@ -91,8 +86,9 @@ void LightCulling::GenerateTiles(RenderPassBegin& begin)
             mHeight
         };
 
-        begin.CommandList->SetComputePipeline(mGeneratePipeline);
-        begin.CommandList->SetComputeConstants(mGeneratePipeline, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("GenerateTiles.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch(mNumTilesX, mNumTilesY, 1);
 
         // Insert manual UAV barrier
@@ -152,8 +148,9 @@ void LightCulling::CullTiles(RenderPassBegin& begin)
             {}
         };
             
-        begin.CommandList->SetComputePipeline(mCullPipeline);
-        begin.CommandList->SetComputeConstants(mCullPipeline, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("CullTiles.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch(mNumTilesX, mNumTilesY, 1);
     }
     begin.CommandList->PopMarker();

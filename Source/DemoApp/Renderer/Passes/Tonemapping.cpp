@@ -21,17 +21,14 @@ Tonemapping::Tonemapping(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateTexture(TONEMAPPING_LDR_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("Tonemapping.hlsl");
-
     RHIComputePipelineDesc desc = {};
-    desc.ComputeBytecode = shader.Entries["CSMain"];
     desc.PushConstantSize = sizeof(uint) * 4;
-    mPipeline = mParentDevice->CreateComputePipeline(desc);
+
+    PipelineReloader::SubscribeCompute("Tonemapping.hlsl", desc, "CSMain");
 }
 
 Tonemapping::~Tonemapping()
 {
-    delete mPipeline;
 }
 
 void Tonemapping::Configure(RenderPath path)
@@ -58,8 +55,9 @@ void Tonemapping::Render(RenderPassBegin& begin)
             mWidth, mHeight
         };
 
-        begin.CommandList->SetComputePipeline(mPipeline);
-        begin.CommandList->SetComputeConstants(mPipeline, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("Tonemapping.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
     }
     begin.CommandList->PopMarker();

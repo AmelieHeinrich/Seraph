@@ -10,19 +10,15 @@
 CopyToSwapchain::CopyToSwapchain(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
-    CompiledShader resolve = ShaderCompiler::Compile("RenderTexture.hlsl");
-
     RHIGraphicsPipelineDesc resolveDesc = {};
-    resolveDesc.Bytecode[ShaderStage::kVertex] = resolve.Entries["VSMain"];
-    resolveDesc.Bytecode[ShaderStage::kFragment] = resolve.Entries["FSMain"];
     resolveDesc.PushConstantSize = sizeof(uint) * 2;
     resolveDesc.RenderTargetFormats.push_back(device->GetSurfaceFormat());
-    mCopyPipeline = mParentDevice->CreateGraphicsPipeline(resolveDesc);
+
+    PipelineReloader::SubscribeGraphics("RenderTexture.hlsl", resolveDesc, { "VSMain", "FSMain" });
 }
 
 CopyToSwapchain::~CopyToSwapchain()
 {
-    delete mCopyPipeline;
 }
 
 void CopyToSwapchain::Render(RenderPassBegin& begin)
@@ -40,6 +36,7 @@ void CopyToSwapchain::Render(RenderPassBegin& begin)
 
         RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& sampler = RendererResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
+        IRHIGraphicsPipeline* pipeline = PipelineReloader::GetGraphics("RenderTexture.hlsl");
 
         struct Constants {
             BindlessHandle in;
@@ -51,9 +48,9 @@ void CopyToSwapchain::Render(RenderPassBegin& begin)
 
         begin.CommandList->Barrier(swapchainBarrier);
         begin.CommandList->BeginRendering(renderBegin);
-        begin.CommandList->SetGraphicsPipeline(mCopyPipeline);
+        begin.CommandList->SetGraphicsPipeline(pipeline);
         begin.CommandList->SetViewport(mWidth, mHeight, 0, 0);
-        begin.CommandList->SetGraphicsConstants(mCopyPipeline, &constants, sizeof(constants));
+        begin.CommandList->SetGraphicsConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Draw(3, 1, 0, 0);
         begin.CommandList->EndRendering();
     }

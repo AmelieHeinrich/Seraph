@@ -1,4 +1,2 @@
-- Rewrite shaders
-- Hot reload
 - Fix CSM biasing
 - Comparison sampler

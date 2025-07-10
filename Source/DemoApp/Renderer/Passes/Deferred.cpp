@@ -23,17 +23,14 @@ Deferred::Deferred(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateTexture(DEFERRED_HDR_TEXTURE_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("Deferred.hlsl");
-
     RHIComputePipelineDesc desc = {};
-    desc.ComputeBytecode = shader.Entries["CSMain"];
     desc.PushConstantSize = sizeof(uint) * 20;
-    mPipeline = mParentDevice->CreateComputePipeline(desc);
+   
+    PipelineReloader::SubscribeCompute("Deferred.hlsl", desc, "CSMain");
 }
 
 Deferred::~Deferred()
 {
-    delete mPipeline;
 }
 
 void Deferred::Render(RenderPassBegin& begin)
@@ -103,8 +100,9 @@ void Deferred::Render(RenderPassBegin& begin)
             RendererViewRecycler::GetSRV(shadowMask.Texture)->GetBindlessHandle()
         };
     
-        begin.CommandList->SetComputePipeline(mPipeline);
-        begin.CommandList->SetComputeConstants(mPipeline, &constants, sizeof(constants));
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("Deferred.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
     }
     begin.CommandList->PopMarker();

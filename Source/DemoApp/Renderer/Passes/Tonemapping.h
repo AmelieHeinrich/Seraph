@@ -19,5 +19,4 @@ public:
     void Configure(RenderPath path) override;
 private:
     const char* mInputID;
-    IRHIComputePipeline* mPipeline;
 };

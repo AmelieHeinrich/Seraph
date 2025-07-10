@@ -21,17 +21,14 @@ PathtracerDenoise::PathtracerDenoise(IRHIDevice* device, uint width, uint height
     RendererResourceManager::CreateTexture(PATHTRACER_DENOISE_HISTORY_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("PathtracerDenoise.hlsl");
-
     RHIComputePipelineDesc desc = {};
-    desc.ComputeBytecode = shader.Entries["CSMain"];
     desc.PushConstantSize = sizeof(uint) * 8;
-    mPipeline = mParentDevice->CreateComputePipeline(desc);
+
+    PipelineReloader::SubscribeCompute("PathtracerDenoise.hlsl", desc, "CSMain");
 }
 
 PathtracerDenoise::~PathtracerDenoise()
 {
-    delete mPipeline;
 }
 
 void PathtracerDenoise::Render(RenderPassBegin& begin)
@@ -74,8 +71,9 @@ void PathtracerDenoise::Denoise(RenderPassBegin& begin)
                 {}
             };
 
-            begin.CommandList->SetComputePipeline(mPipeline);
-            begin.CommandList->SetComputeConstants(mPipeline, &constants, sizeof(constants));
+            IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("PathtracerDenoise.hlsl");
+            begin.CommandList->SetComputePipeline(pipeline);
+            begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
             begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
         } else {
             RendererResource& before = RendererResourceManager::Import(PATHTRACER_DENOISE_HISTORY_ID, begin.CommandList, RendererImportType::kColorWrite);

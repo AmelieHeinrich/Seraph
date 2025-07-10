@@ -1,5 +1,2 @@
-- Slang literally crashes for no reason sometimes, switch to HLSL
-- CSM doesn't work on Vulkan
-- CSM looks like shit
 - Vulkan device creation fails on AMD
 - D3D12 device losts on AMD (RT issue?)

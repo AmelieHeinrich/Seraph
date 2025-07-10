@@ -20,6 +20,7 @@
 #include "Core/Window.h"
 
 #include "Renderer/Lights.h"
+#include "Renderer/PipelineReloader.h"
 #include "Renderer/RendererResource.h"
 #include "Renderer/RendererResourceManager.h"
 #include "Renderer/RendererViewRecycler.h"

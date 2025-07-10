@@ -24,7 +24,12 @@ void FileSystem::Initialize()
 
 void FileSystem::Shutdown()
 {
+    
+}
 
+FileTime FileSystem::GetWriteTime(const String& path)
+{
+    return std::filesystem::last_write_time(path);
 }
 
 nlohmann::json FileSystem::ReadJSON(const String& path)

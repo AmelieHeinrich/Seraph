@@ -22,6 +22,4 @@ public:
     ~GBuffer();
 
     void Render(RenderPassBegin& begin) override;
-private:
-    IRHIGraphicsPipeline* mPipeline;
 };

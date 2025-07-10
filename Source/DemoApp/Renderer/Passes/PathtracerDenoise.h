@@ -20,7 +20,4 @@ public:
 private:
     void Denoise(RenderPassBegin& begin);
     void Copy(RenderPassBegin& begin);
-
-private:
-    IRHIComputePipeline* mPipeline;
 };

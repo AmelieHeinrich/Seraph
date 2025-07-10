@@ -201,7 +201,7 @@ CompiledShader ShaderCompiler::Compile(const String& path)
         }
 
         IDxcOperationResult* pResult = nullptr;
-        ASSERT_EQ(SUCCEEDED(pCompiler->Compile(pSourceBlob, L"Shader", wideEntry, wideTarget, args.data(), args.size(), nullptr, 0, pIncludeHandler, &pResult)), "Failed to create result blob!");
+        SUCCEEDED(pCompiler->Compile(pSourceBlob, L"Shader", wideEntry, wideTarget, args.data(), args.size(), nullptr, 0, pIncludeHandler, &pResult));
 
         IDxcBlobEncoding* pErrors = nullptr;
         pResult->GetErrorBuffer(&pErrors);
