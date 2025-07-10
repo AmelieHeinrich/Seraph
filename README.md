@@ -1,16 +1,14 @@
 # Seraph : A showcase renderer for all my graphics programming skills
 
-!! IMPORTANT : The current branch will not run in release mode due to a Slang bug. D3D12 and Vulkan should run fine on NVIDIA, but not on AMD !!
-
 ## Requirements
 
 Minimum requirements is a SM6.6 capable GPU with raytracing and mesh shading capabilities, running Vulkan 1.3 and the latest version of D3D12.
 The Vulkan backend requires VK_EXT_mutable_descriptor.
 
-If you have an NVIDIA card, both backends are tested and thus work.
-If you have an AMD or Intel card, you are recommended to use the D3D12 backend.
+## Disclaimer
 
-The Vulkan backend can be a bit finnicky depending on your GPU and is still experimental. You can try to use it, but if you just want to see what the renderer looks like, I recommend running the D3D12 backend.
+If you have an NVIDIA card, both backends are tested and thus work. Vulkan backend might be a bit finnicky so I recommend you use the D3D12 one.
+It is currently **untested** on AMD and Intel cards since I do not have the hardware. However it is likely that it will not work.
 
 ## Screenshots
 
