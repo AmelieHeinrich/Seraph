@@ -43,3 +43,10 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - Temporal Anti-Aliasing
 - Bloom
 - 6-pass Bokeh DOF
+
+## Planned tests
+
+- Indirect draw
+- Indirect draw indexed
+- Indirect dispatch
+- Indirect dispatch mesh
