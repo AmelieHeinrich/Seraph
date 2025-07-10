@@ -65,33 +65,47 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     uint baseWidth = desc.Width;
     uint baseHeight = desc.Height;
     Array<MipLevelInfo> mips;
-    uint64 totalBufferSize = 0;
     
-    // 1. Layout mip levels
+    // Get buffer-image granularity for proper alignment
+    uint64 bufferImageGranularity = sData.Device->GetBufferImageGranularity();
+    uint64 currentOffset = 0;
+    
+    // 1. Layout mip levels with proper alignment
     for (uint32 i = 0; i < mipLevels; i++) {
         MipLevelInfo mip = {};
         mip.Width = std::max(1u, baseWidth >> i);
         mip.Height = std::max(1u, baseHeight >> i);
         
+        uint64 mipSize;
         if (IRHITexture::IsBlockFormat(desc.Format)) {
             uint blockWidth = (mip.Width + 3) / 4;
-            uint blockHeight = (mip.Height + 3) / 4; // FIX: Calculate block height
-            // FIX: Use dynamic bytes per block instead of hardcoded 16
-            mip.RowPitch = Align<uint>(blockWidth * IRHITexture::BytesPerPixel(desc.Format), sData.Device->GetOptimalRowPitchAlignment());
-            // FIX: Use block height for buffer size calculation
-            totalBufferSize += mip.RowPitch * blockHeight;
+            uint blockHeight = (mip.Height + 3) / 4;
+            // MUST match VulkanCommandList::CopyBufferToTexture calculation
+            mip.RowPitch = Align<uint>(blockWidth * IRHITexture::BytesPerPixel(desc.Format), TEXTURE_ROW_PITCH_ALIGNMENT);
+            mipSize = mip.RowPitch * blockHeight;
         } else {
-            mip.RowPitch = Align<uint>(mip.Width * IRHITexture::BytesPerPixel(desc.Format), sData.Device->GetOptimalRowPitchAlignment());
-            totalBufferSize += mip.RowPitch * mip.Height;
+            // MUST match VulkanCommandList::CopyBufferToTexture calculation  
+            mip.RowPitch = Align<uint>(mip.Width * IRHITexture::BytesPerPixel(desc.Format), TEXTURE_ROW_PITCH_ALIGNMENT);
+            mipSize = mip.RowPitch * mip.Height;
         }
-        mip.BufferOffset = totalBufferSize - (IRHITexture::IsBlockFormat(desc.Format) ? 
-            mip.RowPitch * ((mip.Height + 3) / 4) : mip.RowPitch * mip.Height);
+        
+        // Set the buffer offset (aligned to granularity)
+        mip.BufferOffset = currentOffset;
+        currentOffset += mipSize;
+        
+        // Align for next mip level (except for the last one)
+        if (i < mipLevels - 1) {
+            currentOffset = Align<uint64>(currentOffset, bufferImageGranularity);
+        }
+        
         mips.push_back(mip);
     }
     
-    // 2. Allocate staging buffer
+    uint64 totalBufferSize = currentOffset;
+    
+    // 2. Allocate staging buffer with the correctly calculated size
     RHIBufferDesc stagingDesc = {};
-    stagingDesc.Size = Align<uint>(totalBufferSize, sData.Device->GetOptimalRowPitchAlignment());
+    stagingDesc.Size = totalBufferSize; // No need for extra alignment here
     stagingDesc.Usage = RHIBufferUsage::kStaging;
     
     UploadRequest request = {};
@@ -104,11 +118,13 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     uint8* dstBase = reinterpret_cast<uint8*>(mappedVoid);
     const uint8* srcPtr = reinterpret_cast<const uint8*>(data);
     uint64 srcOffset = 0;
+    
     for (uint mip = 0; mip < mipLevels; mip++) {
         const auto& mipInfo = mips[mip];
         uint32 srcWidth = mipInfo.Width;
         uint32 srcHeight = mipInfo.Height;
         uint32 rowPitch = mipInfo.RowPitch;
+        
         if (IRHITexture::IsBlockFormat(desc.Format)) {
             uint32 blockWidth = (srcWidth + 3) / 4;
             uint32 blockHeight = (srcHeight + 3) / 4;

@@ -437,6 +437,10 @@ void VulkanCommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
 
     const bool isBlockCompressed = IRHITexture::IsBlockFormat(textureDesc.Format);
     const uint bytesPerUnit = IRHITexture::BytesPerPixel(textureDesc.Format); // bytes per pixel or per block
+    
+    // Get the device's buffer-image granularity for proper alignment
+    VkDeviceSize bufferImageGranularity = mParentDevice->GetBufferImageGranularity();
+    
     VkDeviceSize bufferOffset = 0;
     Array<VkBufferImageCopy> regions;
     
@@ -474,7 +478,13 @@ void VulkanCommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
         regions.push_back(copyRegion);
 
         uint mipHeightInBlocks = isBlockCompressed ? (mipHeight + 3) / 4 : mipHeight;
-        bufferOffset += rowPitch * mipHeightInBlocks;
+        VkDeviceSize mipSize = rowPitch * mipHeightInBlocks;
+        
+        // CRITICAL FIX: Align buffer offset for next mip level
+        bufferOffset += mipSize;
+        if (mip < textureDesc.MipLevels - 1) { // Don't align after the last mip
+            bufferOffset = Align<VkDeviceSize>(bufferOffset, bufferImageGranularity);
+        }
     }
 
     vkCmdCopyBufferToImage(
@@ -493,6 +503,9 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     VkImage image = static_cast<VulkanTexture*>(src)->Image();
     VkBuffer buffer = static_cast<VulkanBuffer*>(dest)->GetBuffer();
 
+    // Get the device's buffer-image granularity for proper alignment
+    VkDeviceSize bufferImageGranularity = mParentDevice->GetBufferImageGranularity();
+    
     VkDeviceSize bufferOffset = 0;
     Array<VkBufferImageCopy> regions;
 
@@ -503,10 +516,11 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
         VkDeviceSize rowPitch;
         if (IRHITexture::IsBlockFormat(textureDesc.Format)) {
             uint blockWidth = (width + 3) / 4;
-            rowPitch = Align<uint>(blockWidth * 16, 4); // Vulkan only requires row alignment to 4 bytes
+            uint bytesPerUnit = IRHITexture::BytesPerPixel(textureDesc.Format);
+            rowPitch = Align<uint>(blockWidth * bytesPerUnit, TEXTURE_ROW_PITCH_ALIGNMENT);
         } else {
             uint bytesPerPixel = IRHITexture::BytesPerPixel(textureDesc.Format);
-            rowPitch = Align<uint>(width * bytesPerPixel, 4);
+            rowPitch = Align<uint>(width * bytesPerPixel, TEXTURE_ROW_PITCH_ALIGNMENT);
         }
 
         VkBufferImageCopy region = {};
@@ -530,7 +544,13 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
             ? ((height + 3) / 4)
             : height;
 
-        bufferOffset += rowPitch * heightInBlocks;
+        VkDeviceSize mipSize = rowPitch * heightInBlocks;
+        
+        // CRITICAL FIX: Align buffer offset for next mip level
+        bufferOffset += mipSize;
+        if (mip < textureDesc.MipLevels - 1) { // Don't align after the last mip
+            bufferOffset = Align<VkDeviceSize>(bufferOffset, bufferImageGranularity);
+        }
     }
 
     vkCmdCopyImageToBuffer(

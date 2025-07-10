@@ -47,6 +47,7 @@ public:
 
     virtual RHITextureFormat GetSurfaceFormat() = 0;
     virtual uint64 GetOptimalRowPitchAlignment() = 0;
+    virtual uint64 GetBufferImageGranularity() = 0;
 protected:
     IRHIDevice() = default;
 };

@@ -35,7 +35,8 @@ public:
     IRHIImGuiContext* CreateImGuiContext(IRHICommandQueue* mainQueue, Window* window) override;
 
     RHITextureFormat GetSurfaceFormat() { return RHITextureFormat::kR8G8B8A8_UNORM; }
-    uint64 GetOptimalRowPitchAlignment() override { return 256; }
+    uint64 GetOptimalRowPitchAlignment() override { return D3D12_TEXTURE_DATA_PITCH_ALIGNMENT; }
+    uint64 GetBufferImageGranularity() override { return D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT; }
 public:
     ID3D12Device14* GetDevice() { return mDevice; }
     IDXGIFactory6* GetFactory() { return mFactory; }

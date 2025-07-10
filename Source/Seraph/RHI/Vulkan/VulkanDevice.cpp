@@ -208,6 +208,9 @@ void VulkanDevice::BuildPhysicalDevice()
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
     SERAPH_INFO("Using GPU %s with score %llu", properties.deviceName, bestScore);
+
+    mBufferImageGranularity = properties.limits.bufferImageGranularity;
+    mOptimalRowPitchAlignment = properties.limits.optimalBufferCopyRowPitchAlignment;
 }
 
 uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
@@ -217,8 +220,6 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
     // Query device properties and features
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    mBufferImageGranularity = deviceProperties.limits.bufferImageGranularity;
-    mOptimalRowPitchAlignment = deviceProperties.limits.optimalBufferCopyRowPitchAlignment;
 
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
@@ -410,7 +411,6 @@ void VulkanDevice::BuildLogicalDevice()
     mComputeQueueFamilyIndex = computeIndex;
     mTransferQueueFamilyIndex = transferIndex;
 }
-
 
 void VulkanDevice::BuildAllocator()
 {

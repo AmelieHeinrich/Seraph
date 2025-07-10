@@ -38,6 +38,7 @@ public:
 
     RHITextureFormat GetSurfaceFormat() override { return RHITextureFormat::kB8G8R8A8_UNORM; }
     uint64 GetOptimalRowPitchAlignment() override { return mOptimalRowPitchAlignment; }
+    uint64 GetBufferImageGranularity() override { return mBufferImageGranularity; }
 public:
     VkInstance Instance() const { return mInstance; }
     VkPhysicalDevice GPU() const { return mPhysicalDevice; }
