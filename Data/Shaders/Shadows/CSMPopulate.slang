@@ -56,8 +56,14 @@ float CalculateShadowCascade(float4 world, float3 N, float3 L, int layer)
     Texture2D<float> shadowMap0 = BindlessTexture2DFloat.Load(cascade0.SRVIndex);
     Texture2D<float> shadowMap1 = BindlessTexture2DFloat.Load(cascade1.SRVIndex);
 
-    float bias0 = max(0.05 * (1.0 - dot(N, L)), 0.005) / (cascade0.Split * 0.5);
-    float bias1 = max(0.05 * (1.0 - dot(N, L)), 0.005) / (cascade1.Split * 0.5);
+    float texelSize0 = cascade0.Split / SHADOW_MAP_SIZE;
+    float texelSize1 = cascade1.Split / SHADOW_MAP_SIZE;
+
+    float slopeBias = 0.05;
+    float minBias = 0.005;
+
+    float bias0 = max(slopeBias * (1.0 - dot(N, L)), minBias) * texelSize0;
+    float bias1 = max(slopeBias * (1.0 - dot(N, L)), minBias) * texelSize1;
 
     int kernelSize = 1;
 

@@ -6,15 +6,7 @@
 module Shadow;
 
 static public const int SHADOW_CASCADE_COUNT = 4;
-static public const int SHADOW_MAP_SIZE = 4096;
-
-static const float3 PCF_POISSON_DISK[20] = {
-    float3(1, 1, 1), float3(1, -1, 1), float3(-1, -1, 1), float3(-1, 1, 1),
-    float3(1, 1, -1), float3(1, -1, -1), float3(-1, -1, -1), float3(-1, 1, -1),
-    float3(1, 1, 0), float3(1, -1, 0), float3(-1, -1, 0), float3(-1, 1, 0),
-    float3(1, 0, 1), float3(-1, 0, 1), float3(1, 0, -1), float3(-1, 0, -1),
-    float3(0, 1, 1), float3(0, -1, 1), float3(0, -1, -1), float3(0, 1, -1)
-};
+static public const int SHADOW_MAP_SIZE = 2048;
 
 public float PCFCascade(
     Texture2D<float> ShadowMap,
@@ -43,23 +35,8 @@ public float PCFCascade(
     float2 texelSize = 1.0 / SHADOW_MAP_SIZE;
 
     // Poisson disk PCF sampling
-    float shadow = 0.0;
-    int sampleCount = 8;
-
-    for (int i = 0; i < sampleCount; i++) {
-        float2 offset = PCF_POISSON_DISK[i].xy * texelSize * kernelSize;
-
-        float2 offsetUV = clamp(shadowUV + offset, 0.0, 1.0);
-
-        // Sample the depth from the shadow map
-        float sampledDepth = ShadowMap.SampleLevel(regularSampler, offsetUV, 0.0);
-
-        // Manually compare depth with bias
-        shadow += ndcPosition.z - bias > sampledDepth ? 0.0 : 1.0;
-    }
-
-    shadow /= sampleCount;
-    return shadow;
+    float sampledDepth = ShadowMap.SampleLevel(regularSampler, shadowUV, 0.0);
+    return ndcPosition.z - bias > sampledDepth ? 0.0 : 1.;
 }
 
 float4 GetCascadeColor(int layer)

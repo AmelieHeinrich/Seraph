@@ -14,7 +14,7 @@ constexpr const char* SHADOWS_CASCADE_2 = "Shadows/Cascade2";
 constexpr const char* SHADOWS_CASCADE_3 = "Shadows/Cascade3";
 
 constexpr int SHADOW_CASCADE_COUNT = 4;
-constexpr int SHADOW_CASCADE_QUALITY = 4096;
+constexpr int SHADOW_CASCADE_QUALITY = 2048;
 
 enum class ShadowMode : uint
 {
@@ -49,7 +49,7 @@ private:
 
 private:
     bool mAlphaTest = true;
-    ShadowMode mMode = ShadowMode::kHardRT;
+    ShadowMode mMode = ShadowMode::kCSM;
 
     // CSM
     IRHIGraphicsPipeline* mCSMPipeline;

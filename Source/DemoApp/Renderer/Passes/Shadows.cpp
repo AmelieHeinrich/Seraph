@@ -170,12 +170,12 @@ void Shadows::CSM(RenderPassBegin& begin)
 
             glm::mat4 lightView = glm::lookAt(shadowCameraPos, center, up);
             glm::mat4 lightProjection = glm::ortho(
-                minBounds.x * 2.0f,
-                maxBounds.x * 2.0f,
-                minBounds.y * 2.0f,
-                maxBounds.y * 2.0f,
-                minBounds.z * 2.0f,
-                maxBounds.z * 2.0f
+                minBounds.x,
+                maxBounds.x,
+                minBounds.y,
+                maxBounds.y,
+                minBounds.z,
+                maxBounds.z
             );
 
             // Texel snap
