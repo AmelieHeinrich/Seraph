@@ -370,7 +370,7 @@ void Shadows::HardRT(RenderPassBegin& begin)
 void Shadows::UI(RenderPassBegin& begin)
 {
     if (ImGui::TreeNodeEx("Shadows", ImGuiTreeNodeFlags_Framed)) {
-        const char* modes[] = { "None", "CSM", "Hard RT", "Soft RT" };
+        const char* modes[] = { "None", "CSM (Experimental)", "Hard RT", "Soft RT" };
         ImGui::Combo("Shadow Technique", (int*)&mMode, modes, 4, 4);
         ImGui::Checkbox("Alpha Test", &mAlphaTest);
 
