@@ -31,7 +31,17 @@ The Vulkan backend can be a bit finnicky depending on your GPU and is still expe
 - Techniques: Tiled light culling, deferred shading
 - Lighting: Microfacet BRDF, CSM, raytraced hard shadows
 
-## Planned
+## WIP
 
 - Raytraced soft shadows
 - SVGF denoising
+
+## Planned
+
+- Raytraced reflections
+- Raytraced AO
+- Dynamic Diffuse Global Illumination
+- Cluster culling & LODing via mesh shaders
+- Temporal Anti-Aliasing
+- Bloom
+- 6-pass Bokeh DOF
