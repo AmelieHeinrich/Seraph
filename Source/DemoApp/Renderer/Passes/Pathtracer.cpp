@@ -21,7 +21,7 @@ Pathtracer::Pathtracer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateTexture(PATHTRACER_HDR_TEXTURE_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("Pathtracer", { "CSMain" });
+    CompiledShader shader = ShaderCompiler::Compile("Pathtracer.hlsl");
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];

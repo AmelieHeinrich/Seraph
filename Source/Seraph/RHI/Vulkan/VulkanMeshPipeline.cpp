@@ -80,7 +80,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
         stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stageInfo.stage = ShaderStageToVk(stage);
         stageInfo.module = shaderModule;
-        stageInfo.pName = "main";
+        stageInfo.pName = module.Entry.c_str();
         shaderStages.push_back(stageInfo);
     }
 

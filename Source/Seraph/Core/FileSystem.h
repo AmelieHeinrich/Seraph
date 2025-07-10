@@ -18,6 +18,9 @@ public:
     static nlohmann::json ReadJSON(const String& path);
     static void WriteJSON(nlohmann::json json, const String& path);
 
+    static Array<String> ReadAllLines(const String& path);
+    static String ReadFile(const String& path);
+
     static bool Exists(const String& path);
     static uint GetFileSize(const String& path);    
 private:

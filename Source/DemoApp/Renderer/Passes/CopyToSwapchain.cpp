@@ -10,7 +10,7 @@
 CopyToSwapchain::CopyToSwapchain(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
-    CompiledShader resolve = ShaderCompiler::Compile("RenderTexture", { "VSMain", "FSMain" });
+    CompiledShader resolve = ShaderCompiler::Compile("RenderTexture.hlsl");
 
     RHIGraphicsPipelineDesc resolveDesc = {};
     resolveDesc.Bytecode[ShaderStage::kVertex] = resolve.Entries["VSMain"];

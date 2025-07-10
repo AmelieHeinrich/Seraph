@@ -5,104 +5,237 @@
 
 #include "ShaderCompiler.h"
 
+#include <Core/FileSystem.h>
+
+#include <Windows.h>
+#include <dxc/dxcerrors.h>
+#include <dxc/dxcapi.h>
+
+#undef ReadFile // I hate Windows
+
 ShaderCompiler::Data ShaderCompiler::sData;
+
+// I clauded this, sorry not sorry  
+class CustomIncludeHandler : public IDxcIncludeHandler
+{
+private:
+    IDxcUtils* m_pUtils;
+    String m_shaderDirectory;
+    ULONG m_refCount;
+
+public:
+    CustomIncludeHandler(IDxcUtils* pUtils, const String& shaderDirectory)
+        : m_pUtils(pUtils), m_shaderDirectory(shaderDirectory), m_refCount(1)
+    {
+        if (m_pUtils)
+            m_pUtils->AddRef();
+    }
+
+    virtual ~CustomIncludeHandler()
+    {
+        if (m_pUtils)
+            m_pUtils->Release();
+    }
+
+    // IUnknown methods
+    ULONG STDMETHODCALLTYPE AddRef() override
+    {
+        return ++m_refCount;
+    }
+
+    ULONG STDMETHODCALLTYPE Release() override
+    {
+        ULONG refCount = --m_refCount;
+        if (refCount == 0)
+            delete this;
+        return refCount;
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
+    {
+        if (riid == __uuidof(IDxcIncludeHandler) || riid == __uuidof(IUnknown))
+        {
+            *ppvObject = this;
+            AddRef();
+            return S_OK;
+        }
+        return E_NOINTERFACE;
+    }
+
+    // IDxcIncludeHandler method
+    HRESULT STDMETHODCALLTYPE LoadSource(
+        LPCWSTR pFilename,
+        IDxcBlob** ppIncludeSource) override
+    {
+        if (!pFilename || !ppIncludeSource)
+            return E_INVALIDARG;
+
+        // Convert wide char filename to string
+        char filename[512];
+        wcstombs_s(nullptr, filename, 512, pFilename, _TRUNCATE);
+
+        // Build full path - try relative to shader directory first
+        String fullPath = m_shaderDirectory + "/" + String(filename);
+        
+        // If file doesn't exist in shader directory, try as absolute path
+        if (!FileSystem::Exists(fullPath))
+        {
+            fullPath = String(filename);
+            if (!FileSystem::Exists(fullPath))
+            {
+                return E_FAIL;
+            }
+        }
+
+        // Read the file
+        String source = FileSystem::ReadFile(fullPath);
+        if (source.empty())
+            return E_FAIL;
+
+        // Create blob from source
+        IDxcBlobEncoding* pSourceBlob = nullptr;
+        HRESULT hr = m_pUtils->CreateBlob(source.c_str(), source.size(), 0, &pSourceBlob);
+        if (FAILED(hr))
+            return hr;
+
+        *ppIncludeSource = pSourceBlob;
+        return S_OK;
+    }
+};
+
+const char* ProfileFromStage(ShaderStage stage)
+{
+    switch (stage)
+    {
+        case ShaderStage::kVertex:
+            return "vs_6_6";
+        case ShaderStage::kFragment:
+            return "ps_6_6";
+        case ShaderStage::kCompute:
+            return "cs_6_6";
+        case ShaderStage::kMesh:
+            return "ms_6_6";
+    }
+    return "cs6_6";
+}
 
 void ShaderCompiler::Initialize(RHIBackend backend)
 {
     sData.Backend = backend;
 
-    SlangGlobalSessionDesc desc = {};
-    
-    SlangResult result = slang::createGlobalSession(&desc, &sData.GlobalSession);
-    ASSERT_EQ(SLANG_SUCCEEDED(result), "Failed to initialize Slang global session!");
-
-    SERAPH_INFO("Initialized Slang global session!");
+    SERAPH_INFO("Initialized shader compiler!");
 }
 
 void ShaderCompiler::Shutdown()
 {
-    sData.GlobalSession->Release();
 }
 
-CompiledShader ShaderCompiler::Compile(const String& path, Array<String> entryPoints)
+CompiledShader ShaderCompiler::Compile(const String& path)
 {
+    String actualPath = "Data/Shaders/" + path;
+
+    if (!FileSystem::Exists(actualPath))
+        return {};
+
     CompiledShader result = {};
 
-    const char* searchPaths[] = { "Data/Shaders" };
+    String source = FileSystem::ReadFile(actualPath);
+    Array<String> lines = FileSystem::ReadAllLines(actualPath);
 
-    slang::TargetDesc targetDesc = {};
-    targetDesc.format = sData.Backend == RHIBackend::kVulkan ? SLANG_SPIRV : SLANG_DXIL;
-    targetDesc.profile = sData.GlobalSession->findProfile("sm_6_6");
-
-    slang::CompilerOptionEntry debugEntry;
-    debugEntry.name = slang::CompilerOptionName::DebugInformation;
-    debugEntry.value.intValue0 = SlangDebugInfoLevel::SLANG_DEBUG_INFO_LEVEL_STANDARD;
-
-    slang::PreprocessorMacroDesc platformDesc = {};
-    platformDesc.value = "1";
-    platformDesc.name = sData.Backend == RHIBackend::kVulkan ? "VULKAN" : "D3D12";
-
-    slang::CompilerOptionEntry entries[] = { debugEntry };
-
-    slang::SessionDesc sessionDesc = {};
-    sessionDesc.targets = &targetDesc;
-    sessionDesc.targetCount = 1;
-    sessionDesc.searchPaths = searchPaths;
-    sessionDesc.searchPathCount = 1;
-    sessionDesc.compilerOptionEntries = entries;
-    sessionDesc.compilerOptionEntryCount = 2;
-    sessionDesc.preprocessorMacroCount = 1;
-    sessionDesc.preprocessorMacros = &platformDesc;
-
-    Slang::ComPtr<slang::ISession> session = nullptr;
-    SlangResult err = sData.GlobalSession->createSession(sessionDesc, session.writeRef());
-    ASSERT_EQ(err == SLANG_OK, "Failed to create slang session!");
-
-    Slang::ComPtr<slang::IBlob> diagnostics = nullptr;
-    Slang::ComPtr<slang::IModule> module(session->loadModule(path.c_str(), diagnostics.writeRef()));
-    if (diagnostics) {
-        SERAPH_ERROR("Failed to compile shader %s : %s", path.c_str(), diagnostics->getBufferPointer());
-        return {};
+    UnorderedMap<String, ShaderStage> entryPoints;
+    for (String line : lines) {
+        if (line.find("#pragma vertex") != String::npos) {
+            line = line.substr(String("#pragma vertex ").length());
+            entryPoints[line] = ShaderStage::kVertex;
+        }
+        if (line.find("#pragma fragment") != String::npos) {
+            line = line.substr(String("#pragma fragment ").length());
+            entryPoints[line] = ShaderStage::kFragment;
+        }
+        if (line.find("#pragma kernel") != String::npos) {
+            line = line.substr(String("#pragma kernel ").length());
+            entryPoints[line] = ShaderStage::kCompute;
+        }
+        if (line.find("#pragma mesh") != String::npos) {
+            line = line.substr(String("#pragma mesh ").length());
+            entryPoints[line] = ShaderStage::kMesh;
+        }
     }
 
-    Array<Slang::ComPtr<slang::IEntryPoint>> slangEntryPoints;
-    for (String entryPoint : entryPoints) {
-        Slang::ComPtr<slang::IEntryPoint> slangEntryPoint;
-        err = module->findEntryPointByName(entryPoint.c_str(), slangEntryPoint.writeRef());
-        ASSERT_EQ(err == SLANG_OK, "Failed to find entry point!");
-        slangEntryPoints.push_back(slangEntryPoint);
-    }
+    for (auto& [entry, type] : entryPoints) {
+        // Compile that shyte
+        const char* sourceCstr = source.c_str();
 
-    Array<slang::IComponentType*> components;
-    components.push_back(module);
-    for (Slang::ComPtr<slang::IEntryPoint> entryPoint : slangEntryPoints) {
-        components.push_back(entryPoint);
-    }
-
-    Slang::ComPtr<slang::IComponentType> program = nullptr;
-    err = session->createCompositeComponentType(components.data(), components.size(), program.writeRef());
-    ASSERT_EQ(err == SLANG_OK, "Failed to create composite component type!");
-
-    Slang::ComPtr<slang::IComponentType> linkedProgram = nullptr;
-    Slang::ComPtr<ISlangBlob> diagnosticBlob = nullptr;
-    program->link(linkedProgram.writeRef(), diagnosticBlob.writeRef());
-    if (diagnosticBlob) {
-        SERAPH_ERROR("Failed to link shader %s : %s", path.c_str(), diagnosticBlob->getBufferPointer());
-        return {};
-    }
-
-    for (int i = 0; i < entryPoints.size(); i++) {
-        Slang::ComPtr<slang::IBlob> kernelBlob;
-        linkedProgram->getEntryPointCode(i, 0, kernelBlob.writeRef());
+        wchar_t wideTarget[512];
+        swprintf_s(wideTarget, 512, L"%hs", ProfileFromStage(type));
         
-        ShaderModule shaderModule = {};
-        shaderModule.Entry = entryPoints[i];
-        shaderModule.Bytecode.resize(kernelBlob->getBufferSize());
-        SafeMemcpy(shaderModule.Bytecode.data(), kernelBlob->getBufferPointer(), shaderModule.Bytecode.size());
-        result.Entries[entryPoints[i]] = shaderModule;
+        wchar_t wideEntry[512];
+        swprintf_s(wideEntry, 512, L"%hs", entry.c_str());
+
+        IDxcUtils* pUtils = nullptr;
+        IDxcCompiler* pCompiler = nullptr;
+        ASSERT_EQ(SUCCEEDED(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils))), "Failed to create DXC utils!");
+        ASSERT_EQ(SUCCEEDED(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler))), "Failed too create DXC compiler!");
+
+        // Create custom include handler that looks in Data/Shaders directory
+        CustomIncludeHandler* pIncludeHandler = new CustomIncludeHandler(pUtils, "Data/Shaders");
+
+        IDxcBlobEncoding* pSourceBlob = nullptr;
+        ASSERT_EQ(SUCCEEDED(pUtils->CreateBlob(sourceCstr, source.size(), 0, &pSourceBlob)), "Failed to create source blob!");
+
+        Array<LPCWSTR> args = {
+            L"-Zi",
+            L"-Qembed_debug"
+        };
+        if (sData.Backend == RHIBackend::kVulkan) {
+            args.push_back(L"-DVULKAN");
+            args.push_back(L"-spirv");
+            args.push_back(L"-fspv-extension=SPV_EXT_mesh_shader");
+            args.push_back(L"-fspv-extension=SPV_EXT_descriptor_indexing");
+            args.push_back(L"-fspv-extension=SPV_KHR_ray_tracing");
+            args.push_back(L"-fspv-extension=SPV_KHR_ray_query");
+            args.push_back(L"-fspv-extension=SPV_KHR_shader_draw_parameters");
+            args.push_back(L"-fspv-extension=SPV_EXT_demote_to_helper_invocation");
+            args.push_back(L"-fvk-allow-rwstructuredbuffer-arrays");
+            args.push_back(L"-fspv-target-env=vulkan1.3");
+        }
+
+        IDxcOperationResult* pResult = nullptr;
+        ASSERT_EQ(SUCCEEDED(pCompiler->Compile(pSourceBlob, L"Shader", wideEntry, wideTarget, args.data(), args.size(), nullptr, 0, pIncludeHandler, &pResult)), "Failed to create result blob!");
+
+        IDxcBlobEncoding* pErrors = nullptr;
+        pResult->GetErrorBuffer(&pErrors);
+
+        if (pErrors && pErrors->GetBufferSize() != 0) {
+            IDxcBlobUtf8* pErrorsU8 = nullptr;
+            pErrors->QueryInterface(IID_PPV_ARGS(&pErrorsU8));
+            SERAPH_ERROR("Shader errors: %s", (char*)pErrorsU8->GetStringPointer());
+            pErrorsU8->Release();
+            pErrors->Release();
+            return {};
+        }
+
+        HRESULT Status;
+        pResult->GetStatus(&Status);
+
+        IDxcBlob* pShaderBlob = nullptr;
+        pResult->GetResult(&pShaderBlob);
+
+        result.Entries[entry] = {};
+        result.Entries[entry].Stage = type;
+        result.Entries[entry].Entry = entry;
+        result.Entries[entry].Bytecode.resize(pShaderBlob->GetBufferSize());
+        memcpy(result.Entries[entry].Bytecode.data(), pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize());
+
+        if (pShaderBlob) pShaderBlob->Release();
+        if (pErrors) pErrors->Release();
+        if (pResult) pResult->Release();
+        if (pSourceBlob) pSourceBlob->Release();
+        if (pIncludeHandler) pIncludeHandler->Release();
+        if (pCompiler) pCompiler->Release();
+        if (pUtils) pUtils->Release();
     }
 
     SERAPH_INFO("Compiled shader : %s", path.c_str());
-
     return result;
 }

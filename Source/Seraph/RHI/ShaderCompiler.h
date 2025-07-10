@@ -7,10 +7,6 @@
 
 #include <Core/Context.h>
 
-#include <slang.h>
-#include <slang-com-ptr.h>
-#include <slang-com-helper.h>
-
 #include "Backend.h"
 
 enum class ShaderStage
@@ -47,12 +43,10 @@ public:
     static void Initialize(RHIBackend backend);
     static void Shutdown();
 
-    static CompiledShader Compile(const String& path, Array<String> entryPoints);
+    static CompiledShader Compile(const String& path);
 
 private:
     static struct Data {
         RHIBackend Backend;
-
-        slang::IGlobalSession* GlobalSession;
     } sData;
 };

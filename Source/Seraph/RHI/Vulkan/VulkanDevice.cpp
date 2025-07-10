@@ -30,8 +30,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-    if (!strcmp(pCallbackData->pMessageIdName, "VUID-StandaloneSpirv-None-10684")) return VK_FALSE;
-
     switch (messageSeverity)
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
@@ -235,7 +233,6 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
     // Required extensions
     const Array<const char*> requiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
@@ -245,7 +242,8 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_EXT_MESH_SHADER_EXTENSION_NAME,
         VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
     };
 
     // Check if all required extensions are supported
@@ -283,7 +281,6 @@ void VulkanDevice::BuildLogicalDevice()
     // Required extensions
     const Array<const char*> requiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
@@ -318,9 +315,6 @@ void VulkanDevice::BuildLogicalDevice()
     descriptorIndexing.descriptorBindingPartiallyBound = VK_TRUE;
     descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 
-    VkPhysicalDeviceDynamicRenderingFeatures dynamicRendering = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES };
-    dynamicRendering.dynamicRendering = VK_TRUE;
-
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
     accelerationStructure.accelerationStructure = VK_TRUE;
     accelerationStructure.descriptorBindingAccelerationStructureUpdateAfterBind = VK_TRUE;
@@ -342,11 +336,15 @@ void VulkanDevice::BuildLogicalDevice()
     VkPhysicalDeviceBufferDeviceAddressFeatures bda = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES };
     bda.bufferDeviceAddress = VK_TRUE;
 
+    VkPhysicalDeviceVulkan13Features vk13Features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+    vk13Features.dynamicRendering = VK_TRUE;
+    vk13Features.shaderDemoteToHelperInvocation = VK_TRUE;
+    vk13Features.synchronization2 = VK_TRUE;
+
     // Chain pNexts (careful with ordering!)
-    deviceFeatures2.pNext = &sync2;
-    sync2.pNext = &descriptorIndexing;
-    descriptorIndexing.pNext = &dynamicRendering;
-    dynamicRendering.pNext = &accelerationStructure;
+    deviceFeatures2.pNext = &vk13Features;
+    vk13Features.pNext = &descriptorIndexing;
+    descriptorIndexing.pNext = &accelerationStructure;
     accelerationStructure.pNext = &rayTracingPipeline;
     rayTracingPipeline.pNext = &rayQuery;
     rayQuery.pNext = &meshShader;

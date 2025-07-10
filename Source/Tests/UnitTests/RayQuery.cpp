@@ -42,7 +42,7 @@ public:
         memcpy(ptr, &instance, sizeof(instance));
         mInstanceBuffer->Unmap();
 
-        CompiledShader shader = ShaderCompiler::Compile("Tests/RayQuery.slang", { "CSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Tests/RayQuery.hlsl");
 
         RHIComputePipelineDesc desc = {};
         desc.ComputeBytecode = shader.Entries["CSMain"];

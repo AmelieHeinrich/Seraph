@@ -21,7 +21,7 @@ Tonemapping::Tonemapping(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateTexture(TONEMAPPING_LDR_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("Tonemapping", { "CSMain" });
+    CompiledShader shader = ShaderCompiler::Compile("Tonemapping.hlsl");
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];

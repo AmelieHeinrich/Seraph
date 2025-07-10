@@ -14,7 +14,7 @@ public:
     {
         mView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mStarters.RenderTexture, RHITextureViewType::kShaderWrite));
 
-        CompiledShader shader = ShaderCompiler::Compile("Tests/SimpleCompute.slang", { "CSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Tests/SimpleCompute.hlsl");
 
         RHIComputePipelineDesc desc = {};
         desc.ComputeBytecode = shader.Entries["CSMain"];

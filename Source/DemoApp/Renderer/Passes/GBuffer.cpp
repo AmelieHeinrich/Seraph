@@ -38,7 +38,7 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
     // Shader
-    CompiledShader shader = ShaderCompiler::Compile("GBuffer", { "VSMain", "FSMain" });
+    CompiledShader shader = ShaderCompiler::Compile("GBuffer.hlsl");
 
     RHIGraphicsPipelineDesc pipelineDesc = {};
     pipelineDesc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];

@@ -28,7 +28,7 @@ float3 GetNormalizedPerpendicular(float3 base)
 Debug::Debug(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
-    CompiledShader shader = ShaderCompiler::Compile("Debug", { "VSMain", "FSMain" });
+    CompiledShader shader = ShaderCompiler::Compile("Debug.hlsl");
 
     RHIGraphicsPipelineDesc desc = {};
     desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];

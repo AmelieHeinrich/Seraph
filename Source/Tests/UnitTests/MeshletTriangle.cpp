@@ -14,7 +14,7 @@ public:
     {
         mView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mStarters.RenderTexture, RHITextureViewType::kRenderTarget));
 
-        CompiledShader shader = ShaderCompiler::Compile("Tests/MeshletTriangle.slang", { "MSMain", "FSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Tests/MeshletTriangle.hlsl");
 
         RHIMeshPipelineDesc desc = {};
         desc.Bytecode[ShaderStage::kMesh] = shader.Entries["MSMain"];

@@ -21,7 +21,7 @@ PathtracerDenoise::PathtracerDenoise(IRHIDevice* device, uint width, uint height
     RendererResourceManager::CreateTexture(PATHTRACER_DENOISE_HISTORY_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("PathtracerDenoise", { "CSMain" });
+    CompiledShader shader = ShaderCompiler::Compile("PathtracerDenoise.hlsl");
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];

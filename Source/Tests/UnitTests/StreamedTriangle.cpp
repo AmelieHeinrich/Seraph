@@ -14,7 +14,7 @@ public:
     {
         mView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mStarters.RenderTexture, RHITextureViewType::kRenderTarget));
 
-        CompiledShader shader = ShaderCompiler::Compile("Tests/StreamedTriangle.slang", { "VSMain", "FSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Tests/StreamedTriangle.hlsl");
 
         RHIGraphicsPipelineDesc desc = {};
         desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];

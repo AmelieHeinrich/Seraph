@@ -23,7 +23,7 @@ Deferred::Deferred(IRHIDevice* device, uint width, uint height)
     RendererResourceManager::CreateTexture(DEFERRED_HDR_TEXTURE_ID, hdrDesc);
 
     // Pipeline
-    CompiledShader shader = ShaderCompiler::Compile("Deferred", { "CSMain" });
+    CompiledShader shader = ShaderCompiler::Compile("Deferred.hlsl");
 
     RHIComputePipelineDesc desc = {};
     desc.ComputeBytecode = shader.Entries["CSMain"];

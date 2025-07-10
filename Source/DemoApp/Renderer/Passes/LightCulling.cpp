@@ -30,7 +30,7 @@ LightCulling::LightCulling(IRHIDevice* device, uint width, uint height)
 
     // Create pipeline
     CODE_BLOCK("Create generate shader") {
-        CompiledShader shader = ShaderCompiler::Compile("GenerateTiles", { "CSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("GenerateTiles.hlsl");
 
         RHIComputePipelineDesc desc = {};
         desc.ComputeBytecode = shader.Entries["CSMain"];
@@ -39,7 +39,7 @@ LightCulling::LightCulling(IRHIDevice* device, uint width, uint height)
     }
 
     CODE_BLOCK("Create generate shader") {
-        CompiledShader shader = ShaderCompiler::Compile("CullTiles", { "CSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("CullTiles.hlsl");
 
         RHIComputePipelineDesc desc = {};
         desc.ComputeBytecode = shader.Entries["CSMain"];

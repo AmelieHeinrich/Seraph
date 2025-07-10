@@ -49,6 +49,38 @@ void FileSystem::WriteJSON(nlohmann::json json, const String& path)
     stream.close();
 }
 
+Array<String> FileSystem::ReadAllLines(const String& path)
+{
+     std::ifstream stream(path);
+    std::vector<std::string> lines;
+    std::string line;
+    
+    if (!stream.is_open()) {
+        SERAPH_ERROR("Failed to open file! %s", path.c_str());
+        return {};
+    }
+    while (std::getline(stream, line)) {
+        lines.push_back(line);
+    }
+    stream.close();
+    return lines;
+}
+
+String FileSystem::ReadFile(const String& path)
+{
+    std::ifstream stream(path);
+    if (!stream.is_open()) {
+        SERAPH_ERROR("failed to open file! %s", path.c_str());
+        return "";
+    }
+
+    std::stringstream ss;
+    ss << stream.rdbuf();
+
+    stream.close();
+    return ss.str();
+}
+
 bool FileSystem::Exists(const String& path)
 {
     struct stat s;

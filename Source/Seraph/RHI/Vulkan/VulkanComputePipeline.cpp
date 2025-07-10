@@ -46,7 +46,7 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice* device, RHIComputePip
     computePipeInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     computePipeInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     computePipeInfo.stage.module = computeModule;
-    computePipeInfo.stage.pName = "main";
+    computePipeInfo.stage.pName = desc.ComputeBytecode.Entry.c_str();
 
     result = vkCreateComputePipelines(mParentDevice->Device(), VK_NULL_HANDLE, 1, &computePipeInfo, nullptr, &mPipeline);
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create Vulkan compute pipeline!");

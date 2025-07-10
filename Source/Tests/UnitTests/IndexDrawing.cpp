@@ -32,7 +32,7 @@ public:
         Uploader::EnqueueBufferUpload(indices, sizeof(indices), mIndexBuffer);
         Uploader::Flush();
 
-        CompiledShader shader = ShaderCompiler::Compile("Tests/IndexedDraw.slang", { "VSMain", "FSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Tests/IndexedDraw.hlsl");
 
         RHIGraphicsPipelineDesc desc = {};
         desc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];

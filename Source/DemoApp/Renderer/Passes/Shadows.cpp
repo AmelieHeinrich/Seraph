@@ -40,9 +40,9 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
 
     // Create pipelines
     CODE_BLOCK("Create CSM resources") {
-        CompiledShader shader = ShaderCompiler::Compile("Shadows/CSM", { "VSMain", "PSMain" });
-        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/CSMNoAlpha", { "VSMain", "PSMain" });
-        CompiledShader shaderPopulate = ShaderCompiler::Compile("Shadows/CSMPopulate", { "CSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Shadows/CSM.hlsl");
+        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/CSMNoAlpha.hlsl");
+        CompiledShader shaderPopulate = ShaderCompiler::Compile("Shadows/CSMPopulate.hlsl");
 
         RHIGraphicsPipelineDesc pipelineDesc = {};
         pipelineDesc.Bytecode[ShaderStage::kVertex] = shader.Entries["VSMain"];
@@ -64,8 +64,8 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
         mCSMToMaskPipeline = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 16, shaderPopulate.Entries["CSMain"]));
     }
     CODE_BLOCK("Create Hard RT resources") {
-        CompiledShader shader = ShaderCompiler::Compile("Shadows/HardRT", { "CSMain" });
-        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/HardRTNoAlpha", { "CSMain" });
+        CompiledShader shader = ShaderCompiler::Compile("Shadows/HardRT.hlsl");
+        CompiledShader shaderNoAlpha = ShaderCompiler::Compile("Shadows/HardRTNoAlpha.hlsl");
 
         mHardRTShadows = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shader.Entries["CSMain"]));
         mHardRTShadowsNoAlpha = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shaderNoAlpha.Entries["CSMain"]));
