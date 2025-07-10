@@ -39,7 +39,7 @@ Application::Application(const ApplicationSpecs& specs)
     mScene->AddEntity("Data/Models/Sponza/Sponza.gltf");
     mScene->GetLights().Sun = {
         .Direction = float3(0.0f, -1.0f, 0.1f),
-        .Intensity = 1.0f,
+        .Intensity = 10.0f,
         .Color = float3(1.0f),
         .Pad = 0.0f
     };
