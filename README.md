@@ -1,6 +1,6 @@
 # Seraph : A showcase renderer for all my graphics programming skills
 
-!! IMPORTANT : The current branch will not run in release mode due to a Slang bug !!
+!! IMPORTANT : The current branch will not run in release mode due to a Slang bug. D3D12 and Vulkan should run fine on NVIDIA, but not on AMD !!
 
 ## Requirements
 
