@@ -258,6 +258,7 @@ void Shadows::CSM(RenderPassBegin& begin)
                     }
                 }
             }
+            begin.CommandList->EndRendering();
 
             begin.CommandList->PopMarker();
         }
