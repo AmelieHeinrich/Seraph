@@ -1,5 +1,7 @@
 # Seraph : A showcase renderer for all my graphics programming skills
 
+!! IMPORTANT : The current branch will not run in release mode due to a Slang bug !!
+
 ## Requirements
 
 Minimum requirements is a SM6.6 capable GPU with raytracing and mesh shading capabilities, running Vulkan 1.3 and the latest version of D3D12.
