@@ -304,6 +304,7 @@ void VulkanDevice::BuildLogicalDevice()
     baseFeatures.multiDrawIndirect = VK_TRUE;
     baseFeatures.drawIndirectFirstInstance = VK_TRUE;
     baseFeatures.tessellationShader = VK_TRUE;
+    baseFeatures.depthClamp = VK_TRUE;
     deviceFeatures2.features = baseFeatures;
 
     // Feature structs

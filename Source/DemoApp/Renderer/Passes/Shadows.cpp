@@ -50,9 +50,10 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
         pipelineDesc.RenderTargetFormats = {};
         pipelineDesc.DepthEnabled = true;
         pipelineDesc.DepthWrite = true;
+        pipelineDesc.DepthClampEnabled = true;
         pipelineDesc.DepthFormat = RHITextureFormat::kD32_FLOAT;
         pipelineDesc.DepthOperation = RHIDepthOperation::kLess;
-        pipelineDesc.CullMode = RHICullMode::kFront;
+        pipelineDesc.CullMode = RHICullMode::kBack;
         pipelineDesc.PushConstantSize = sizeof(uint) * 4 + sizeof(glm::mat4) * 2;
         mCSMPipeline = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
 
@@ -60,7 +61,7 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
         pipelineDesc.Bytecode[ShaderStage::kFragment] = shaderNoAlpha.Entries["PSMain"];
         mCSMPipelineNoAlpha = mParentDevice->CreateGraphicsPipeline(pipelineDesc);
 
-        mCSMToMaskPipeline = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 12, shaderPopulate.Entries["CSMain"]));
+        mCSMToMaskPipeline = mParentDevice->CreateComputePipeline(RHIComputePipelineDesc(sizeof(uint) * 16, shaderPopulate.Entries["CSMain"]));
     }
     CODE_BLOCK("Create Hard RT resources") {
         CompiledShader shader = ShaderCompiler::Compile("Shadows/HardRT", { "CSMain" });
@@ -222,7 +223,7 @@ void Shadows::CSM(RenderPassBegin& begin)
             RendererResource& depthTexture = RendererResourceManager::Import(indexToID[i], begin.CommandList, RendererImportType::kDepthWrite);
             RendererResource& defaultWhite = RendererResourceManager::Get(DEFAULT_WHITE_TEXTURE);
             RendererResource& materialSampler = RendererResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
-            RHIRenderBegin renderBegin(mWidth, mHeight, {}, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture)));
+            RHIRenderBegin renderBegin(SHADOW_CASCADE_QUALITY, SHADOW_CASCADE_QUALITY, {}, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture)));
 
             begin.CommandList->BeginRendering(renderBegin);
             begin.CommandList->SetGraphicsPipeline(pipeline);
