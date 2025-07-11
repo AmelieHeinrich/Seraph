@@ -10,7 +10,7 @@
 class Assert
 {
 public:
-    static void Eq(bool condition, const String& file, const String& function, int line, const String& message);
+    static void Eq(bool condition, const std::string& file, const std::string& function, int line, const std::string& message);
 };
 
 #define ASSERT_EQ(cond, msg) Assert::Eq(cond, __FILE__, __FUNCTION__, __LINE__, msg);

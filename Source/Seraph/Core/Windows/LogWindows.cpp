@@ -8,7 +8,7 @@
 #include <Windows.h>
 #include <iostream>
 
-void ConsoleLogger::Output(LogLevel level, const String& format)
+void ConsoleLogger::Output(LogLevel level, const std::string& format)
 {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     WORD color = 7; // Default gray/white

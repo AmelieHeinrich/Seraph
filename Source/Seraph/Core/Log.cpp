@@ -65,7 +65,7 @@ void ILogger::Fatal(const char* file, int line, const char* fmt, ...)
     va_end(args);
 }
 
-String ILogger::LevelToString(LogLevel level)
+std::string ILogger::LevelToString(LogLevel level)
 {
     switch (level)
     {
@@ -78,7 +78,7 @@ String ILogger::LevelToString(LogLevel level)
     }
 }
 
-String ILogger::GetTimeString()
+std::string ILogger::GetTimeString()
 {
     std::time_t now = std::time(nullptr);
     std::tm tm = *std::localtime(&now);
@@ -87,7 +87,7 @@ String ILogger::GetTimeString()
     return oss.str();
 }
 
-FileLogger::FileLogger(const String& path)
+FileLogger::FileLogger(const std::string& path)
 {
     mStream.open(path, std::ios::trunc | std::ios::out);
     if (!mStream.is_open()) {
@@ -100,7 +100,7 @@ FileLogger::~FileLogger()
     mStream.close();
 }
 
-void FileLogger::Output(LogLevel level, const String& format)
+void FileLogger::Output(LogLevel level, const std::string& format)
 {
     mStream << format << std::endl;
 }
@@ -118,7 +118,7 @@ void MultiLogger::AddLogger(ILogger* logger)
     mLoggers.push_back(logger);
 }
 
-void MultiLogger::Output(LogLevel level, const String& format)
+void MultiLogger::Output(LogLevel level, const std::string& format)
 {
     for (ILogger* logger : mLoggers) {
         logger->Output(level, format);

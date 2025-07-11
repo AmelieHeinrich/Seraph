@@ -25,7 +25,7 @@ void PipelineReloader::Shutdown()
     sData.Entries.clear();
 }
 
-void PipelineReloader::SubscribeGraphics(const String& path, const RHIGraphicsPipelineDesc& desc, const Array<String>& entryPoint)
+void PipelineReloader::SubscribeGraphics(const std::string& path, const RHIGraphicsPipelineDesc& desc, const std::vector<std::string>& entryPoint)
 {
     PipelineEntry entry = {};
     entry.Type = PipelineType::kGraphics;
@@ -36,8 +36,8 @@ void PipelineReloader::SubscribeGraphics(const String& path, const RHIGraphicsPi
         "Data/Shaders/" + path,
         FileSystem::GetWriteTime("Data/Shaders/" + path)
     });
-    Array<String> lines = FileSystem::ReadAllLines("Data/Shaders/" + path);
-    for (String line : lines) {
+    std::vector<std::string> lines = FileSystem::ReadAllLines("Data/Shaders/" + path);
+    for (std::string line : lines) {
         // Trim leading/trailing whitespace
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char ch) { return !std::isspace(ch); }));
         line.erase(std::find_if(line.rbegin(), line.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), line.end());
@@ -46,8 +46,8 @@ void PipelineReloader::SubscribeGraphics(const String& path, const RHIGraphicsPi
         if (line.compare(0, 10, "#include \"") == 0) {
             size_t start = line.find('\"') + 1;
             size_t end = line.find_last_of('\"');
-            if (start != String::npos && end != String::npos && end > start) {
-                String filename = line.substr(start, end - start);
+            if (start != std::string::npos && end != std::string::npos && end > start) {
+                std::string filename = line.substr(start, end - start);
                 
                 entry.Dependencies.push_back({
                     "Data/Shaders/" + filename,
@@ -60,7 +60,7 @@ void PipelineReloader::SubscribeGraphics(const String& path, const RHIGraphicsPi
     sData.Entries[path] = entry;
 }
 
-void PipelineReloader::SubscribeCompute(const String& path, const RHIComputePipelineDesc& desc, const String& entryPoint)
+void PipelineReloader::SubscribeCompute(const std::string& path, const RHIComputePipelineDesc& desc, const std::string& entryPoint)
 {
     PipelineEntry entry = {};
     entry.Type = PipelineType::kCompute;
@@ -71,8 +71,8 @@ void PipelineReloader::SubscribeCompute(const String& path, const RHIComputePipe
         "Data/Shaders/" + path,
         FileSystem::GetWriteTime("Data/Shaders/" + path)
     });
-    Array<String> lines = FileSystem::ReadAllLines("Data/Shaders/" + path);
-    for (String line : lines) {
+    std::vector<std::string> lines = FileSystem::ReadAllLines("Data/Shaders/" + path);
+    for (std::string line : lines) {
         // Trim leading/trailing whitespace
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char ch) { return !std::isspace(ch); }));
         line.erase(std::find_if(line.rbegin(), line.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), line.end());
@@ -81,8 +81,8 @@ void PipelineReloader::SubscribeCompute(const String& path, const RHIComputePipe
         if (line.compare(0, 10, "#include \"") == 0) {
             size_t start = line.find('\"') + 1;
             size_t end = line.find_last_of('\"');
-            if (start != String::npos && end != String::npos && end > start) {
-                String filename = line.substr(start, end - start);
+            if (start != std::string::npos && end != std::string::npos && end > start) {
+                std::string filename = line.substr(start, end - start);
                 
                 entry.Dependencies.push_back({
                     "Data/Shaders/" + filename,
@@ -95,7 +95,7 @@ void PipelineReloader::SubscribeCompute(const String& path, const RHIComputePipe
     sData.Entries[path] = entry;
 }
 
-void PipelineReloader::SubscribeMesh(const String& path, const RHIMeshPipelineDesc& desc, const Array<String>& entryPoint)
+void PipelineReloader::SubscribeMesh(const std::string& path, const RHIMeshPipelineDesc& desc, const std::vector<std::string>& entryPoint)
 {
     PipelineEntry entry = {};
     entry.Type = PipelineType::kMesh;
@@ -106,8 +106,8 @@ void PipelineReloader::SubscribeMesh(const String& path, const RHIMeshPipelineDe
         "Data/Shaders/" + path,
         FileSystem::GetWriteTime("Data/Shaders/" + path)
     });
-    Array<String> lines = FileSystem::ReadAllLines("Data/Shaders/" + path);
-    for (String line : lines) {
+    std::vector<std::string> lines = FileSystem::ReadAllLines("Data/Shaders/" + path);
+    for (std::string line : lines) {
         // Trim leading/trailing whitespace
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char ch) { return !std::isspace(ch); }));
         line.erase(std::find_if(line.rbegin(), line.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), line.end());
@@ -116,8 +116,8 @@ void PipelineReloader::SubscribeMesh(const String& path, const RHIMeshPipelineDe
         if (line.compare(0, 10, "#include \"") == 0) {
             size_t start = line.find('\"') + 1;
             size_t end = line.find_last_of('\"');
-            if (start != String::npos && end != String::npos && end > start) {
-                String filename = line.substr(start, end - start);
+            if (start != std::string::npos && end != std::string::npos && end > start) {
+                std::string filename = line.substr(start, end - start);
                 
                 entry.Dependencies.push_back({
                     "Data/Shaders/" + filename,
@@ -130,17 +130,17 @@ void PipelineReloader::SubscribeMesh(const String& path, const RHIMeshPipelineDe
     sData.Entries[path] = entry;
 }
 
-IRHIGraphicsPipeline* PipelineReloader::GetGraphics(const String& path)
+IRHIGraphicsPipeline* PipelineReloader::GetGraphics(const std::string& path)
 {
     return sData.Entries[path].GraphicsPipeline;
 }
 
-IRHIComputePipeline* PipelineReloader::GetCompute(const String& path)
+IRHIComputePipeline* PipelineReloader::GetCompute(const std::string& path)
 {
     return sData.Entries[path].ComputePipeline;
 }
 
-IRHIMeshPipeline* PipelineReloader::GetMesh(const String& path)
+IRHIMeshPipeline* PipelineReloader::GetMesh(const std::string& path)
 {
     return sData.Entries[path].MeshPipeline;
 }

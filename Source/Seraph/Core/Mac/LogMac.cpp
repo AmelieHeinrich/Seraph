@@ -14,7 +14,7 @@
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 
-void ConsoleLogger::Output(LogLevel level, const String& format)
+void ConsoleLogger::Output(LogLevel level, const std::string& format)
 {
     const char* colorCode = ANSI_COLOR_RESET;
 

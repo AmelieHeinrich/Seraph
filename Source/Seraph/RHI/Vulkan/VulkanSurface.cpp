@@ -38,7 +38,7 @@ VulkanSurface::VulkanSurface(IRHIDevice* device, Window* window)
     
     uint formatCount = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(mParentDevice->GPU(), mSurface, &formatCount, nullptr);
-    Array<VkSurfaceFormatKHR> formats(formatCount);
+    std::vector<VkSurfaceFormatKHR> formats(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(mParentDevice->GPU(), mSurface, &formatCount, formats.data());
     for (VkSurfaceFormatKHR format : formats) {
         if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
@@ -78,7 +78,7 @@ VulkanSurface::VulkanSurface(IRHIDevice* device, Window* window)
     // 6. get the images
     uint32 maxImages;
     vkGetSwapchainImagesKHR(mParentDevice->Device(), mSwapchain, &maxImages, nullptr);
-    Array<VkImage> images(maxImages);
+    std::vector<VkImage> images(maxImages);
     vkGetSwapchainImagesKHR(mParentDevice->Device(), mSwapchain, &maxImages, images.data());
 
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {

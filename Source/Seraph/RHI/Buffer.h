@@ -37,7 +37,7 @@ class IRHIBuffer
 public:
     virtual ~IRHIBuffer() = default;
 
-    virtual void SetName(const String& name) = 0;
+    virtual void SetName(const std::string& name) = 0;
 
     RHIBufferDesc GetDesc() const { return mDesc; }
 

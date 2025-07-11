@@ -64,7 +64,7 @@ void Uploader::EnqueueTextureUploadRaw(const void* data, uint64 size, IRHITextur
     uint mipLevels = desc.MipLevels;
     uint baseWidth = desc.Width;
     uint baseHeight = desc.Height;
-    Array<MipLevelInfo> mips;
+    std::vector<MipLevelInfo> mips;
     
     // Get buffer-image granularity for proper alignment
     uint64 bufferImageGranularity = sData.Device->GetBufferImageGranularity();

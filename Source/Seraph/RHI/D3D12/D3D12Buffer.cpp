@@ -48,7 +48,7 @@ D3D12Buffer::~D3D12Buffer()
     if (mResource) mResource->Release();
 }
 
-void D3D12Buffer::SetName(const String& name)
+void D3D12Buffer::SetName(const std::string& name)
 {
     mResource->SetName(MULTIBYTE_TO_UNICODE(name.data()));
 }

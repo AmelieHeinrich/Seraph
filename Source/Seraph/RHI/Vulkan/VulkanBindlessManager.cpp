@@ -59,8 +59,8 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     asBinding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
     asBinding.pImmutableSamplers = nullptr;
 
-    Array<VkDescriptorSetLayoutBinding> bindings = { cbvSrvUavBinding, samplerBinding, asBinding };
-    Array<VkDescriptorBindingFlags> flagBits = {
+    std::vector<VkDescriptorSetLayoutBinding> bindings = { cbvSrvUavBinding, samplerBinding, asBinding };
+    std::vector<VkDescriptorBindingFlags> flagBits = {
         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
@@ -83,7 +83,7 @@ VulkanBindlessManager::VulkanBindlessManager(VulkanDevice* device)
     ASSERT_EQ(result == VK_SUCCESS, "Failed to create bindless set layout!");
 
     // Pool
-    Array<VkDescriptorPoolSize> poolSizes = {
+    std::vector<VkDescriptorPoolSize> poolSizes = {
         { VK_DESCRIPTOR_TYPE_MUTABLE_EXT, MAX_BINDLESS_RESOURCES },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_BINDLESS_SAMPLERS },
         { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, MAX_BINDLESS_AS },

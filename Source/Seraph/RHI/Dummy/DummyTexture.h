@@ -16,7 +16,7 @@ public:
     DummyTexture(DummyDevice* device, RHITextureDesc desc);
     ~DummyTexture();
 
-    void SetName(const String& name) override;
+    void SetName(const std::string& name) override;
 
 private:
     friend class DummySurface;

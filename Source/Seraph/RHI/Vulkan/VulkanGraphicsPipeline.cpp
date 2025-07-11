@@ -64,8 +64,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
 {
     mDesc = desc;
 
-    Array<VkPipelineShaderStageCreateInfo> shaderStages;
-    Array<VkShaderModule> vkShaderModules;
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    std::vector<VkShaderModule> vkShaderModules;
 
     for (auto& [stage, module] : desc.Bytecode) {
         VkShaderModuleCreateInfo createInfo = {};
@@ -115,7 +115,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     rasterizer.lineWidth = 1.0f;
 
     // Color blend attachments
-    Array<VkPipelineColorBlendAttachmentState> blendAttachments;
+    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments;
     for (size_t i = 0; i < desc.RenderTargetFormats.size(); ++i)
     {
         VkPipelineColorBlendAttachmentState attachment = {};
@@ -152,7 +152,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     vertexInputBindingDesc.stride = 0;
     vertexInputBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    Array<VkVertexInputAttributeDescription> attributeDescriptions;
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -164,7 +164,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
 
         uint inputVarCount = 0;
         spvReflectEnumerateInputVariables(&inputLayoutReflect, &inputVarCount, nullptr);
-        Array<SpvReflectInterfaceVariable*> interfaceVariables(inputVarCount);
+        std::vector<SpvReflectInterfaceVariable*> interfaceVariables(inputVarCount);
         spvReflectEnumerateInputVariables(&inputLayoutReflect, &inputVarCount, interfaceVariables.data());
 
         for (int location = 0; location < inputVarCount; location++) {
@@ -195,7 +195,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     // Dynamic states (we assume viewport/scissor are dynamic)
-    Array<VkDynamicState> dynamicStates = {
+    std::vector<VkDynamicState> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
@@ -205,7 +205,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphics
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Rendering info (for dynamic rendering)
-    Array<VkFormat> colorFormats;
+    std::vector<VkFormat> colorFormats;
     for (const auto& fmt : desc.RenderTargetFormats)
         colorFormats.push_back(VulkanTexture::RHIToVkFormat(fmt));
 

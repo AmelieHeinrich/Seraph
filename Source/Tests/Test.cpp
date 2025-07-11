@@ -40,9 +40,9 @@ void ITest::DeleteStarts(TestStarters starters)
     delete starters.Device;
 }
 
-Array<ITest*>& GetTests()
+std::vector<ITest*>& GetTests()
 {
-    static Array<ITest*> tests;
+    static std::vector<ITest*> tests;
     return tests;
 }
 

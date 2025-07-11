@@ -62,8 +62,8 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
 {
     mDesc = desc;
 
-    Array<VkPipelineShaderStageCreateInfo> shaderStages;
-    Array<VkShaderModule> vkShaderModules;
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    std::vector<VkShaderModule> vkShaderModules;
 
     for (auto& [stage, module] : desc.Bytecode) {
         VkShaderModuleCreateInfo createInfo = {};
@@ -113,7 +113,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     rasterizer.lineWidth = 1.0f;
 
     // Color blend attachments
-    Array<VkPipelineColorBlendAttachmentState> blendAttachments;
+    std::vector<VkPipelineColorBlendAttachmentState> blendAttachments;
     for (size_t i = 0; i < desc.RenderTargetFormats.size(); ++i)
     {
         VkPipelineColorBlendAttachmentState attachment = {};
@@ -158,7 +158,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     // Dynamic states (we assume viewport/scissor are dynamic)
-    Array<VkDynamicState> dynamicStates = {
+    std::vector<VkDynamicState> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
@@ -168,7 +168,7 @@ VulkanMeshPipeline::VulkanMeshPipeline(VulkanDevice* device, RHIGraphicsPipeline
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Rendering info (for dynamic rendering)
-    Array<VkFormat> colorFormats;
+    std::vector<VkFormat> colorFormats;
     for (const auto& fmt : desc.RenderTargetFormats)
         colorFormats.push_back(VulkanTexture::RHIToVkFormat(fmt));
 

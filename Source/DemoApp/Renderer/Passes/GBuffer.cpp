@@ -77,7 +77,7 @@ void GBuffer::Render(RenderPassBegin& begin)
         RendererResource& materialSampler = RendererResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
         RendererResource& defaultWhite = RendererResourceManager::Get(DEFAULT_WHITE_TEXTURE);
 
-        Array<RHIRenderAttachment> attachments = {
+        std::vector<RHIRenderAttachment> attachments = {
             RHIRenderAttachment(RendererViewRecycler::GetRTV(normalTexture.Texture)),
             RHIRenderAttachment(RendererViewRecycler::GetRTV(albedoTexture.Texture)),
             RHIRenderAttachment(RendererViewRecycler::GetRTV(pbrTexture.Texture))

@@ -71,8 +71,8 @@ public:
         SpotLights.push_back(light);
     }
 
-    Array<PointLight> PointLights;
-    Array<SpotLight> SpotLights;
+    std::vector<PointLight> PointLights;
+    std::vector<SpotLight> SpotLights;
     DirectionalLight Sun;
 
     IRHIBuffer* GetPointLightBuffer(uint frameIndex) { return mPointLightBuffer[frameIndex]; }

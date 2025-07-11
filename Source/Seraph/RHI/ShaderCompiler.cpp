@@ -32,11 +32,11 @@ class CustomIncludeHandler : public IDxcIncludeHandler
 {
 private:
     IDxcUtils* m_pUtils;
-    String m_shaderDirectory;
+    std::string m_shaderDirectory;
     uint m_refCount;
 
 public:
-    CustomIncludeHandler(IDxcUtils* pUtils, const String& shaderDirectory)
+    CustomIncludeHandler(IDxcUtils* pUtils, const std::string& shaderDirectory)
         : m_pUtils(pUtils), m_shaderDirectory(shaderDirectory), m_refCount(1)
     {
         if (m_pUtils)
@@ -90,12 +90,12 @@ public:
 #endif
 
         // Build full path - try relative to shader directory first
-        String fullPath = m_shaderDirectory + "/" + String(filename);
+        std::string fullPath = m_shaderDirectory + "/" + std::string(filename);
         
         // If file doesn't exist in shader directory, try as absolute path
         if (!FileSystem::Exists(fullPath))
         {
-            fullPath = String(filename);
+            fullPath = std::string(filename);
             if (!FileSystem::Exists(fullPath))
             {
                 return E_FAIL;
@@ -103,7 +103,7 @@ public:
         }
 
         // Read the file
-        String source = FileSystem::ReadFile(fullPath);
+        std::string source = FileSystem::ReadFile(fullPath);
         if (source.empty())
             return E_FAIL;
 
@@ -159,22 +159,22 @@ void ShaderCompiler::Shutdown()
 #endif
 }
 
-CompiledShader ShaderCompiler::Compile(const String& path)
+CompiledShader ShaderCompiler::Compile(const std::string& path)
 {
-    String actualPath = "Data/Shaders/" + path;
+    std::string actualPath = "Data/Shaders/" + path;
 
     if (!FileSystem::Exists(actualPath))
         return {};
 
     CompiledShader result = {};
 
-    String source = FileSystem::ReadFile(actualPath);
-    Array<String> lines = FileSystem::ReadAllLines(actualPath);
+    std::string source = FileSystem::ReadFile(actualPath);
+    std::vector<std::string> lines = FileSystem::ReadAllLines(actualPath);
 
-    UnorderedMap<String, ShaderStage> entryPoints;
-    for (String line : lines) {
+    UnorderedMap<std::string, ShaderStage> entryPoints;
+    for (std::string line : lines) {
         std::istringstream iss(line);
-        String pragma, stage, entry;
+        std::string pragma, stage, entry;
         iss >> pragma >> stage >> entry;
         
         if (pragma == "#pragma") {
@@ -215,7 +215,7 @@ CompiledShader ShaderCompiler::Compile(const String& path)
         IDxcBlobEncoding* pSourceBlob = nullptr;
         ASSERT_EQ(SUCCEEDED(pUtils->CreateBlob(sourceCstr, source.size(), 0, &pSourceBlob)), "Failed to create source blob!");
 
-        Array<LPCWSTR> args = {
+        std::vector<LPCWSTR> args = {
             L"-Zi",
             L"-Qembed_debug"
         };

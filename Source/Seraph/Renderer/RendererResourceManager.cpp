@@ -40,7 +40,7 @@ void RendererResourceManager::Shutdown()
     sData.Resources.clear();
 }
 
-void RendererResourceManager::CreateTexture(const String& name, RHITextureDesc desc)
+void RendererResourceManager::CreateTexture(const std::string& name, RHITextureDesc desc)
 {
     RendererResource* resource = new RendererResource;
     resource->Type = RendererResourceType::kTexture;
@@ -49,7 +49,7 @@ void RendererResourceManager::CreateTexture(const String& name, RHITextureDesc d
     sData.Resources[name] = std::move(resource);
 }
 
-void RendererResourceManager::CreateBuffer(const String& name, RHIBufferDesc desc)
+void RendererResourceManager::CreateBuffer(const std::string& name, RHIBufferDesc desc)
 {
     RendererResource* resource = new RendererResource;
     resource->Type = RendererResourceType::kBuffer;
@@ -58,7 +58,7 @@ void RendererResourceManager::CreateBuffer(const String& name, RHIBufferDesc des
     sData.Resources[name] = std::move(resource);
 }
 
-void RendererResourceManager::CreateRingBuffer(const String& name, uint size)
+void RendererResourceManager::CreateRingBuffer(const std::string& name, uint size)
 {
     RendererResource* resource = new RendererResource;
     resource->Type= RendererResourceType::kRingBuffer;
@@ -70,7 +70,7 @@ void RendererResourceManager::CreateRingBuffer(const String& name, uint size)
     sData.Resources[name] = std::move(resource);
 }
 
-void RendererResourceManager::CreateSampler(const String& name, RHISamplerDesc desc)
+void RendererResourceManager::CreateSampler(const std::string& name, RHISamplerDesc desc)
 {
     RendererResource* resource = new RendererResource;
     resource->Type = RendererResourceType::kSampler;
@@ -78,12 +78,12 @@ void RendererResourceManager::CreateSampler(const String& name, RHISamplerDesc d
     sData.Resources[name] = std::move(resource);
 }
 
-RendererResource& RendererResourceManager::Get(const String& name)
+RendererResource& RendererResourceManager::Get(const std::string& name)
 {
     return *sData.Resources[name];
 }
 
-RendererResource& RendererResourceManager::Import(const String& name, IRHICommandList* list, RendererImportType type)
+RendererResource& RendererResourceManager::Import(const std::string& name, IRHICommandList* list, RendererImportType type)
 {
     RendererResource* resource = sData.Resources[name];
     switch (resource->Type)

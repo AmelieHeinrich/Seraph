@@ -18,18 +18,18 @@ public:
     static void Initialize();
     static void Shutdown();
 
-    static nlohmann::json ReadJSON(const String& path);
-    static void WriteJSON(nlohmann::json json, const String& path);
+    static nlohmann::json ReadJSON(const std::string& path);
+    static void WriteJSON(nlohmann::json json, const std::string& path);
 
-    static Array<String> ReadAllLines(const String& path);
-    static String ReadFile(const String& path);
+    static std::vector<std::string> ReadAllLines(const std::string& path);
+    static std::string ReadFile(const std::string& path);
 
-    static bool Exists(const String& path);
-    static uint GetFileSize(const String& path);
+    static bool Exists(const std::string& path);
+    static uint GetFileSize(const std::string& path);
     
-    static FileTime GetWriteTime(const String& path);
+    static FileTime GetWriteTime(const std::string& path);
 private:
     static struct Data {
-        String WorkingDirectory;
+        std::string WorkingDirectory;
     } sData;
 };

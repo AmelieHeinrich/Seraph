@@ -65,7 +65,7 @@ namespace MikkT
     }
 }
 
-Model::Model(IRHIDevice* device, const String& path)
+Model::Model(IRHIDevice* device, const std::string& path)
     : mParentDevice(device)
 {
     mDirectory = path.substr(0, path.find_last_of('/'));
@@ -82,7 +82,7 @@ Model::Model(IRHIDevice* device, const String& path)
     cgltf_scene* scene = data->scene;
 
     ModelNode rootNode = {};
-    rootNode.Name = "Root Node " + String(path);
+    rootNode.Name = "Root Node " + std::string(path);
     rootNode.ParentIndex = -1;
     rootNode.Transform = glm::mat4(1.0f);
     mNodes.push_back(rootNode);
@@ -91,7 +91,7 @@ Model::Model(IRHIDevice* device, const String& path)
         ProcessNode(scene->nodes[i], 0);
     }
 
-    Array<SceneMaterial> sceneMaterials;
+    std::vector<SceneMaterial> sceneMaterials;
     for (auto& material : mMaterials) {
         SceneMaterial sceneMat = {
             material.Albedo ? material.Albedo->TextureOrImage.View->GetBindlessHandle() : BindlessHandle{},
@@ -227,17 +227,17 @@ void Model::ProcessPrimitive(cgltf_primitive* primitive, ModelNode* node, glm::m
     ModelMaterial modelMaterial = {};
     if (material) {
         if (material->pbr_metallic_roughness.base_color_texture.texture) {
-            String path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.base_color_texture.texture->image->uri);
+            std::string path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.base_color_texture.texture->image->uri);
     
             modelMaterial.Albedo = AssetManager::Get(path, AssetType::kTexture);
         }
         if (material->normal_texture.texture) {
-            String path = mDirectory + '/' + std::string(material->normal_texture.texture->image->uri);
+            std::string path = mDirectory + '/' + std::string(material->normal_texture.texture->image->uri);
     
             modelMaterial.Normal = AssetManager::Get(path, AssetType::kTexture);
         }
         if (material->pbr_metallic_roughness.metallic_roughness_texture.texture) {
-            String path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri);
+            std::string path = mDirectory + '/' + std::string(material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri);
     
             modelMaterial.PBR = AssetManager::Get(path, AssetType::kTexture);
         }

@@ -38,5 +38,5 @@ private:
     SharedPtr<Debug> mDebug;
     SharedPtr<CopyToSwapchain> mCopyToSwapchain;
 
-    UnorderedMap<RenderPath, Array<SharedPtr<RenderPass>>> mPasses;
+    UnorderedMap<RenderPath, std::vector<SharedPtr<RenderPass>>> mPasses;
 };

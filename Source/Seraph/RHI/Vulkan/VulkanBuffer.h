@@ -18,7 +18,7 @@ public:
     VulkanBuffer(VulkanDevice* device, RHIBufferDesc desc);
     ~VulkanBuffer();
 
-    void SetName(const String& name) override;
+    void SetName(const std::string& name) override;
 
     void* Map() override;
     void Unmap() override;

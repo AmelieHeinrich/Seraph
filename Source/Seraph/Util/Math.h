@@ -17,5 +17,5 @@ struct FrustumPlane
 
 namespace Math
 {
-    Array<float4> GetFrustumCorners(glm::mat4 view, glm::mat4 proj);
+    std::vector<float4> GetFrustumCorners(glm::mat4 view, glm::mat4 proj);
 }

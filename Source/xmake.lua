@@ -25,10 +25,10 @@ target("Seraph")
 
     add_includedirs("Seraph")
     add_defines("ENABLE_PIX", "GLM_ENABLE_EXPERIMENTAL", { public = true })
-    add_deps("SDL3", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "NVTT", "MikkTSpace", { public = true })
+    add_deps("SDL3", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "MikkTSpace", { public = true })
 
     if is_plat("windows") then
-        add_deps("DirectX", "Vulkan", "PIX")
+        add_deps("DirectX", "Vulkan", "PIX", "NVTT", { public = true })
         add_syslinks("user32", { public = true })
         add_defines("SERAPH_VULKAN", "SERAPH_D3D12", "SERAPH_DUMMY")
         add_files("Seraph/RHI/Vulkan/*.cpp",
@@ -37,10 +37,12 @@ target("Seraph")
                   "Seraph/Core/Windows/*.cpp",
                   "Seraph/Asset/Windows/*.cpp")
     else
-        add_defines("SERAPH_DUMMY")
+        add_deps("Metal", { public = true })
+        add_defines("SERAPH_DUMMY", "SERAPH_METAL")
         add_files("Seraph/Core/Mac/*.cpp",
                   "Seraph/Asset/Mac/*.cpp",
-                  "Seraph/RHI/Dummy/*.cpp")
+                  "Seraph/RHI/Dummy/*.cpp",
+                  "Seraph/RHI/Metal/*.cpp")
     end
 
     if is_mode("debug") then

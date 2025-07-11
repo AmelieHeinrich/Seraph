@@ -143,7 +143,7 @@ void VulkanDevice::BuildInstance(bool validationLayers)
 
     uint32 sdlExtensionCount = 2;
     const char* sdlInstanceExtensions[] = { "VK_KHR_win32_surface", "VK_KHR_surface" };
-    Array<const char*> extensions(sdlInstanceExtensions, sdlInstanceExtensions + sdlExtensionCount);
+    std::vector<const char*> extensions(sdlInstanceExtensions, sdlInstanceExtensions + sdlExtensionCount);
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     VkApplicationInfo appInfo = {};
@@ -188,7 +188,7 @@ void VulkanDevice::BuildPhysicalDevice()
 {
     uint gpuCount = 0;
     vkEnumeratePhysicalDevices(mInstance, &gpuCount, nullptr);
-    Array<VkPhysicalDevice> gpus(gpuCount);
+    std::vector<VkPhysicalDevice> gpus(gpuCount);
     vkEnumeratePhysicalDevices(mInstance, &gpuCount, gpus.data());
 
     uint64 bestScore = 0;
@@ -231,7 +231,7 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
     // Required extensions
-    const Array<const char*> requiredExtensions = {
+    const std::vector<const char*> requiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
@@ -279,7 +279,7 @@ uint64 VulkanDevice::CalculateDeviceScore(VkPhysicalDevice device)
 void VulkanDevice::BuildLogicalDevice()
 {
     // Required extensions
-    const Array<const char*> requiredExtensions = {
+    const std::vector<const char*> requiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
@@ -355,7 +355,7 @@ void VulkanDevice::BuildLogicalDevice()
     // Queue family selection
     uint queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, nullptr);
-    Array<VkQueueFamilyProperties> families(queueFamilyCount);
+    std::vector<VkQueueFamilyProperties> families(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, families.data());
 
     uint graphicsIndex = UINT32_MAX;
@@ -379,7 +379,7 @@ void VulkanDevice::BuildLogicalDevice()
     if (transferIndex == UINT32_MAX) transferIndex = graphicsIndex;
 
     // Deduplicate queue families
-    Array<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint> uniqueQueueFamilies = { graphicsIndex, computeIndex, transferIndex };
     float priority = 1.0f;
 

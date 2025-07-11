@@ -25,7 +25,7 @@ DummyTexture::~DummyTexture()
     
 }
 
-void DummyTexture::SetName(const String& name)
+void DummyTexture::SetName(const std::string& name)
 {
 
 }

@@ -57,7 +57,7 @@ private:
 
     static struct Data
     {
-        Array<Line> Lines;
+        std::vector<Line> Lines;
         IRHIGraphicsPipeline* Pipeline;
         IRHIGraphicsPipeline* NoDepthPipeline;
         StaticArray<IRHIBuffer*, FRAMES_IN_FLIGHT> TransferBuffer;

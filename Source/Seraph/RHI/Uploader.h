@@ -53,7 +53,7 @@ private:
         IRHICommandQueue* CopyQueue;
         
         IRHICommandList* CommandBuffer;
-        Array<UploadRequest> Requests;
+        std::vector<UploadRequest> Requests;
 
         int BufferRequests;
         int UploadBatchSize;

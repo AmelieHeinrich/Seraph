@@ -13,7 +13,7 @@
 class Window
 {
 public:
-    Window(RHIBackend backend, int width, int height, const String& title);
+    Window(RHIBackend backend, int width, int height, const std::string& title);
     ~Window();
 
     bool IsOpen() const;

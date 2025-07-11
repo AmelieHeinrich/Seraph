@@ -42,8 +42,8 @@ struct ModelPrimitive
     IRHIBuffer* IndexBuffer;
     IRHIBLAS* BottomLevelAS;
 
-    Array<StaticModelVertex> Vertices;
-    Array<uint> Indices;
+    std::vector<StaticModelVertex> Vertices;
+    std::vector<uint> Indices;
 
     uint VertexCount;
     uint IndexCount;
@@ -54,8 +54,8 @@ struct ModelNode
 {
     int ParentIndex;
     glm::mat4 Transform;
-    Array<ModelPrimitive> Primitives;
-    String Name;
+    std::vector<ModelPrimitive> Primitives;
+    std::string Name;
 };
 
 struct SceneMaterial
@@ -69,11 +69,11 @@ struct SceneMaterial
 class Model
 {
 public:
-    Model(IRHIDevice* device, const String& path);
+    Model(IRHIDevice* device, const std::string& path);
     ~Model();
 
-    Array<ModelNode>& GetNodes() { return mNodes; }
-    Array<ModelMaterial>& GetMaterials() { return mMaterials; }
+    std::vector<ModelNode>& GetNodes() { return mNodes; }
+    std::vector<ModelMaterial>& GetMaterials() { return mMaterials; }
 
     IRHIBuffer* GetMaterialBuffer() { return mMaterialBuffer; }
 private:
@@ -83,8 +83,8 @@ private:
     IRHIBuffer* mMaterialBuffer;
 
     IRHIDevice* mParentDevice;
-    String mDirectory;
+    std::string mDirectory;
 
-    Array<ModelNode> mNodes;
-    Array<ModelMaterial> mMaterials;
+    std::vector<ModelNode> mNodes;
+    std::vector<ModelMaterial> mMaterials;
 };

@@ -45,7 +45,7 @@ void Scene::Update(uint frameIndex)
 
     // Material deduplication map
     std::unordered_map<size_t, uint> materialMap;
-    Array<SceneInstance> instances;
+    std::vector<SceneInstance> instances;
 
     mInstances.clear();
     mInstances.reserve(MAX_TLAS_INSTANCES);
@@ -85,7 +85,7 @@ void Scene::Update(uint frameIndex)
     mSceneInstances->Unmap();
 }
 
-Entity* Scene::AddEntity(const String& modelPath)
+Entity* Scene::AddEntity(const std::string& modelPath)
 {
     Entity entity;
     entity.Model = AssetManager::Get(modelPath, AssetType::kModel);

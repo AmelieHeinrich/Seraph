@@ -53,5 +53,5 @@ private:
     bool mUIOpened = false;
     bool mRendererSettingsOpened = false;
     bool mOverlayOpened = true;
-    String mStringBackend;
+    std::string mStringBackend;
 };

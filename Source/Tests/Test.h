@@ -36,7 +36,7 @@ public:
     virtual TestResult Run(RHIBackend backend) = 0;
 };
 
-Array<ITest*>& GetTests();
+std::vector<ITest*>& GetTests();
 void RegisterTest(ITest* test);
 
 #define DEFINE_RHI_TEST(testName) \

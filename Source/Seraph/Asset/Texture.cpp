@@ -7,7 +7,7 @@
 
 #include <Core/FileSystem.h>
 
-void TextureAsset::Load(const String& path)
+void TextureAsset::Load(const std::string& path)
 {
     if (!FileSystem::Exists(path)) {
         SERAPH_WARN("%s isn't compressed, skipping");

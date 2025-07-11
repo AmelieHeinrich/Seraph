@@ -28,13 +28,13 @@ enum class ShaderStage
 struct ShaderModule
 {
     ShaderStage Stage;
-    String Entry;
-    Array<uint8> Bytecode;
+    std::string Entry;
+    std::vector<uint8> Bytecode;
 };
 
 struct CompiledShader
 {
-    UnorderedMap<String, ShaderModule> Entries;
+    UnorderedMap<std::string, ShaderModule> Entries;
 };
 
 class ShaderCompiler
@@ -43,7 +43,7 @@ public:
     static void Initialize(RHIBackend backend);
     static void Shutdown();
 
-    static CompiledShader Compile(const String& path);
+    static CompiledShader Compile(const std::string& path);
 
 private:
     static struct Data {

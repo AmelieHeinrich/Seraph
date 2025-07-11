@@ -26,16 +26,16 @@ public:
     static void Initialize(IRHIDevice* device);
     static void Shutdown();
 
-    static void CreateTexture(const String& name, RHITextureDesc desc);
-    static void CreateBuffer(const String& name, RHIBufferDesc desc);
-    static void CreateRingBuffer(const String& name, uint size);
-    static void CreateSampler(const String& name, RHISamplerDesc desc);
+    static void CreateTexture(const std::string& name, RHITextureDesc desc);
+    static void CreateBuffer(const std::string& name, RHIBufferDesc desc);
+    static void CreateRingBuffer(const std::string& name, uint size);
+    static void CreateSampler(const std::string& name, RHISamplerDesc desc);
 
-    static RendererResource& Get(const String& name);
-    static RendererResource& Import(const String& name, IRHICommandList* list, RendererImportType type);
+    static RendererResource& Get(const std::string& name);
+    static RendererResource& Import(const std::string& name, IRHICommandList* list, RendererImportType type);
 private:
     static struct Data {
         IRHIDevice* Device;
-        UnorderedMap<String, RendererResource*> Resources;
+        UnorderedMap<std::string, RendererResource*> Resources;
     } sData;
 };

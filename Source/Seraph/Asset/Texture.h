@@ -18,7 +18,7 @@ struct TextureHeader
 struct TextureAsset
 {
     TextureHeader Header;
-    Array<uint8> Pixels;
+    std::vector<uint8> Pixels;
 
-    void Load(const String& path);
+    void Load(const std::string& path);
 };

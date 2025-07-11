@@ -55,7 +55,7 @@ void AssetManager::Update()
     }
 }
 
-Asset::Handle AssetManager::Get(const String& path, AssetType type)
+Asset::Handle AssetManager::Get(const std::string& path, AssetType type)
 {
     if (!FileSystem::Exists(path))
         return nullptr;

@@ -7,11 +7,11 @@
 
 namespace Math
 {
-    Array<float4> GetFrustumCorners(glm::mat4 view, glm::mat4 proj)
+    std::vector<float4> GetFrustumCorners(glm::mat4 view, glm::mat4 proj)
     {
         glm::mat4 inv = glm::inverse(proj * view);
 
-        Array<glm::vec4> corners = {
+        std::vector<glm::vec4> corners = {
             glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
             glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f),
             glm::vec4( 1.0f, -1.0f, 0.0f, 1.0f),

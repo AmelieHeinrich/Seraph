@@ -35,12 +35,12 @@ public:
     ~Scene();
 
     void Update(uint frameIndex);
-    Entity* AddEntity(const String& modelPath);
+    Entity* AddEntity(const std::string& modelPath);
 
     LightList& GetLights() { return mLights; }
-    Array<Entity>& GetEntities() { return mEntities; }
+    std::vector<Entity>& GetEntities() { return mEntities; }
 
-    Array<TLASInstance>& GetTLASInstances() { return mInstances; }
+    std::vector<TLASInstance>& GetTLASInstances() { return mInstances; }
     IRHITLAS* GetTLAS() { return mTLAS; }
     IRHIBuffer* GetInstanceBuffer() { return mInstanceBuffer; }
 
@@ -48,10 +48,10 @@ public:
 private:
     IRHIDevice* mDevice;
 
-    Array<Entity> mEntities;
+    std::vector<Entity> mEntities;
     LightList mLights;
 
-    Array<TLASInstance> mInstances;
+    std::vector<TLASInstance> mInstances;
     IRHIBuffer* mInstanceBuffer;
     IRHITLAS* mTLAS;
 

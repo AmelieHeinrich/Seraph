@@ -46,7 +46,7 @@ VulkanTexture::~VulkanTexture()
     if (mImage && !mDesc.Reserved) vmaDestroyImage(mParentDevice->Allocator(), mImage, mAllocation);
 }
 
-void VulkanTexture::SetName(const String& name)
+void VulkanTexture::SetName(const std::string& name)
 {
     VkDebugUtilsObjectNameInfoEXT nameInfo = {};
     nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;

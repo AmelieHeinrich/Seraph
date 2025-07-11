@@ -39,7 +39,7 @@ public:
         mTextureView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
         mSampler = mStarters.Device->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, false));
 
-        Array<uint> textureMemory;
+        std::vector<uint> textureMemory;
         const uint32_t squareSize = 32;
         for (uint32_t y = 0; y < 256; ++y) {
             for (uint32_t x = 0; x < 256; ++x) {

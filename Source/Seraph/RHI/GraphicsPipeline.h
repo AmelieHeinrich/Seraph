@@ -39,7 +39,7 @@ struct RHIGraphicsPipelineDesc
 
     uint PushConstantSize = 0;
     
-    Array<RHITextureFormat> RenderTargetFormats;
+    std::vector<RHITextureFormat> RenderTargetFormats;
     RHIDepthOperation DepthOperation = RHIDepthOperation::kLess;
     RHITextureFormat DepthFormat = RHITextureFormat::kD32_FLOAT;
     bool DepthEnabled = false;

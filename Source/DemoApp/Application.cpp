@@ -13,7 +13,12 @@
 Application::Application(const ApplicationSpecs& specs)
     : mSpecs(specs), mPath(RenderPath::kBasic)
 {
-    mStringBackend = specs.Backend == RHIBackend::kVulkan ? "Vulkan" : "D3D12";
+    switch (specs.Backend) {
+        case RHIBackend::kVulkan: mStringBackend = "Vulkan"; break;
+        case RHIBackend::kMetal: mStringBackend = "Metal"; break;
+        case RHIBackend::kD3D12: mStringBackend = "D3D12"; break;
+        case RHIBackend::kDummy: mStringBackend = "Dummy"; break;
+    }
 
     Compressor compressor;
     compressor.RecurseFolder("Data/");

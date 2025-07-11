@@ -61,7 +61,7 @@ void VulkanCommandList::End()
 
 void VulkanCommandList::BeginRendering(const RHIRenderBegin& begin)
 {
-    Array<VkRenderingAttachmentInfo> colorAttachments;
+    std::vector<VkRenderingAttachmentInfo> colorAttachments;
     colorAttachments.reserve(begin.RenderTargets.size());
 
     for (const auto& rt : begin.RenderTargets) {
@@ -211,9 +211,9 @@ void VulkanCommandList::Barrier(const RHIMemoryBarrier& barrier)
 
 void VulkanCommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 {
-    Array<VkImageMemoryBarrier2> imageBarriers;
-    Array<VkBufferMemoryBarrier2> bufferBarriers;
-    Array<VkMemoryBarrier2> memoryBarriers;
+    std::vector<VkImageMemoryBarrier2> imageBarriers;
+    std::vector<VkBufferMemoryBarrier2> bufferBarriers;
+    std::vector<VkMemoryBarrier2> memoryBarriers;
     for (RHITextureBarrier barrier : barrierGroup.TextureBarriers) {
         RHITextureDesc desc = barrier.Texture->GetDesc();
         VulkanTexture* vkTexture = static_cast<VulkanTexture*>(barrier.Texture);
@@ -442,7 +442,7 @@ void VulkanCommandList::CopyBufferToTexture(IRHITexture* dest, IRHIBuffer* src)
     VkDeviceSize bufferImageGranularity = mParentDevice->GetBufferImageGranularity();
     
     VkDeviceSize bufferOffset = 0;
-    Array<VkBufferImageCopy> regions;
+    std::vector<VkBufferImageCopy> regions;
     
     for (uint mip = 0; mip < textureDesc.MipLevels; mip++) {
         uint mipWidth = std::max(1u, textureDesc.Width >> mip);
@@ -507,7 +507,7 @@ void VulkanCommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     VkDeviceSize bufferImageGranularity = mParentDevice->GetBufferImageGranularity();
     
     VkDeviceSize bufferOffset = 0;
-    Array<VkBufferImageCopy> regions;
+    std::vector<VkBufferImageCopy> regions;
 
     for (uint mip = 0; mip < textureDesc.MipLevels; ++mip) {
         uint width = std::max(1u, textureDesc.Width >> mip);
@@ -650,7 +650,7 @@ void VulkanCommandList::BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint inst
     vkCmdBuildAccelerationStructuresKHR(mCmdBuffer, 1, &vkTlas->mBuildInfo, &range);
 }
 
-void VulkanCommandList::PushMarker(const String& name)
+void VulkanCommandList::PushMarker(const std::string& name)
 {
     VkDebugUtilsLabelEXT marker = {};
     marker.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;

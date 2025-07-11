@@ -63,7 +63,7 @@ Debug::~Debug()
 void Debug::Render(RenderPassBegin& begin)
 {
     if (!sData.Lines.empty()) {
-        Array<LineVertex> vertices;
+        std::vector<LineVertex> vertices;
         for (const Line& line : sData.Lines) {
             vertices.push_back({ line.From, 0.0f, line.Color });
             vertices.push_back({ line.To, 0.0f, line.Color });

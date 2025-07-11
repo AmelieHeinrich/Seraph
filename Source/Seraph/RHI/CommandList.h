@@ -116,9 +116,9 @@ struct RHIMemoryBarrier
 
 struct RHIBarrierGroup
 {
-    Array<RHITextureBarrier> TextureBarriers;
-    Array<RHIBufferBarrier> BufferBarriers;
-    Array<RHIMemoryBarrier> MemoryBarriers;
+    std::vector<RHITextureBarrier> TextureBarriers;
+    std::vector<RHIBufferBarrier> BufferBarriers;
+    std::vector<RHIMemoryBarrier> MemoryBarriers;
 };
 
 struct RHIRenderAttachment
@@ -134,13 +134,13 @@ struct RHIRenderAttachment
 
 struct RHIRenderBegin
 {
-    Array<RHIRenderAttachment> RenderTargets;
+    std::vector<RHIRenderAttachment> RenderTargets;
     RHIRenderAttachment DepthTarget;
     uint Width;
     uint Height;
 
     RHIRenderBegin() = default;
-    RHIRenderBegin(uint w, uint h, Array<RHIRenderAttachment> rts, RHIRenderAttachment depth)
+    RHIRenderBegin(uint w, uint h, std::vector<RHIRenderAttachment> rts, RHIRenderAttachment depth)
         : Width(w), Height(h), RenderTargets(rts), DepthTarget(depth) {}
 };
 
@@ -195,7 +195,7 @@ public:
     virtual void BuildBLAS(IRHIBLAS* blas, RHIASBuildMode mode) = 0;
     virtual void BuildTLAS(IRHITLAS* blas, RHIASBuildMode mode, uint instanceCount, IRHIBuffer* buffer) = 0;
 
-    virtual void PushMarker(const String& name) = 0;
+    virtual void PushMarker(const std::string& name) = 0;
     virtual void PopMarker() = 0;
     
     virtual void BeginImGui() = 0;

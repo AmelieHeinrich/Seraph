@@ -14,13 +14,13 @@ public:
     static void Initialize(IRHIDevice* device);
     static void Shutdown();
 
-    static void SubscribeGraphics(const String& path, const RHIGraphicsPipelineDesc& desc, const Array<String>& entryPoint);
-    static void SubscribeCompute(const String& path, const RHIComputePipelineDesc& desc, const String& entryPoint);
-    static void SubscribeMesh(const String& path, const RHIMeshPipelineDesc& desc, const Array<String>& entryPoint);
+    static void SubscribeGraphics(const std::string& path, const RHIGraphicsPipelineDesc& desc, const std::vector<std::string>& entryPoint);
+    static void SubscribeCompute(const std::string& path, const RHIComputePipelineDesc& desc, const std::string& entryPoint);
+    static void SubscribeMesh(const std::string& path, const RHIMeshPipelineDesc& desc, const std::vector<std::string>& entryPoint);
 
-    static IRHIGraphicsPipeline* GetGraphics(const String& path);
-    static IRHIComputePipeline* GetCompute(const String& path);
-    static IRHIMeshPipeline* GetMesh(const String& path);
+    static IRHIGraphicsPipeline* GetGraphics(const std::string& path);
+    static IRHIComputePipeline* GetCompute(const std::string& path);
+    static IRHIMeshPipeline* GetMesh(const std::string& path);
 
     // Persona 3 Reload reference?,!?:
     // Call this outside of command buffer recording/submitting!
@@ -35,16 +35,16 @@ private:
 
     struct FileWatch
     {
-        String Path;
+        std::string Path;
         FileTime LastWritten;
     };
 
     struct PipelineEntry
     {
         PipelineType Type;
-        String ShaderFile;
-        Array<FileWatch> Dependencies;
-        Array<String> EntryPoints;
+        std::string ShaderFile;
+        std::vector<FileWatch> Dependencies;
+        std::vector<std::string> EntryPoints;
 
         IRHIComputePipeline* ComputePipeline;
         RHIComputePipelineDesc ComputeDesc;
@@ -59,7 +59,7 @@ private:
     static struct Data {
         IRHIDevice* Device;
         
-        UnorderedMap<String, PipelineEntry> Entries;
+        UnorderedMap<std::string, PipelineEntry> Entries;
         float Start = 0.0f;
     } sData;
 };

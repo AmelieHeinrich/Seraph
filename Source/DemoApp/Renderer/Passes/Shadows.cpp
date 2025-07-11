@@ -122,7 +122,7 @@ void Shadows::CSM(RenderPassBegin& begin)
     begin.CommandList->PushMarker("CSM");
     CODE_BLOCK("Update Cascade Matrices") {
         uint cascadeSize = SHADOW_CASCADE_QUALITY;
-        Array<float> splits(SHADOW_CASCADE_COUNT + 1);
+        std::vector<float> splits(SHADOW_CASCADE_COUNT + 1);
 
         splits[0] = CAMERA_NEAR;
         splits[SHADOW_CASCADE_COUNT] = CAMERA_FAR;
@@ -135,7 +135,7 @@ void Shadows::CSM(RenderPassBegin& begin)
 
         for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
             glm::mat4 projection = glm::perspective(glm::radians(90.0f), 16.0f / 9.0f, splits[i], splits[i + 1]);
-            Array<float4> corners = Math::GetFrustumCorners(begin.CamData.View, projection);
+            std::vector<float4> corners = Math::GetFrustumCorners(begin.CamData.View, projection);
 
             // Calculate center
             float3 center(0.0f);

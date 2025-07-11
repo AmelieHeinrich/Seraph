@@ -10,8 +10,8 @@
 class Compressor
 {
 public:
-    void RecurseFolder(const String& path);
-    void CompressTexture(const String& path);
+    void RecurseFolder(const std::string& path);
+    void CompressTexture(const std::string& path);
 
-    static String ToCachedPath(const String& path);
+    static std::string ToCachedPath(const std::string& path);
 };

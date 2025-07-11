@@ -31,7 +31,7 @@ public:
         mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(float3) + sizeof(float2), RHIBufferUsage::kVertex));
         mIndexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
 
-        String path = compressor.ToCachedPath("Data/Textures/BCTest.jpg");
+        std::string path = compressor.ToCachedPath("Data/Textures/BCTest.jpg");
         TextureAsset asset;
         asset.Load(path);
 

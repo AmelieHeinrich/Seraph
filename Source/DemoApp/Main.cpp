@@ -8,8 +8,18 @@
 
 #include "Application.h"
 
-RHIBackend TranslateBackend(const String& data)
+RHIBackend TranslateBackend(const std::string& data)
 {
+    if (data == "Default") {
+#ifdef SERAPH_WINDOWS
+        return RHIBackend::kD3D12;
+#elif defined(SERAPH_MAC)
+        return RHIBackend::kMetal;
+#endif
+    }
+
+    if (data == "Dummy") return RHIBackend::kDummy;
+    if (data == "Metal") return RHIBackend::kMetal;
     if (data == "Vulkan") return RHIBackend::kVulkan;
     if (data == "D3D12") return RHIBackend::kD3D12;
     return RHIBackend::kDummy;

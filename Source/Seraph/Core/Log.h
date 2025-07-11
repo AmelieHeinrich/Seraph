@@ -32,20 +32,20 @@ public:
     void Error(const char* file, int line, const char* format, ...);
     void Fatal(const char* file, int line, const char* format, ...);
 
-    virtual void Output(LogLevel level, const String& format) = 0;
+    virtual void Output(LogLevel level, const std::string& format) = 0;
 private:
-    String LevelToString(LogLevel level);
-    String GetTimeString();
+    std::string LevelToString(LogLevel level);
+    std::string GetTimeString();
 };
 
 class FileLogger : public ILogger
 {
 public:
-    FileLogger(const String& path);
+    FileLogger(const std::string& path);
     ~FileLogger();
 
 protected:
-    virtual void Output(LogLevel level, const String& format) override;
+    virtual void Output(LogLevel level, const std::string& format) override;
 
     std::ofstream mStream;
 };
@@ -57,7 +57,7 @@ public:
     ~ConsoleLogger() = default;
 
 protected:
-    virtual void Output(LogLevel level, const String& format) override;
+    virtual void Output(LogLevel level, const std::string& format) override;
 };
 
 class MultiLogger : public ILogger
@@ -68,7 +68,7 @@ public:
     
     void AddLogger(ILogger* logger);
 protected:
-    virtual void Output(LogLevel level, const String& format) override;
+    virtual void Output(LogLevel level, const std::string& format) override;
 
-    Array<ILogger*> mLoggers;
+    std::vector<ILogger*> mLoggers;
 };

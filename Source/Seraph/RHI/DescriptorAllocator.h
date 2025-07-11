@@ -24,6 +24,6 @@ private:
 
     uint64 mMaxSlots;
     uint64 mBitmapSize;
-    Array<uint64> mBitmap;
-    Array<uint32> mFreeList;
+    std::vector<uint64> mBitmap;
+    std::vector<uint32> mFreeList;
 };

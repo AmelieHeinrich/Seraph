@@ -15,7 +15,7 @@ public:
     DummyBuffer(DummyDevice* device, RHIBufferDesc desc);
     ~DummyBuffer();
 
-    void SetName(const String& name) override;
+    void SetName(const std::string& name) override;
 
     void* Map() override;
     void Unmap() override;

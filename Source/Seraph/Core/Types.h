@@ -52,12 +52,6 @@ static_assert(sizeof(uint16) == 2, "uint16 size incorrect.");
 static_assert(sizeof(uint32) == 4, "uint32 size incorrect.");
 static_assert(sizeof(uint64) == 8, "uint64 size incorrect.");
 
-using String = std::string;
-using StringView = std::string_view;
-
-template<typename T>
-using Array = std::vector<T>;
-
 template<typename T, size_t Size>
 using StaticArray = std::array<T, Size>;
 

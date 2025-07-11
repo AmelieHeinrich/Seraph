@@ -65,7 +65,7 @@ void D3D12CommandList::End()
 
 void D3D12CommandList::BeginRendering(const RHIRenderBegin& begin)
 {
-    Array<D3D12_CPU_DESCRIPTOR_HANDLE> cpus;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> cpus;
     for (auto& target : begin.RenderTargets) {
         D3D12TextureView* view = static_cast<D3D12TextureView*>(target.View);
         cpus.push_back(view->GetAlloc().CPU);
@@ -157,10 +157,10 @@ void D3D12CommandList::Barrier(const RHIMemoryBarrier& barrier)
 
 void D3D12CommandList::BarrierGroup(const RHIBarrierGroup& barrierGroup)
 {
-    Array<D3D12_TEXTURE_BARRIER> textureBarriers;
-    Array<D3D12_BUFFER_BARRIER> bufferBarriers;
-    Array<D3D12_GLOBAL_BARRIER> globalBarriers;
-    Array<D3D12_BARRIER_GROUP> barriers;
+    std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
+    std::vector<D3D12_BUFFER_BARRIER> bufferBarriers;
+    std::vector<D3D12_GLOBAL_BARRIER> globalBarriers;
+    std::vector<D3D12_BARRIER_GROUP> barriers;
 
     for (const RHITextureBarrier& barrier : barrierGroup.TextureBarriers) {
         D3D12_TEXTURE_BARRIER texBarrier = {};
@@ -402,9 +402,9 @@ void D3D12CommandList::CopyTextureToBuffer(IRHIBuffer* dest, IRHITexture* src)
     ID3D12Resource* srcResource = static_cast<D3D12Texture*>(src)->GetResource();
     D3D12_RESOURCE_DESC desc = srcResource->GetDesc();
 
-    Array<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(desc.MipLevels);
-    Array<uint> num_rows(desc.MipLevels);
-    Array<uint64_t> row_sizes(desc.MipLevels);
+    std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(desc.MipLevels);
+    std::vector<uint> num_rows(desc.MipLevels);
+    std::vector<uint64_t> row_sizes(desc.MipLevels);
     uint64_t totalSize = 0;
 
     mParentDevice->GetDevice()->GetCopyableFootprints(
@@ -481,7 +481,7 @@ void D3D12CommandList::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint insta
     mList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
-void D3D12CommandList::PushMarker(const String& name)
+void D3D12CommandList::PushMarker(const std::string& name)
 {
     PIXBeginEvent(mList, PIX_COLOR_DEFAULT, name.c_str());
 }

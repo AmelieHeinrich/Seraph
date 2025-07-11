@@ -11,10 +11,10 @@
 #include <filesystem>
 #include <Core/FileSystem.h>
 
-void Compressor::RecurseFolder(const String& path)
+void Compressor::RecurseFolder(const std::string& path)
 {
     for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
-        String entryPath = dirEntry.path().string();
+        std::string entryPath = dirEntry.path().string();
         std::replace(entryPath.begin(), entryPath.end(), '\\', '/');
     
         if (dirEntry.path().extension() == ".png" || dirEntry.path().extension() == ".jpg") {
@@ -23,7 +23,7 @@ void Compressor::RecurseFolder(const String& path)
     }
 }
 
-void Compressor::CompressTexture(const String& path)
+void Compressor::CompressTexture(const std::string& path)
 {
     if (FileSystem::Exists(ToCachedPath(path))) {
         SERAPH_WHATEVER("Skipping %s", path.c_str());
@@ -31,7 +31,7 @@ void Compressor::CompressTexture(const String& path)
     }
 }
 
-String Compressor::ToCachedPath(const String& path)
+std::string Compressor::ToCachedPath(const std::string& path)
 {
     const uint64 m = 0xc6a4a7935bd1e995ULL;
     const uint32 r = 47;
@@ -64,5 +64,5 @@ String Compressor::ToCachedPath(const String& path)
     h ^= h >> r;
     h *= m;
     h ^= h >> r;
-    return ".cache/" + String(std::to_string(h)) + ".stf";
+    return ".cache/" + std::string(std::to_string(h)) + ".stf";
 }

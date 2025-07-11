@@ -62,7 +62,7 @@ class IRHITexture
 public:
     virtual ~IRHITexture() = default;
 
-    virtual void SetName(const String& name) = 0;
+    virtual void SetName(const std::string& name) = 0;
 
     RHITextureDesc GetDesc() const { return mDesc; }
 

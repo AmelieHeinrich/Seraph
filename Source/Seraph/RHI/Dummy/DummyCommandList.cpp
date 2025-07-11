@@ -172,7 +172,7 @@ void DummyCommandList::BuildTLAS(IRHITLAS* tlas, RHIASBuildMode mode, uint insta
 
 }
 
-void DummyCommandList::PushMarker(const String& name)
+void DummyCommandList::PushMarker(const std::string& name)
 {
 
 }

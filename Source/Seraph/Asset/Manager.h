@@ -20,7 +20,7 @@ enum class AssetType
 
 struct Asset
 {
-    String Path;
+    std::string Path;
     AssetType Type;
 
     Model* Model;
@@ -44,13 +44,13 @@ public:
 
     static void Update();
 
-    static Asset::Handle Get(const String& path, AssetType type);
+    static Asset::Handle Get(const std::string& path, AssetType type);
     static void Release(Asset::Handle handle);
     static void Destroy(Asset::Handle handle);
 
 private:
     static struct Data {
         IRHIDevice* Device;
-        UnorderedMap<String, Asset::Handle> Assets;
+        UnorderedMap<std::string, Asset::Handle> Assets;
     } sData;
 };

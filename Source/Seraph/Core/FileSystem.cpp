@@ -28,12 +28,12 @@ void FileSystem::Shutdown()
     
 }
 
-FileTime FileSystem::GetWriteTime(const String& path)
+FileTime FileSystem::GetWriteTime(const std::string& path)
 {
     return std::filesystem::last_write_time(path);
 }
 
-nlohmann::json FileSystem::ReadJSON(const String& path)
+nlohmann::json FileSystem::ReadJSON(const std::string& path)
 {
     std::ifstream stream(path);
     if (!stream.is_open()) {
@@ -45,7 +45,7 @@ nlohmann::json FileSystem::ReadJSON(const String& path)
     return root;
 }
 
-void FileSystem::WriteJSON(nlohmann::json json, const String& path)
+void FileSystem::WriteJSON(nlohmann::json json, const std::string& path)
 {
     std::ofstream stream(path);
     if (!stream.is_open()) {
@@ -55,7 +55,7 @@ void FileSystem::WriteJSON(nlohmann::json json, const String& path)
     stream.close();
 }
 
-Array<String> FileSystem::ReadAllLines(const String& path)
+std::vector<std::string> FileSystem::ReadAllLines(const std::string& path)
 {
      std::ifstream stream(path);
     std::vector<std::string> lines;
@@ -72,7 +72,7 @@ Array<String> FileSystem::ReadAllLines(const String& path)
     return lines;
 }
 
-String FileSystem::ReadFile(const String& path)
+std::string FileSystem::ReadFile(const std::string& path)
 {
     std::ifstream stream(path);
     if (!stream.is_open()) {
@@ -87,7 +87,7 @@ String FileSystem::ReadFile(const String& path)
     return ss.str();
 }
 
-bool FileSystem::Exists(const String& path)
+bool FileSystem::Exists(const std::string& path)
 {
     struct stat s;
     if (stat(path.c_str(), &s) == -1)
@@ -95,7 +95,7 @@ bool FileSystem::Exists(const String& path)
     return true;   
 }
 
-uint FileSystem::GetFileSize(const String& path)
+uint FileSystem::GetFileSize(const std::string& path)
 {
     struct stat s;
     if (stat(path.c_str(), &s) == -1)

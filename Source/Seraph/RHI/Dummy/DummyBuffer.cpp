@@ -23,7 +23,7 @@ DummyBuffer::~DummyBuffer()
     free(mMappedMemory);
 }
 
-void DummyBuffer::SetName(const String& name)
+void DummyBuffer::SetName(const std::string& name)
 {
     
 }

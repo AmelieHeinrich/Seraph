@@ -46,7 +46,7 @@ D3D12Texture::~D3D12Texture()
     if (mResource && !mDesc.Reserved) mResource->Release();
 }
 
-void D3D12Texture::SetName(const String& name)
+void D3D12Texture::SetName(const std::string& name)
 {
     mResource->SetName(MULTIBYTE_TO_UNICODE(name.data()));
 }
