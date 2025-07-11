@@ -32,6 +32,7 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 
 ## WIP
 
+- Metal backend
 - Raytraced soft shadows
 - SVGF denoising
 
