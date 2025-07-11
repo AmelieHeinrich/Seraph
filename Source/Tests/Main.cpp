@@ -49,61 +49,86 @@ int main(void)
     };
 
     for (auto* test : tests) {
-        std::string goldenPath = "Data/Tests/Golden/" + std::string(test->Name()) + "Golden" + ".png";
-        std::string magmaVulkanPath = "Data/Tests/" + std::string(test->Name()) + "MagmaVulkan" + ".png";
-        std::string magmaD3DPath = "Data/Tests/" + std::string(test->Name()) + "MagmaD3D12" + ".png";
-        std::string vulkanPath = "Data/Tests/" + std::string(test->Name()) + std::string("Vulkan") + ".png";
-        std::string d3dPath = "Data/Tests/" + std::string(test->Name()) + std::string("D3D12") + ".png";
+        std::string goldenPath = "Data/Tests/Golden/" + std::string(test->Name()) + "Golden.png";
+        std::string magmaVulkanPath = "Data/Tests/" + std::string(test->Name()) + "MagmaVulkan.png";
+        std::string magmaD3DPath = "Data/Tests/" + std::string(test->Name()) + "MagmaD3D12.png";
+        std::string magmaMetalPath = "Data/Tests/" + std::string(test->Name()) + "MagmaMetal.png";
+        std::string vulkanPath = "Data/Tests/" + std::string(test->Name()) + "Vulkan.png";
+        std::string d3dPath = "Data/Tests/" + std::string(test->Name()) + "D3D12.png";
+        std::string metalPath = "Data/Tests/" + std::string(test->Name()) + "Metal.png";
 
         ImageData golden = Image::LoadImageData(goldenPath);
-        TestResult vulkanData = test->Run(RHIBackend::kVulkan);
-        TestResult d3dData = test->Run(RHIBackend::kD3D12);
-        Image::WriteImageData(vulkanData.Data, vulkanPath);
-        Image::WriteImageData(d3dData.Data, d3dPath);
-
-        vulkanData.Data.Pixels.clear();
-        d3dData.Data.Pixels.clear();
-
-        float* linearVulkan = new float[TEST_WIDTH * TEST_HEIGHT * 3];
-        float* linearD3D = new float[TEST_WIDTH * TEST_HEIGHT * 3];
-        float* linearGolden = new float[TEST_WIDTH * TEST_HEIGHT * 3];
-        ConvertFLIP(vulkanData.Data.Pixels.data(), linearVulkan, TEST_WIDTH, TEST_HEIGHT);
-        ConvertFLIP(d3dData.Data.Pixels.data(), linearD3D, TEST_WIDTH, TEST_HEIGHT);
-        ConvertFLIP(golden.Pixels.data(), linearGolden, TEST_WIDTH, TEST_HEIGHT);
+        std::vector<float> linearGolden(TEST_WIDTH * TEST_HEIGHT * 3);
+        ConvertFLIP(golden.Pixels.data(), linearGolden.data(), TEST_WIDTH, TEST_HEIGHT);
 
         float finalMean = 0.0f;
+        int backendCount = 0;
+
+    #ifdef SERAPH_WINDOWS
+        TestResult vulkanData = test->Run(RHIBackend::kVulkan);
+        Image::WriteImageData(vulkanData.Data, vulkanPath);
+        std::vector<float> linearVulkan(TEST_WIDTH * TEST_HEIGHT * 3);
+        ConvertFLIP(vulkanData.Data.Pixels.data(), linearVulkan.data(), TEST_WIDTH, TEST_HEIGHT);
+
         {
             FLIP::Parameters parameters;
             float meanError;
-            float* outMagma;
-            FLIP::evaluate(linearGolden, linearVulkan, TEST_WIDTH, TEST_HEIGHT, false, parameters, true, true, meanError, &outMagma);
-            Image::WriteImageRGB(outMagma, TEST_WIDTH, TEST_HEIGHT, magmaVulkanPath);
-            delete outMagma;
-
+            float* outMagmaRaw = nullptr;
+            FLIP::evaluate(linearGolden.data(), linearVulkan.data(), TEST_WIDTH, TEST_HEIGHT,
+                           false, parameters, true, true, meanError, &outMagmaRaw);
+            std::unique_ptr<float[]> outMagma(outMagmaRaw);  // assumes FLIP::evaluate allocates with new[]
+            Image::WriteImageRGB(outMagma.get(), TEST_WIDTH, TEST_HEIGHT, magmaVulkanPath);
             finalMean += meanError;
+            backendCount++;
         }
+
+        TestResult d3dData = test->Run(RHIBackend::kD3D12);
+        Image::WriteImageData(d3dData.Data, d3dPath);
+        std::vector<float> linearD3D(TEST_WIDTH * TEST_HEIGHT * 3);
+        ConvertFLIP(d3dData.Data.Pixels.data(), linearD3D.data(), TEST_WIDTH, TEST_HEIGHT);
+
         {
             FLIP::Parameters parameters;
             float meanError;
-            float* outMagma;
-            FLIP::evaluate(linearGolden, linearD3D, TEST_WIDTH, TEST_HEIGHT, false, parameters, true, true, meanError, &outMagma);
-            Image::WriteImageRGB(outMagma, TEST_WIDTH, TEST_HEIGHT, magmaD3DPath);
-            delete outMagma;
-
+            float* outMagmaRaw = nullptr;
+            FLIP::evaluate(linearGolden.data(), linearD3D.data(), TEST_WIDTH, TEST_HEIGHT,
+                           false, parameters, true, true, meanError, &outMagmaRaw);
+            std::unique_ptr<float[]> outMagma(outMagmaRaw);
+            Image::WriteImageRGB(outMagma.get(), TEST_WIDTH, TEST_HEIGHT, magmaD3DPath);
             finalMean += meanError;
+            backendCount++;
         }
-        finalMean /= 2;
 
         json[test->Name()]["vkPath"] = StripDataPrefix(vulkanPath);
         json[test->Name()]["d3dPath"] = StripDataPrefix(d3dPath);
         json[test->Name()]["magmaVkPath"] = StripDataPrefix(magmaVulkanPath);
         json[test->Name()]["magmaD3D12Path"] = StripDataPrefix(magmaD3DPath);
-        json[test->Name()]["goldenPath"] = StripDataPrefix(goldenPath);
-        json[test->Name()]["result"] = finalMean < 0.02f;
+    #endif
 
-        delete[] linearGolden;
-        delete[] linearVulkan;
-        delete[] linearD3D;
+    #ifdef SERAPH_MAC
+        TestResult metalData = test->Run(RHIBackend::kMetal);
+        Image::WriteImageData(metalData.Data, metalPath);
+        std::vector<float> linearMetal(TEST_WIDTH * TEST_HEIGHT * 3);
+        ConvertFLIP(metalData.Data.Pixels.data(), linearMetal.data(), TEST_WIDTH, TEST_HEIGHT);
+
+        {
+            FLIP::Parameters parameters;
+            float meanError;
+            float* outMagmaRaw = nullptr;
+            FLIP::evaluate(linearGolden.data(), linearMetal.data(), TEST_WIDTH, TEST_HEIGHT,
+                           false, parameters, true, true, meanError, &outMagmaRaw);
+            std::unique_ptr<float[]> outMagma(outMagmaRaw);
+            Image::WriteImageRGB(outMagma.get(), TEST_WIDTH, TEST_HEIGHT, magmaMetalPath);
+            finalMean += meanError;
+            backendCount++;
+        }
+
+        json[test->Name()]["metalPath"] = StripDataPrefix(metalPath);
+        json[test->Name()]["magmaMetalPath"] = StripDataPrefix(magmaMetalPath);
+    #endif
+
+        json[test->Name()]["goldenPath"] = StripDataPrefix(goldenPath);
+        json[test->Name()]["result"] = (backendCount > 0) ? (finalMean / backendCount) < 0.02f : false;
     }
 
     FileSystem::WriteJSON(json, "Data/TestReport.json");

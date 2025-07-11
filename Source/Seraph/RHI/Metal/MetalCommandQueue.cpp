@@ -10,12 +10,24 @@
 MetalCommandQueue::MetalCommandQueue(MetalDevice* device, RHICommandQueueType type)
     : mParentDevice(device)
 {
+    MTL::CommandQueueDescriptor* descriptor = MTL::CommandQueueDescriptor::alloc()->init();
+    descriptor->retain();
+    descriptor->setMaxCommandBufferCount(3);
+
+    mCommandQueue = device->GetDevice()->newCommandQueue(descriptor);
+    if (!mCommandQueue) {
+        SERAPH_ERROR("Failed to create command queue!");
+    }
+    mCommandQueue->retain();
+
+    descriptor->release();
+
     SERAPH_WHATEVER("Created Metal command queue");
 }
 
 MetalCommandQueue::~MetalCommandQueue()
 {
-
+    mCommandQueue->release();
 }
 
 void MetalCommandQueue::SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer)

@@ -23,6 +23,7 @@
 
 MetalDevice::MetalDevice(bool validationLayers)
 {
+    // Create device
     mDevice = MTL::CreateSystemDefaultDevice();
     mDevice->retain();
 
@@ -30,11 +31,26 @@ MetalDevice::MetalDevice(bool validationLayers)
     SERAPH_INFO("Using Metal GPU: %s", deviceString->utf8String());
     deviceString->release();
 
+    // Create residency set
+    MTL::ResidencySetDescriptor* descriptor = MTL::ResidencySetDescriptor::alloc()->init();
+    descriptor->retain();
+    descriptor->setInitialCapacity(4092);
+
+    NS::Error* err = nullptr;
+    mResidencySet = mDevice->newResidencySet(descriptor, &err);
+    mResidencySet->retain();
+    if (!mResidencySet || err) {
+        SERAPH_FATAL("Failed to create residency set! %s", err->description()->utf8String());
+        return;
+    }
+    descriptor->release();
+
     SERAPH_INFO("Created Metal device!");
 }
 
 MetalDevice::~MetalDevice()
 {
+    mResidencySet->release();
     mDevice->release();
 }
 

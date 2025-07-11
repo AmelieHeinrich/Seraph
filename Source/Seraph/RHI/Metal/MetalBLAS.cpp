@@ -17,7 +17,7 @@ MetalBLAS::MetalBLAS(MetalDevice* device, RHIBLASDesc desc)
 
 MetalBLAS::~MetalBLAS() 
 {
-
+    
 }
 
 uint64 MetalBLAS::GetAddress()

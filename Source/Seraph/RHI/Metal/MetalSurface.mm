@@ -9,6 +9,8 @@
 #include "MetalTexture.h"
 #include "MetalTextureView.h"
 
+#include <QuartzCore/QuartzCore.h>
+
 MetalSurface::MetalSurface(MetalDevice* device, Window* window, MetalCommandQueue* commandQueue)
     : mParentDevice(device)
 {
@@ -17,23 +19,30 @@ MetalSurface::MetalSurface(MetalDevice* device, Window* window, MetalCommandQueu
     SDL_GetWindowSize(sdlWindow, &width, &height);
     SDL_SetWindowTitle(sdlWindow, "Seraph | Metal");
 
+    mView = SDL_Metal_CreateView(sdlWindow);
+    void* layerPtr = SDL_Metal_GetLayer(mView);
+    mLayer = static_cast<CA::MetalLayer*>(layerPtr);
+
+    mLayer->setDevice(device->GetDevice());
+    mLayer->setPixelFormat(MTL::PixelFormatBGRA8Unorm);
+    mLayer->setDrawableSize(CGSizeMake(width, height));
+    mLayer->setMaximumDrawableCount(FRAMES_IN_FLIGHT);
+    mLayer->setAllowsNextDrawableTimeout(false);
+    mLayer->setDisplaySyncEnabled(false);
+
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         RHITextureDesc desc = {};
-        desc.Reserved = true;
         desc.Width = width;
         desc.Height = height;
         desc.Depth = 1;
         desc.MipLevels = 1;
         desc.Usage = RHITextureUsage::kRenderTarget;
-        desc.Format = RHITextureFormat::kR8G8B8A8_UNORM;
+        desc.Format = RHITextureFormat::kB8G8R8A8_UNORM;
 
-        MetalTexture* texture = new MetalTexture(desc);
-    
-        mTextures[i] = texture;
-        mTextureViews[i] = new MetalTextureView(device, RHITextureViewDesc(texture, RHITextureViewType::kRenderTarget));
+        mTextures[i] = new MetalTexture(device, desc);
+        mTextures[i]->SetName("Frame in flight " + std::to_string(i));
+        mTextureViews[i] = new MetalTextureView(device, RHITextureViewDesc(mTextures[i], RHITextureViewType::kRenderTarget));
     }
-
-    SERAPH_WHATEVER("Created Metal surface");
 }
 
 MetalSurface::~MetalSurface()
@@ -42,4 +51,5 @@ MetalSurface::~MetalSurface()
         delete mTextureViews[i];
         delete mTextures[i];
     }
+    SDL_Metal_DestroyView(mView);
 }

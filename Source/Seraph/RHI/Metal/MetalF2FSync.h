@@ -24,4 +24,6 @@ private:
     MetalDevice* mParentDevice;
     MetalSurface* mSurface;
     MetalCommandQueue* mCommandQueue;
+
+    uint mFrameIndex = 0;
 };

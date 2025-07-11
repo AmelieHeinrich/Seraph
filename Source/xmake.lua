@@ -42,7 +42,8 @@ target("Seraph")
         add_files("Seraph/Core/Mac/*.cpp",
                   "Seraph/Asset/Mac/*.cpp",
                   "Seraph/RHI/Dummy/*.cpp",
-                  "Seraph/RHI/Metal/*.cpp")
+                  "Seraph/RHI/Metal/*.cpp",
+                  "Seraph/RHI/Metal/*.mm")
     end
 
     if is_mode("debug") then

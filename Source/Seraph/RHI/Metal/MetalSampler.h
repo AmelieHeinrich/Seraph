@@ -6,6 +6,7 @@
 #pragma once
 
 #include <RHI/Sampler.h>
+#include <MetalCPP/Metal/Metal.hpp>
 
 class MetalDevice;
 

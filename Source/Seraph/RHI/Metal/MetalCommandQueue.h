@@ -7,6 +7,8 @@
 
 #include <RHI/CommandQueue.h>
 
+#include <MetalCPP/Metal/Metal.hpp>
+
 class MetalDevice;
 
 class MetalCommandQueue : public IRHICommandQueue
@@ -21,4 +23,6 @@ public:
 
 private:
     MetalDevice* mParentDevice;
+
+    MTL::CommandQueue* mCommandQueue;
 };

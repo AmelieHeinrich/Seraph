@@ -36,6 +36,8 @@ public:
     uint64 GetBufferImageGranularity() override { return 1; }
 
     MTL::Device* GetDevice() { return mDevice; }
+    MTL::ResidencySet* GetResidencySet() { return mResidencySet; }
 private:
     MTL::Device* mDevice;
+    MTL::ResidencySet* mResidencySet;
 };

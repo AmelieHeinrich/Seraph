@@ -6,6 +6,7 @@
 #pragma once
 
 #include <RHI/Texture.h>
+#include <MetalCPP/Metal/Metal.hpp>
 
 class MetalDevice;
 
@@ -18,6 +19,14 @@ public:
 
     void SetName(const std::string& name) override;
 
+public:
+    static MTL::PixelFormat TranslateToMTLPixelFormat(RHITextureFormat format);
+
 private:
     friend class MetalSurface;
+
+    MetalDevice* mParentDevice;
+
+    NS::String* mLabel;
+    MTL::Texture* mTexture;
 };

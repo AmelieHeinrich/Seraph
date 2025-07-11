@@ -6,7 +6,6 @@
 - TLAS
 - Bindless Setup
 - Buffer View
-- Texture
 - Texture View
 - Command Queue
 - Compute Pipeline
@@ -14,5 +13,4 @@
 - F2F Sync
 - Mesh Pipeline
 - Sampler
-- Surface
 - Command List

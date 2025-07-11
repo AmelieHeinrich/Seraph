@@ -32,13 +32,19 @@ MetalBuffer::MetalBuffer(MetalDevice* device, RHIBufferDesc desc)
     mDesc = desc;
 
     mBuffer = device->GetDevice()->newBuffer(desc.Size, GetMetalResourceOptions(desc.Usage));
+    if (!mBuffer) {
+        SERAPH_ERROR("Failed to create buffer!");
+    }
     mBuffer->retain();
+
+    device->GetResidencySet()->addAllocation((const MTL::Allocation*)mBuffer);
 
     SERAPH_WHATEVER("Created Metal buffer");
 }
 
 MetalBuffer::~MetalBuffer()
 {
+    mParentDevice->GetResidencySet()->removeAllocation((const MTL::Allocation*)mBuffer);
     if (mLabel) mLabel->release();
     mBuffer->release();
 }
