@@ -11,6 +11,7 @@
 #ifdef SERAPH_D3D12
     #include "D3D12/D3D12Device.h"
 #endif
+#include "Dummy/DummyDevice.h"
 
 IRHIDevice* IRHIDevice::CreateDevice(RHIBackend backend, bool validationLayers)
 {
@@ -22,8 +23,8 @@ IRHIDevice* IRHIDevice::CreateDevice(RHIBackend backend, bool validationLayers)
 #ifdef SERAPH_VULKAN
         case RHIBackend::kVulkan: return new VulkanDevice(validationLayers);
 #endif
-        case RHIBackend::kDummy: return nullptr;
-        default: return nullptr;
+        case RHIBackend::kDummy: return new DummyDevice(validationLayers);
+        default: return new DummyDevice(validationLayers);
     }
     return nullptr;
 }

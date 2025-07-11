@@ -25,7 +25,7 @@ Application::Application(const ApplicationSpecs& specs)
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
     Uploader::Initialize(mDevice, mGraphicsQueue);
 
-    mWindow = SharedPtr<Window>(new Window(specs.WindowWidth, specs.WindowHeight, "Seraph"));
+    mWindow = SharedPtr<Window>(new Window(specs.Backend, specs.WindowWidth, specs.WindowHeight, "Seraph"));
     mSurface = mDevice->CreateSurface(mWindow.get(), mGraphicsQueue);
     mF2FSync = mDevice->CreateF2FSync(mSurface, mGraphicsQueue);
     mImGuiContext = mDevice->CreateImGuiContext(mGraphicsQueue, mWindow.get());

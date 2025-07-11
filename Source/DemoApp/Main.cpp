@@ -12,7 +12,7 @@ RHIBackend TranslateBackend(const String& data)
 {
     if (data == "Vulkan") return RHIBackend::kVulkan;
     if (data == "D3D12") return RHIBackend::kD3D12;
-    return RHIBackend::kD3D12;
+    return RHIBackend::kDummy;
 }
 
 int main(void)

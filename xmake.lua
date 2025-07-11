@@ -13,6 +13,7 @@ if is_plat("windows") then
         os.cp("Binaries/Windows/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
     end)
 else
+    add_rpathdirs("Binaries/Mac/")
     before_link(function (target)
         os.cp("Binaries/Mac/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
     end)

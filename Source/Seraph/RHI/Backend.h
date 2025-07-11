@@ -9,5 +9,6 @@ enum class RHIBackend
 {
     kDummy,
     kVulkan,
-    kD3D12
+    kD3D12,
+    kMetal
 };

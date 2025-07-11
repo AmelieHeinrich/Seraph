@@ -8,11 +8,12 @@
 #include <SDL3/SDL.h>
 
 #include "Types.h"
+#include "RHI/Backend.h"
 
 class Window
 {
 public:
-    Window(int width, int height, const String& title);
+    Window(RHIBackend backend, int width, int height, const String& title);
     ~Window();
 
     bool IsOpen() const;

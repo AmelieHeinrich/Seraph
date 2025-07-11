@@ -7,5 +7,6 @@
 
 void SafeMemcpy(void* dst, const void* src, uint64 size)
 {
-    memcpy(dst, src, size);
+    if (dst && src)
+        memcpy(dst, src, size);
 }

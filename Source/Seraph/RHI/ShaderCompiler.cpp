@@ -7,6 +7,7 @@
 
 #include <Core/FileSystem.h>
 #include <Core/Types.h>
+#include <sstream>
 
 #ifdef SERAPH_WINDOWS
     #include <Windows.h>
@@ -172,21 +173,19 @@ CompiledShader ShaderCompiler::Compile(const String& path)
 
     UnorderedMap<String, ShaderStage> entryPoints;
     for (String line : lines) {
-        if (line.find("#pragma vertex") != String::npos) {
-            line = line.substr(String("#pragma vertex ").length());
-            entryPoints[line] = ShaderStage::kVertex;
-        }
-        if (line.find("#pragma fragment") != String::npos) {
-            line = line.substr(String("#pragma fragment ").length());
-            entryPoints[line] = ShaderStage::kFragment;
-        }
-        if (line.find("#pragma kernel") != String::npos) {
-            line = line.substr(String("#pragma kernel ").length());
-            entryPoints[line] = ShaderStage::kCompute;
-        }
-        if (line.find("#pragma mesh") != String::npos) {
-            line = line.substr(String("#pragma mesh ").length());
-            entryPoints[line] = ShaderStage::kMesh;
+        std::istringstream iss(line);
+        String pragma, stage, entry;
+        iss >> pragma >> stage >> entry;
+        
+        if (pragma == "#pragma") {
+            if (stage == "vertex")
+                entryPoints[entry] = ShaderStage::kVertex;
+            else if (stage == "fragment")
+                entryPoints[entry] = ShaderStage::kFragment;
+            else if (stage == "kernel")
+                entryPoints[entry] = ShaderStage::kCompute;
+            else if (stage == "mesh")
+                entryPoints[entry] = ShaderStage::kMesh;
         }
     }
 

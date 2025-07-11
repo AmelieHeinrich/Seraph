@@ -33,12 +33,14 @@ target("Seraph")
         add_defines("SERAPH_VULKAN", "SERAPH_D3D12", "SERAPH_DUMMY")
         add_files("Seraph/RHI/Vulkan/*.cpp",
                   "Seraph/RHI/D3D12/*.cpp",
+                  "Seraph/RHI/Dummy/*.cpp",
                   "Seraph/Core/Windows/*.cpp",
                   "Seraph/Asset/Windows/*.cpp")
     else
         add_defines("SERAPH_DUMMY")
-        add_files("Seraph/Core/Mac/*.cpp")
-        add_files("Serpah/Asset/Mac/*.cpp")
+        add_files("Seraph/Core/Mac/*.cpp",
+                  "Seraph/Asset/Mac/*.cpp",
+                  "Seraph/RHI/Dummy/*.cpp")
     end
 
     if is_mode("debug") then

@@ -9,6 +9,11 @@
 
 void TextureAsset::Load(const String& path)
 {
+    if (!FileSystem::Exists(path)) {
+        SERAPH_WARN("%s isn't compressed, skipping");
+        return;
+    }
+
     uint64 size = FileSystem::GetFileSize(path);
     Pixels.resize(size - sizeof(TextureHeader));
 

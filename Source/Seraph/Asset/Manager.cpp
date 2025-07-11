@@ -78,8 +78,8 @@ Asset::Handle AssetManager::Get(const String& path, AssetType type)
         }
         case AssetType::kTexture: {
             if (!FileSystem::Exists(Compressor::ToCachedPath(path))) {
-                SERAPH_ERROR("Asset %s isn't compressed and thus can't be loaded as a texture!", path.c_str());
-                return nullptr;
+                SERAPH_WARN("Asset %s isn't compressed and thus can't be loaded as a texture! Loading as image instead.", path.c_str());
+                return AssetManager::Get(path, AssetType::kImage);
             }
 
             TextureAsset asset;

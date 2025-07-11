@@ -8,15 +8,22 @@
 
 #include <ImGui/imgui_impl_sdl3.h>
 
-Window::Window(int width, int height, const String& title)
+Window::Window(RHIBackend backend, int width, int height, const String& title)
     : mOpen(true)
 {
     ASSERT_EQ(SDL_Init(SDL_INIT_VIDEO) == true, "Failed to initialize SDL3!");
 
-    mWindow = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN);
-    ASSERT_EQ(mWindow != nullptr, "Failed to create SDL3 window!");
+    int windowFlags = 0;
+    if (backend == RHIBackend::kVulkan) windowFlags = SDL_WINDOW_VULKAN;
+    if (backend == RHIBackend::kMetal) windowFlags = SDL_WINDOW_METAL;
 
-    SDL_SetWindowFullscreen(mWindow, true);
+    mWindow = SDL_CreateWindow(title.data(), width, height, windowFlags);
+    if (!mWindow) {
+        SERAPH_ERROR("SDL ERROR: %s", SDL_GetError());
+        ASSERT_EQ(false, "Failed to create SDL3 window!");
+    }
+
+    // SDL_SetWindowFullscreen(mWindow, true);
 }
 
 Window::~Window()

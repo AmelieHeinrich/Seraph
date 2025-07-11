@@ -28,6 +28,7 @@ std::string StringifyBackend(RHIBackend backend)
         case RHIBackend::kVulkan: return "Vulkan";
         case RHIBackend::kD3D12: return "D3D12";
         case RHIBackend::kDummy: return "Dummy";
+        case RHIBackend::kMetal: return "Metal";
     }
     return "WTF";
 }
