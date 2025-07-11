@@ -8,6 +8,8 @@
 #include <RHI/BLAS.h>
 #include <RHI/Buffer.h>
 
+#include <MetalCPP/Metal/Metal.hpp>
+
 class MetalDevice;
 
 class MetalBLAS : public IRHIBLAS
@@ -17,4 +19,13 @@ public:
     ~MetalBLAS();
 
     uint64 GetAddress() override;
+
+public:
+    MTL::AccelerationStructure* GetAccelerationStructure() { return mAS; }
+    MTL::AccelerationStructureDescriptor* GetDescriptor() { return mDescriptor; }
+
+private:
+    MTL::AccelerationStructure* mAS;
+    MTL::AccelerationStructureTriangleGeometryDescriptor* mGeometryDescriptor;
+    MTL::AccelerationStructureDescriptor* mDescriptor;
 };

@@ -1,2 +1,18 @@
 - Fix CSM biasing
 - Comparison sampler
+
+# Metal
+- BLAS
+- TLAS
+- Bindless Setup
+- Buffer View
+- Texture
+- Texture View
+- Command Queue
+- Compute Pipeline
+- Graphics Pipeline
+- F2F Sync
+- Mesh Pipeline
+- Sampler
+- Surface
+- Command List

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <RHI/Buffer.h>
+#include <MetalCPP/Metal/Metal.hpp>
 
 class MetalDevice;
 
@@ -22,7 +23,12 @@ public:
 
     uint64 GetAddress() override;
 
+public:
+    MTL::Buffer* GetBuffer() { return mBuffer; }
+
 private:
     MetalDevice* mParentDevice;
-    void* mMappedMemory;
+    
+    MTL::Buffer* mBuffer;
+    NS::String* mLabel;
 };
