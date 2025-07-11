@@ -153,7 +153,7 @@ enum class RHIASBuildMode
 class IRHICommandList
 {
 public:
-    ~IRHICommandList() = default;
+    virtual ~IRHICommandList() = default;
 
     virtual void Reset() = 0;
 

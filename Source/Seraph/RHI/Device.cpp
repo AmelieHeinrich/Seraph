@@ -5,15 +5,25 @@
 
 #include "Device.h"
 
-#include "Vulkan/VulkanDevice.h"
-#include "D3D12/D3D12Device.h"
+#ifdef SERAPH_VULKAN
+    #include "Vulkan/VulkanDevice.h"
+#endif
+#ifdef SERAPH_D3D12
+    #include "D3D12/D3D12Device.h"
+#endif
 
 IRHIDevice* IRHIDevice::CreateDevice(RHIBackend backend, bool validationLayers)
 {
     switch (backend)
     {
+#ifdef SERAPH_D3D12
         case RHIBackend::kD3D12: return new D3D12Device(validationLayers);
+#endif
+#ifdef SERAPH_VULKAN
         case RHIBackend::kVulkan: return new VulkanDevice(validationLayers);
+#endif
+        case RHIBackend::kDummy: return nullptr;
+        default: return nullptr;
     }
     return nullptr;
 }

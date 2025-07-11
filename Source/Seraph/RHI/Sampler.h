@@ -37,7 +37,7 @@ struct RHISamplerDesc
 class IRHISampler
 {
 public:
-    ~IRHISampler() = default;
+    virtual ~IRHISampler() = default;
 
     RHISamplerDesc GetDesc() const { return mDesc; }
     BindlessHandle GetBindlessHandle() const { return mHandle; }

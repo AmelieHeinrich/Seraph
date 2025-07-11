@@ -9,5 +9,7 @@ target("NVTT")
 
     add_headerfiles("Include/**.h")
     add_includedirs("Include", { public = true })
-    add_linkdirs("Lib/", { public = true })
-    add_syslinks("nvtt30205.lib", { public = true })
+    if is_plat("windows") then
+        add_linkdirs("Lib/", { public = true })
+        add_syslinks("nvtt30205.lib", { public = true })
+    end

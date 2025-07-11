@@ -6,7 +6,7 @@
 #pragma once
 
 #include <Seraph/Seraph.h>
-#include <imgui/imgui.h>
+#include <ImGui/imgui.h>
 
 #include "Camera.h"
 #include "Renderer/Renderer.h"

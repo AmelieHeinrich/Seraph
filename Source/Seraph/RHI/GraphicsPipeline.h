@@ -53,7 +53,7 @@ struct RHIGraphicsPipelineDesc
 class IRHIGraphicsPipeline
 {
 public:
-    ~IRHIGraphicsPipeline() = default;
+    virtual ~IRHIGraphicsPipeline() = default;
 
     RHIGraphicsPipelineDesc GetDesc() const { return mDesc; }
 protected:

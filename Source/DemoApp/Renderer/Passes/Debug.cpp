@@ -10,7 +10,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-#include <imgui/imgui.h>
+#include <ImGui/imgui.h>
 
 Debug::Data Debug::sData;
 

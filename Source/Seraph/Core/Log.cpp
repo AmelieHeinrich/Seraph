@@ -10,7 +10,6 @@
 #include <cstdarg>
 #include <ctime>
 #include <iomanip>
-#include <Windows.h>
 
 void ILogger::Log(LogLevel level, const char* file, int line, const char* fmt, va_list args)
 {
@@ -86,25 +85,6 @@ String ILogger::GetTimeString()
     std::ostringstream oss;
     oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
     return oss.str();
-}
-
-void ConsoleLogger::Output(LogLevel level, const String& format)
-{
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    WORD color = 7; // Default gray/white
-    
-    switch (level)
-    {
-        case LogLevel::kInfo: color = 10; break;        // Green
-        case LogLevel::kWarn: color = 14; break;        // Yellow
-        case LogLevel::kError: color = 12; break;       // Red
-        case LogLevel::kFatal: color = 13; break;       // Magenta
-        case LogLevel::kWhatever: color = 11; break;    // Cyan
-    }
-    
-    SetConsoleTextAttribute(hConsole, color);
-    std::cout << format << std::endl;
-    SetConsoleTextAttribute(hConsole, 7);
 }
 
 FileLogger::FileLogger(const String& path)

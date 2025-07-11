@@ -8,7 +8,7 @@
 #include "LightCulling.h"
 #include "Shadows.h"
 
-#include <imgui/imgui.h>
+#include <ImGui/imgui.h>
 
 Deferred::Deferred(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)

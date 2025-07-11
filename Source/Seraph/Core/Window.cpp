@@ -6,7 +6,7 @@
 #include "Window.h"
 #include "Context.h"
 
-#include <imgui/imgui_impl_sdl3.h>
+#include <ImGui/imgui_impl_sdl3.h>
 
 Window::Window(int width, int height, const String& title)
     : mOpen(true)

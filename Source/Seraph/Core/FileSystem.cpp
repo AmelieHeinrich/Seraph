@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <sys/stat.h>
 #include <fstream>
+#include <sstream>
 
 FileSystem::Data FileSystem::sData;
 
@@ -36,7 +37,7 @@ nlohmann::json FileSystem::ReadJSON(const String& path)
 {
     std::ifstream stream(path);
     if (!stream.is_open()) {
-        SERAPH_ERROR("Failed to open JSON file {0}", path);
+        SERAPH_ERROR("Failed to open JSON file {0}", path.c_str());
         return {};
     }
     nlohmann::json root = nlohmann::json::parse(stream);
@@ -48,7 +49,7 @@ void FileSystem::WriteJSON(nlohmann::json json, const String& path)
 {
     std::ofstream stream(path);
     if (!stream.is_open()) {
-        SERAPH_ERROR("Failed to open JSON file {0} for writing!", path);
+        SERAPH_ERROR("Failed to open JSON file {0} for writing!", path.c_str());
     }
     stream << json.dump(4) << std::endl;
     stream.close();

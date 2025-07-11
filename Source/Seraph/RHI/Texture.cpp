@@ -17,6 +17,7 @@ uint32 IRHITexture::BytesPerPixel(RHITextureFormat format)
     case RHITextureFormat::kD32_FLOAT:          return 4; // depth 32-bit float
     case RHITextureFormat::kBC7_UNORM:          return 16; // block compressed: 16 bytes per 4x4 block
     case RHITextureFormat::kR16G16_FLOAT:       return 8;
+    default: return 0;
     }
     return 4;
 }

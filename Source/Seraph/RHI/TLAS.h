@@ -28,7 +28,7 @@ struct TLASInstance
 class IRHITLAS
 {
 public:
-    ~IRHITLAS() = default;
+    virtual ~IRHITLAS() = default;
 
     BindlessHandle GetBindlessHandle() const { return mBindless; }
 

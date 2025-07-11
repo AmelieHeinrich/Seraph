@@ -12,7 +12,7 @@ using RHIMeshPipelineDesc = RHIGraphicsPipelineDesc;
 class IRHIMeshPipeline
 {
 public:
-    ~IRHIMeshPipeline() = default;
+    virtual ~IRHIMeshPipeline() = default;
 
     RHIMeshPipelineDesc GetDesc() const { return mDesc; }
 protected:

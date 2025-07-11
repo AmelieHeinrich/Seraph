@@ -29,7 +29,7 @@ struct RHIBLASDesc
 class IRHIBLAS
 {
 public:
-    ~IRHIBLAS() = default;
+    virtual ~IRHIBLAS() = default;
 
     RHIBLASDesc GetDesc() const { return mDesc; }
     

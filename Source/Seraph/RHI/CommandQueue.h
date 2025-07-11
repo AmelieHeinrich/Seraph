@@ -20,7 +20,7 @@ class IRHICommandList;
 class IRHICommandQueue
 {
 public:
-    ~IRHICommandQueue() = default;
+    virtual ~IRHICommandQueue() = default;
 
     RHICommandQueueType GetType() const { return mType; }
 

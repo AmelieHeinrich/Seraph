@@ -5,6 +5,15 @@
 
 #pragma once
 
+// https://stackoverflow.com/questions/5919996/how-to-detect-reliably-mac-os-x-ios-linux-windows-in-c-preprocessor
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+   #define SERAPH_WINDOWS
+#elif __APPLE__
+    #define SERAPH_MAC
+#elif __linux__
+    #define SERAPH_LINUX
+#endif
+
 #include <cstdint>
 
 #include <string>

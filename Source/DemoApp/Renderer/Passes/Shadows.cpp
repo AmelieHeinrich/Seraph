@@ -7,7 +7,7 @@
 #include "GBuffer.h"
 #include "Debug.h"
 
-#include <imgui/imgui.h>
+#include <ImGui/imgui.h>
 #include <DemoApp/Camera.h>
 
 Shadows::Shadows(IRHIDevice* device, uint width, uint height)
@@ -96,7 +96,7 @@ void Shadows::Render(RenderPassBegin& begin)
             break;
         }
         default: {
-            SERAPH_WARN("SHADOW TECHNIQUE NOT IMPLEMENTED YET!");
+            None(begin);
             break;
         }
     }

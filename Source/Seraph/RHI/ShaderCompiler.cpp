@@ -6,12 +6,23 @@
 #include "ShaderCompiler.h"
 
 #include <Core/FileSystem.h>
+#include <Core/Types.h>
 
-#include <Windows.h>
-#include <dxc/dxcerrors.h>
-#include <dxc/dxcapi.h>
+#ifdef SERAPH_WINDOWS
+    #include <Windows.h>
+    #include <dxc/dxcerrors.h>
+    #include <dxc/dxcapi.h>
 
-#undef ReadFile // I hate Windows
+    #undef ReadFile // I hate Windows
+#elif defined(SERAPH_MAC)
+    #include <dxc/WinAdapter.h>
+    #include <dxc/dxcapi.h>
+    #include <dlfcn.h>
+
+    typedef HRESULT (*PFN_DxcCreateInstance)(REFCLSID rclsid, REFIID riid, LPVOID *ppv);
+    PFN_DxcCreateInstance DxcCreateInstance_Mac;
+    void* DxcDYLIB;
+#endif
 
 ShaderCompiler::Data ShaderCompiler::sData;
 
@@ -21,7 +32,7 @@ class CustomIncludeHandler : public IDxcIncludeHandler
 private:
     IDxcUtils* m_pUtils;
     String m_shaderDirectory;
-    ULONG m_refCount;
+    uint m_refCount;
 
 public:
     CustomIncludeHandler(IDxcUtils* pUtils, const String& shaderDirectory)
@@ -37,7 +48,6 @@ public:
             m_pUtils->Release();
     }
 
-    // IUnknown methods
     ULONG STDMETHODCALLTYPE AddRef() override
     {
         return ++m_refCount;
@@ -72,7 +82,11 @@ public:
 
         // Convert wide char filename to string
         char filename[512];
+#ifdef SERAPH_WINDOWS
         wcstombs_s(nullptr, filename, 512, pFilename, _TRUNCATE);
+#else
+        std::wcstombs(filename, pFilename, 512);
+#endif
 
         // Build full path - try relative to shader directory first
         String fullPath = m_shaderDirectory + "/" + String(filename);
@@ -115,6 +129,7 @@ const char* ProfileFromStage(ShaderStage stage)
             return "cs_6_6";
         case ShaderStage::kMesh:
             return "ms_6_6";
+        default: return "cs_6_6";
     }
     return "cs6_6";
 }
@@ -123,11 +138,24 @@ void ShaderCompiler::Initialize(RHIBackend backend)
 {
     sData.Backend = backend;
 
+#ifdef SERAPH_MAC
+    DxcDYLIB = dlopen("libdxcompiler.dylib", RTLD_LAZY);
+    if (!DxcDYLIB) {
+        SERAPH_FATAL("Failed to load DXC dylib!");
+        return;
+    }
+
+    DxcCreateInstance_Mac = (PFN_DxcCreateInstance)dlsym(DxcDYLIB, "DxcCreateInstance");
+#endif
+
     SERAPH_INFO("Initialized shader compiler!");
 }
 
 void ShaderCompiler::Shutdown()
 {
+#ifdef SERAPH_MAC
+    dlclose(DxcDYLIB);
+#endif
 }
 
 CompiledShader ShaderCompiler::Compile(const String& path)
@@ -174,8 +202,13 @@ CompiledShader ShaderCompiler::Compile(const String& path)
 
         IDxcUtils* pUtils = nullptr;
         IDxcCompiler* pCompiler = nullptr;
+#ifdef SERAPH_WINDOWS
         ASSERT_EQ(SUCCEEDED(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils))), "Failed to create DXC utils!");
         ASSERT_EQ(SUCCEEDED(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler))), "Failed too create DXC compiler!");
+#else
+        ASSERT_EQ(SUCCEEDED(DxcCreateInstance_Mac(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils))), "Failed to create DXC utils!");
+        ASSERT_EQ(SUCCEEDED(DxcCreateInstance_Mac(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler))), "Failed too create DXC compiler!");
+#endif
 
         // Create custom include handler that looks in Data/Shaders directory
         CustomIncludeHandler* pIncludeHandler = new CustomIncludeHandler(pUtils, "Data/Shaders");
@@ -201,7 +234,7 @@ CompiledShader ShaderCompiler::Compile(const String& path)
         }
 
         IDxcOperationResult* pResult = nullptr;
-        SUCCEEDED(pCompiler->Compile(pSourceBlob, L"Shader", wideEntry, wideTarget, args.data(), args.size(), nullptr, 0, pIncludeHandler, &pResult));
+        pCompiler->Compile(pSourceBlob, L"Shader", wideEntry, wideTarget, args.data(), args.size(), nullptr, 0, pIncludeHandler, &pResult);
 
         IDxcBlobEncoding* pErrors = nullptr;
         pResult->GetErrorBuffer(&pErrors);

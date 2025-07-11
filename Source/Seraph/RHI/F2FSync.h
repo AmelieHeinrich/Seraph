@@ -24,7 +24,7 @@ class IRHIDevice;
 class IRHIF2FSync
 {
 public:
-    ~IRHIF2FSync() = default;
+    virtual ~IRHIF2FSync() = default;
 
     virtual uint BeginSynchronize() = 0;
     virtual void EndSynchronize(IRHICommandList* submitBuffer) = 0;

@@ -60,7 +60,7 @@ class IRHIDevice;
 class IRHITexture
 {
 public:
-    ~IRHITexture() = default;
+    virtual ~IRHITexture() = default;
 
     virtual void SetName(const String& name) = 0;
 

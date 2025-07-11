@@ -26,7 +26,7 @@
 class IRHIDevice
 {
 public:
-    ~IRHIDevice() = default;
+    virtual ~IRHIDevice() = default;
 
     static IRHIDevice* CreateDevice(RHIBackend backend, bool validationLayers);
 

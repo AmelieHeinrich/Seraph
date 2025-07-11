@@ -131,7 +131,7 @@ void AssetManager::Release(Asset::Handle handle)
             Destroy(sData.Assets[handle->Path]);
         }
     } else {
-        SERAPH_WARN("Trying to give back resource {0} that isn't in cache!", handle->Path);
+        SERAPH_WARN("Trying to give back resource {0} that isn't in cache!", handle->Path.c_str());
     }
 }
 

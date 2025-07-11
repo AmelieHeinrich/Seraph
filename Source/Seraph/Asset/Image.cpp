@@ -42,7 +42,7 @@ void Image::WriteImageRGB(const float* data, int width, int height, const String
     stbi_write_png(path.data(), width, height, 4, temp, width * 4);
     SERAPH_INFO("Wrote image file to %s", path.data());
 
-    delete temp;
+    delete[] temp;
 }
 
 void Image::ShouldFlipImage(bool flip)

@@ -20,7 +20,7 @@ struct RHIComputePipelineDesc
 class IRHIComputePipeline
 {
 public:
-    ~IRHIComputePipeline() = default;
+    virtual ~IRHIComputePipeline() = default;
 
     RHIComputePipelineDesc GetDesc() const { return mDesc; }
 protected:

@@ -6,7 +6,7 @@
 #include "PathtracerDenoise.h"
 #include "Pathtracer.h"
 
-#include <imgui/imgui.h>
+#include <ImGui/imgui.h>
 
 PathtracerDenoise::PathtracerDenoise(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)

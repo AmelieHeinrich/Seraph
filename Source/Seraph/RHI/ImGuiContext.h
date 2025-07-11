@@ -10,5 +10,5 @@
 class IRHIImGuiContext
 {
 public:
-    ~IRHIImGuiContext() = default;
+    virtual ~IRHIImGuiContext() = default;
 };

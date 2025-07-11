@@ -30,7 +30,7 @@ struct RHIBufferViewDesc
 class IRHIBufferView
 {
 public:
-    ~IRHIBufferView() = default;
+    virtual ~IRHIBufferView() = default;
 
     RHIBufferViewDesc GetDesc() const { return mDesc; }
     BindlessHandle GetBindlessHandle() const { return mBindless; }

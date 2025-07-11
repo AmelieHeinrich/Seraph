@@ -35,7 +35,7 @@ struct RHIBufferDesc
 class IRHIBuffer
 {
 public:
-    ~IRHIBuffer() = default;
+    virtual ~IRHIBuffer() = default;
 
     virtual void SetName(const String& name) = 0;
 

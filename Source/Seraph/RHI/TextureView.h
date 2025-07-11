@@ -56,7 +56,7 @@ class IRHIDevice;
 class IRHITextureView
 {
 public:
-    ~IRHITextureView() = default;
+    virtual ~IRHITextureView() = default;
 
     RHITextureViewDesc GetDesc() const { return mDesc; }
     BindlessHandle GetBindlessHandle() const { return mBindless; }

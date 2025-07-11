@@ -179,6 +179,7 @@ RendererResource& RendererResourceManager::Import(const String& name, IRHIComman
         list->Barrier(barrier);
         break;
     }
+    default: break;
     }
     return *resource;
 }

@@ -9,16 +9,35 @@ target("Seraph")
     set_languages("c++20")
     set_rundir("$(projectdir)")
 
-    add_files("Seraph/**.cpp")
-    add_headerfiles("Seraph/**.h")
-    add_includedirs("Seraph")
-    add_syslinks("user32", { public = true })
-    add_defines("ENABLE_PIX", "GLM_ENABLE_EXPERIMENTAL", { public = true })
-    add_deps("SDL3", "Vulkan", "DirectX", "PIX", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "NVTT", "MikkTSpace", { public = true })
+    add_files("Seraph/Asset/*.cpp",
+              "Seraph/Core/*.cpp",
+              "Seraph/Renderer/*.cpp",
+              "Seraph/RHI/*.cpp",
+              "Seraph/Util/*.cpp",
+              "Seraph/World/*.cpp")
+    add_headerfiles("Seraph/*.h",
+                    "Seraph/Asset/*.h",
+                    "Seraph/Core/*.h",
+                    "Seraph/Renderer/*.h",
+                    "Seraph/RHI/*.h",
+                    "Seraph/Util/*.h",
+                    "Seraph/World/*.h")
 
-    before_link(function (target)
-        os.cp("Binaries/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
-    end)
+    add_includedirs("Seraph")
+    add_defines("ENABLE_PIX", "GLM_ENABLE_EXPERIMENTAL", { public = true })
+    add_deps("SDL3", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "NVTT", "MikkTSpace", { public = true })
+
+    if is_plat("windows") then
+        add_deps("DirectX", "Vulkan")
+        add_syslinks("user32", { public = true })
+        add_defines("SERAPH_VULKAN", "SERAPH_D3D12", "SERAPH_DUMMY")
+        add_files("Seraph/RHI/Vulkan/*.cpp",
+                  "Seraph/RHI/DirectX/*.cpp",
+                  "Seraph/Core/Windows/*.cpp")
+    else
+        add_defines("SERAPH_DUMMY")
+        add_files("Seraph/Core/Mac/*.cpp")
+    end
 
     if is_mode("debug") then
         set_symbols("debug")
@@ -42,7 +61,7 @@ target("DemoApp")
     add_files("DemoApp/**.cpp")
     add_headerfiles("DemoApp/**.h")
     add_includedirs(".", "Seraph")
-    add_deps("Seraph", "PIX")
+    add_deps("Seraph")
     add_defines("GLM_FORCE_DEPTH_ZERO_TO_ONE", "ENABLE_PIX")
 
     if is_mode("debug") then

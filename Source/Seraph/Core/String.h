@@ -7,6 +7,8 @@
 
 #include "Types.h"
 
+#ifdef SERAPH_WINDOWS
+
 #include <cstdarg>
 
 // Credit to https://github.com/simco50/D3D12_Research/blob/master/Source/Core/CString.h
@@ -50,3 +52,5 @@ using UnicodeToMultibyte = StringConverter<wchar_t, char>;
 using MultibyteToUnicode = StringConverter<char, wchar_t>;
 #define UNICODE_TO_MULTIBYTE(input) UnicodeToMultibyte(input).Get()
 #define MULTIBYTE_TO_UNICODE(input) MultibyteToUnicode(input).Get()
+
+#endif

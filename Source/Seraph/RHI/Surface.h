@@ -18,7 +18,7 @@ class IRHISurface
 {
 public:
     // Constructor takes: Window*
-    ~IRHISurface() = default;
+    virtual ~IRHISurface() = default;
 
     IRHITexture* GetTexture(uint frameIndex) { return mTextures[frameIndex]; }
     IRHITextureView* GetTextureView(uint frameIndex) { return mTextureViews[frameIndex]; }
