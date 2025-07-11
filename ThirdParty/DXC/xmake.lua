@@ -16,11 +16,10 @@ target("DXC")
     set_group("Dependencies")
 
     if is_plat("windows") then
-        add_headerfiles("Windows/Include/*.h")
+        add_headerfiles("Windows/Include/**.h")
         add_includedirs("Windows/Include/", { public = true })
         add_linkdirs("Windows/Lib", { public = true })
         add_syslinks("dxcompiler.lib", { public = true })
     else
         add_includedirs(vulkan_sdk .. "/Include", { public = true })
-        add_linkdirs(vulkan_sdk .. "/Lib", { public = true })
     end

@@ -49,8 +49,8 @@ private:
     ID3D12Debug1* mDebug = nullptr;
     ID3D12InfoQueue1* mInfoQueue = nullptr;
 
-    D3D12BindlessManager* mBindlessManager;
-    D3D12MA::Allocator* mAllocator;
+    D3D12BindlessManager* mBindlessManager = nullptr;
+    D3D12MA::Allocator* mAllocator = nullptr;
 
     uint64 CalculateAdapterScore(IDXGIAdapter1* adapter);
 };

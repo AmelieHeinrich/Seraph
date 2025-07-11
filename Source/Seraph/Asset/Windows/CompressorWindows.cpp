@@ -3,11 +3,14 @@
 // > Create Time: 2025-06-07 19:48:16
 //
 
-#include "Compressor.h"
-#include "Texture.h"
+#include "Asset/Compressor.h"
+#include "Asset/Texture.h"
 
 #include <filesystem>
 #include <Core/FileSystem.h>
+#include <nvtt/nvtt.h>
+
+nvtt::Context sGlobalContext;
 
 class NVTTWriter : public nvtt::OutputHandler
 {
@@ -77,7 +80,7 @@ void Compressor::CompressTexture(const String& path)
     compressionOptions.setFormat(nvtt::Format_BC7);
 
     for (int i = 0; i < finalMipCount; i++) {
-        if (!mContext.compress(image, 0, i, compressionOptions, options)) {
+        if (!sGlobalContext.compress(image, 0, i, compressionOptions, options)) {
             SERAPH_ERROR("Failed to compress texture!");
         }
 

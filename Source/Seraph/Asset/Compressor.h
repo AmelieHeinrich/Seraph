@@ -6,7 +6,6 @@
 #pragma once
 
 #include <Core/Context.h>
-#include <nvtt/nvtt.h>
 
 class Compressor
 {
@@ -15,6 +14,4 @@ public:
     void CompressTexture(const String& path);
 
     static String ToCachedPath(const String& path);
-private:
-    nvtt::Context mContext;
 };
