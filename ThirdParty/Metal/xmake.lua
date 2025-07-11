@@ -12,5 +12,5 @@ target("Metal")
         add_includedirs("Include/", { public = true })
         add_frameworks("Foundation", "QuartzCore", "Metal", { public = true })
     else
-        set_kind("headeronlh")
+        set_kind("headeronly")
     end
