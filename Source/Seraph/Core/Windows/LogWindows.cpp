@@ -4,7 +4,9 @@
 //
 
 #include "Core/Log.h"
+
 #include <Windows.h>
+#include <iostream>
 
 void ConsoleLogger::Output(LogLevel level, const String& format)
 {

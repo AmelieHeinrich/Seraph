@@ -18,6 +18,7 @@ target("ImGui")
 
     if is_plat("windows") then
         add_deps("DirectX", "Vulkan")
+        add_files("Include/ImGui/imgui_impl_dx12.cpp", "Include/ImGui/imgui_impl_vulkan.cpp")
     else
         
     end

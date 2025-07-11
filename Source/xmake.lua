@@ -28,11 +28,11 @@ target("Seraph")
     add_deps("SDL3", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "NVTT", "MikkTSpace", { public = true })
 
     if is_plat("windows") then
-        add_deps("DirectX", "Vulkan")
+        add_deps("DirectX", "Vulkan", "PIX")
         add_syslinks("user32", { public = true })
         add_defines("SERAPH_VULKAN", "SERAPH_D3D12", "SERAPH_DUMMY")
         add_files("Seraph/RHI/Vulkan/*.cpp",
-                  "Seraph/RHI/DirectX/*.cpp",
+                  "Seraph/RHI/D3D12/*.cpp",
                   "Seraph/Core/Windows/*.cpp")
     else
         add_defines("SERAPH_DUMMY")
