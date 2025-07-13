@@ -14,7 +14,7 @@ class MetalTLAS : public IRHITLAS
 {
 public:
     MetalTLAS(MetalDevice* device);
-    ~MetalTLAS();
+    ~MetalTLAS() override;
 
     uint64 Address() const { return mMemory->GetAddress(); }
 private:

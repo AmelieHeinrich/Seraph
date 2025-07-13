@@ -14,7 +14,7 @@ class MetalSampler : public IRHISampler
 {
 public:
     MetalSampler(MetalDevice* device, RHISamplerDesc desc);
-    ~MetalSampler();
+    ~MetalSampler() override;
 
 private:
     MetalDevice* mParentDevice;

@@ -48,6 +48,8 @@ int main(void)
         return path;
     };
 
+    int testCount = tests.size();
+    int testPassed = 0;
     for (auto* test : tests) {
         std::string goldenPath = "Data/Tests/Golden/" + std::string(test->Name()) + "Golden.png";
         std::string magmaVulkanPath = "Data/Tests/" + std::string(test->Name()) + "MagmaVulkan.png";
@@ -127,9 +129,19 @@ int main(void)
         json[test->Name()]["magmaMetalPath"] = StripDataPrefix(magmaMetalPath);
     #endif
 
+        bool passed = (backendCount > 0) ? (finalMean / backendCount) < 0.02f : false;
+
         json[test->Name()]["goldenPath"] = StripDataPrefix(goldenPath);
-        json[test->Name()]["result"] = (backendCount > 0) ? (finalMean / backendCount) < 0.02f : false;
+        json[test->Name()]["result"] = passed;
+
+        if (passed) testPassed++;
+
+        delete test;
     }
+
+    printf("-------------------------------------\n");
+    SERAPH_INFO("TESTS PASSED: %d/%d", testPassed, testCount);
+    printf("-------------------------------------\n");
 
     FileSystem::WriteJSON(json, "Data/TestReport.json");
     Context::Shutdown();

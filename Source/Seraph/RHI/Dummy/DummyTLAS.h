@@ -14,7 +14,7 @@ class DummyTLAS : public IRHITLAS
 {
 public:
     DummyTLAS(DummyDevice* device);
-    ~DummyTLAS();
+    ~DummyTLAS() override;
 
     uint64 Address() const { return mMemory->GetAddress(); }
 private:

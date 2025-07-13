@@ -11,7 +11,7 @@ class DummyDevice : public IRHIDevice
 {
 public:
     DummyDevice(bool validationLayers);
-    ~DummyDevice();
+    ~DummyDevice() override;
 
     IRHISurface* CreateSurface(Window* window, IRHICommandQueue* graphicsQueue) override;
     IRHITexture* CreateTexture(RHITextureDesc desc) override;

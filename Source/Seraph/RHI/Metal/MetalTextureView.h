@@ -13,7 +13,7 @@ class MetalTextureView : public IRHITextureView
 {
 public:
     MetalTextureView(MetalDevice* device, RHITextureViewDesc viewDesc);
-    ~MetalTextureView();
+    ~MetalTextureView() override;
 
     uint64 GetTextureID() override { return 0; }
 private:

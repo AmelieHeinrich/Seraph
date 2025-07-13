@@ -14,7 +14,7 @@ class DummySurface : public IRHISurface
 {
 public:
     DummySurface(DummyDevice* device, Window* window, DummyCommandQueue* commandQueue);
-    ~DummySurface();
+    ~DummySurface() override;
 
 private:
     DummyDevice* mParentDevice;

@@ -15,7 +15,7 @@ class DummyImGuiContext : public IRHIImGuiContext
 {
 public:
     DummyImGuiContext(DummyDevice* device, DummyCommandQueue* queue, Window* window);
-    ~DummyImGuiContext();
+    ~DummyImGuiContext() override;
 
 private:
     DummyDevice* mParentDevice;

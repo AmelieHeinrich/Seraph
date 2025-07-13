@@ -14,7 +14,7 @@ class MetalDevice : public IRHIDevice
 {
 public:
     MetalDevice(bool validationLayers);
-    ~MetalDevice();
+    ~MetalDevice() override;
 
     IRHISurface* CreateSurface(Window* window, IRHICommandQueue* graphicsQueue) override;
     IRHITexture* CreateTexture(RHITextureDesc desc) override;

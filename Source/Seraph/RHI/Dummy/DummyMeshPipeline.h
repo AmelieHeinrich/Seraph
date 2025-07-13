@@ -13,5 +13,5 @@ class DummyMeshPipeline : public IRHIMeshPipeline
 {
 public:
     DummyMeshPipeline(DummyDevice* device, RHIMeshPipelineDesc desc);
-    ~DummyMeshPipeline();
+    ~DummyMeshPipeline() override;
 };

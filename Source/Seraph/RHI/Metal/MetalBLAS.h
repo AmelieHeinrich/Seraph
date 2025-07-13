@@ -16,7 +16,7 @@ class MetalBLAS : public IRHIBLAS
 {
 public:
     MetalBLAS(MetalDevice* device, RHIBLASDesc desc);
-    ~MetalBLAS();
+    ~MetalBLAS() override;
 
     uint64 GetAddress() override;
 };

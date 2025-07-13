@@ -13,5 +13,5 @@ class DummyGraphicsPipeline : public IRHIGraphicsPipeline
 {
 public:
     DummyGraphicsPipeline(DummyDevice* device, RHIGraphicsPipelineDesc desc);
-    ~DummyGraphicsPipeline();
+    ~DummyGraphicsPipeline() override;
 };

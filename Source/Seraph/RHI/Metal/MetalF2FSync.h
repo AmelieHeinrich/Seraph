@@ -15,7 +15,7 @@ class MetalF2FSync : public IRHIF2FSync
 {
 public:
     MetalF2FSync(MetalDevice* device, MetalSurface* surface, MetalCommandQueue* queue);
-    ~MetalF2FSync();
+    ~MetalF2FSync() override;
 
     uint BeginSynchronize() override;
     void EndSynchronize(IRHICommandList* submitBuffer) override;

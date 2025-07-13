@@ -19,7 +19,7 @@ class MetalCommandList : public IRHICommandList
 {
 public:
     MetalCommandList(MetalDevice* device, MetalCommandQueue* queue, bool singleTime);
-    ~MetalCommandList();
+    ~MetalCommandList() override;
 
     void Reset() override;
     void Begin() override;

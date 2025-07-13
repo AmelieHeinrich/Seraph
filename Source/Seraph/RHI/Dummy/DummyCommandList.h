@@ -19,7 +19,7 @@ class DummyCommandList : public IRHICommandList
 {
 public:
     DummyCommandList(DummyDevice* device, DummyCommandQueue* queue, bool singleTime);
-    ~DummyCommandList();
+    ~DummyCommandList() override;
 
     void Reset() override;
     void Begin() override;

@@ -15,7 +15,7 @@ class DummyF2FSync : public IRHIF2FSync
 {
 public:
     DummyF2FSync(DummyDevice* device, DummySurface* surface, DummyCommandQueue* queue);
-    ~DummyF2FSync();
+    ~DummyF2FSync() override;
 
     uint BeginSynchronize() override;
     void EndSynchronize(IRHICommandList* submitBuffer) override;

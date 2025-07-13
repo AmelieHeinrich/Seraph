@@ -18,7 +18,7 @@ class MetalSurface : public IRHISurface
 {
 public:
     MetalSurface(MetalDevice* device, Window* window, MetalCommandQueue* commandQueue);
-    ~MetalSurface();
+    ~MetalSurface() override;
     
 public:
     CA::MetalLayer* GetLayer() { return mLayer; }

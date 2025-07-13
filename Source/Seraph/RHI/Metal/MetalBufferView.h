@@ -13,7 +13,7 @@ class MetalBufferView : public IRHIBufferView
 {
 public:
     MetalBufferView(MetalDevice* device, RHIBufferViewDesc desc);
-    ~MetalBufferView();
+    ~MetalBufferView() override;
 
 private:
     MetalDevice* mParentDevice;

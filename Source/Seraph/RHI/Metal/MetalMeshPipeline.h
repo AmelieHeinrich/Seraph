@@ -13,5 +13,5 @@ class MetalMeshPipeline : public IRHIMeshPipeline
 {
 public:
     MetalMeshPipeline(MetalDevice* device, RHIMeshPipelineDesc desc);
-    ~MetalMeshPipeline();
+    ~MetalMeshPipeline() override;
 };

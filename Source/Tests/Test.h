@@ -29,6 +29,8 @@ struct TestResult
 class ITest
 {
 public:
+    virtual ~ITest();
+
     static TestStarters CreateStarters(RHIBackend backend);
     static void DeleteStarts(TestStarters starters);
 
@@ -44,6 +46,5 @@ void RegisterTest(ITest* test);
         const char* Name() const override { return #testName; } \
         TestResult Run(RHIBackend backend) override; \
     }; \
-    static testName testName##_instance; \
-    static bool testName##_registered = ([](){ RegisterTest(&testName##_instance); return true; })(); \
+    static bool testName##_registered = ([](){ RegisterTest(new testName); return true; })(); \
     TestResult testName::Run(RHIBackend backend)

@@ -14,7 +14,7 @@ class DummyBLAS : public IRHIBLAS
 {
 public:
     DummyBLAS(DummyDevice* device, RHIBLASDesc desc);
-    ~DummyBLAS();
+    ~DummyBLAS() override;;
 
     uint64 GetAddress() override;
 };

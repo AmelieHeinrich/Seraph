@@ -14,7 +14,7 @@ class DummyTexture : public IRHITexture
 public:
     DummyTexture(RHITextureDesc desc);
     DummyTexture(DummyDevice* device, RHITextureDesc desc);
-    ~DummyTexture();
+    ~DummyTexture() override;
 
     void SetName(const std::string& name) override;
 

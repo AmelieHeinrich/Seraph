@@ -13,5 +13,5 @@ class DummyComputePipeline : public IRHIComputePipeline
 {
 public:
     DummyComputePipeline(DummyDevice* device, RHIComputePipelineDesc desc);
-    ~DummyComputePipeline();
+    ~DummyComputePipeline() override;
 };

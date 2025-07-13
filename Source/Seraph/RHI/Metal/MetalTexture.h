@@ -15,7 +15,7 @@ class MetalTexture : public IRHITexture
 public:
     MetalTexture(RHITextureDesc desc);
     MetalTexture(MetalDevice* device, RHITextureDesc desc);
-    ~MetalTexture();
+    ~MetalTexture() override;
 
     void SetName(const std::string& name) override;
 

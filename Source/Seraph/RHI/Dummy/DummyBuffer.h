@@ -13,7 +13,7 @@ class DummyBuffer : public IRHIBuffer
 {
 public:
     DummyBuffer(DummyDevice* device, RHIBufferDesc desc);
-    ~DummyBuffer();
+    ~DummyBuffer() override;
 
     void SetName(const std::string& name) override;
 

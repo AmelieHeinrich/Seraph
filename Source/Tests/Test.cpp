@@ -5,6 +5,11 @@
 
 #include "Test.h"
 
+ITest::~ITest()
+{
+    SERAPH_INFO("Deleting test data");
+}
+
 TestStarters ITest::CreateStarters(RHIBackend backend)
 {
     TestStarters result = {};

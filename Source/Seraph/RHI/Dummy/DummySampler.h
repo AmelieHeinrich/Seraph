@@ -13,7 +13,7 @@ class DummySampler : public IRHISampler
 {
 public:
     DummySampler(DummyDevice* device, RHISamplerDesc desc);
-    ~DummySampler();
+    ~DummySampler() override;
 
 private:
     DummyDevice* mParentDevice;

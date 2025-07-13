@@ -15,7 +15,7 @@ class MetalImGuiContext : public IRHIImGuiContext
 {
 public:
     MetalImGuiContext(MetalDevice* device, MetalCommandQueue* queue, Window* window);
-    ~MetalImGuiContext();
+    ~MetalImGuiContext() override;
 
 private:
     MetalDevice* mParentDevice;

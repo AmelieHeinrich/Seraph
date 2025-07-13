@@ -13,5 +13,5 @@ class MetalComputePipeline : public IRHIComputePipeline
 {
 public:
     MetalComputePipeline(MetalDevice* device, RHIComputePipelineDesc desc);
-    ~MetalComputePipeline();
+    ~MetalComputePipeline() override;
 };

@@ -13,5 +13,5 @@ class MetalGraphicsPipeline : public IRHIGraphicsPipeline
 {
 public:
     MetalGraphicsPipeline(MetalDevice* device, RHIGraphicsPipelineDesc desc);
-    ~MetalGraphicsPipeline();
+    ~MetalGraphicsPipeline() override;
 };

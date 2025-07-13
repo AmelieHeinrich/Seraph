@@ -35,7 +35,6 @@ MetalBuffer::MetalBuffer(MetalDevice* device, RHIBufferDesc desc)
     if (!mBuffer) {
         SERAPH_ERROR("Failed to create buffer!");
     }
-    mBuffer->retain();
 
     device->GetResidencySet()->addAllocation((const MTL::Allocation*)mBuffer);
 
@@ -45,15 +44,11 @@ MetalBuffer::MetalBuffer(MetalDevice* device, RHIBufferDesc desc)
 MetalBuffer::~MetalBuffer()
 {
     mParentDevice->GetResidencySet()->removeAllocation((const MTL::Allocation*)mBuffer);
-    if (mLabel) mLabel->release();
-    mBuffer->release();
 }
 
 void MetalBuffer::SetName(const std::string& name)
 {
     mLabel = NS::String::alloc()->init(name.c_str(), NS::StringEncoding::ASCIIStringEncoding);
-    mLabel->retain();
-
     mBuffer->setLabel(mLabel);
 }
 

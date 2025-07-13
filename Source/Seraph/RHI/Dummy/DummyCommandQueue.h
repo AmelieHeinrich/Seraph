@@ -13,7 +13,7 @@ class DummyCommandQueue : public IRHICommandQueue
 {
 public:
     DummyCommandQueue(DummyDevice* device, RHICommandQueueType type);
-    ~DummyCommandQueue();
+    ~DummyCommandQueue() override;
 
     IRHICommandList* CreateCommandBuffer(bool singleTime) override;
 

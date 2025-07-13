@@ -14,7 +14,7 @@ class MetalBuffer : public IRHIBuffer
 {
 public:
     MetalBuffer(MetalDevice* device, RHIBufferDesc desc);
-    ~MetalBuffer();
+    ~MetalBuffer() override;
 
     void SetName(const std::string& name) override;
 

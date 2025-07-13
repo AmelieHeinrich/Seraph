@@ -15,7 +15,7 @@ class MetalCommandQueue : public IRHICommandQueue
 {
 public:
     MetalCommandQueue(MetalDevice* device, RHICommandQueueType type);
-    ~MetalCommandQueue();
+    ~MetalCommandQueue() override;
 
     IRHICommandList* CreateCommandBuffer(bool singleTime) override;
 

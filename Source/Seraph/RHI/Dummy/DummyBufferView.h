@@ -13,7 +13,7 @@ class DummyBufferView : public IRHIBufferView
 {
 public:
     DummyBufferView(DummyDevice* device, RHIBufferViewDesc desc);
-    ~DummyBufferView();
+    ~DummyBufferView() override;
 
 private:
     DummyDevice* mParentDevice;

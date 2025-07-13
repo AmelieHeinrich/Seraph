@@ -31,22 +31,11 @@ public:
         mVertexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(vertices), sizeof(float3) + sizeof(float2), RHIBufferUsage::kVertex));
         mIndexBuffer = mStarters.Device->CreateBuffer(RHIBufferDesc(sizeof(indices), sizeof(uint), RHIBufferUsage::kIndex));
 
-        std::string path = compressor.ToCachedPath("Data/Textures/BCTest.jpg");
-        TextureAsset asset;
-        asset.Load(path);
+        AssetManager::Initialize(mStarters.Device);
+        mTexture = AssetManager::Get("Data/Textures/BCTest.jpg", AssetType::kTexture);
 
-        RHITextureDesc checkerboardDesc = {};
-        checkerboardDesc.Width = asset.Header.Width;
-        checkerboardDesc.Height = asset.Header.Height;
-        checkerboardDesc.MipLevels = asset.Header.Mips;
-        checkerboardDesc.Format = asset.Header.Format;
-        checkerboardDesc.Usage = RHITextureUsage::kShaderResource;
-
-        mTexture = mStarters.Device->CreateTexture(checkerboardDesc);
-        mTextureView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mTexture, RHITextureViewType::kShaderRead));
         mSampler = mStarters.Device->CreateSampler(RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
-        Uploader::EnqueueTextureUploadRaw(asset.Pixels.data(), asset.Pixels.size(), mTexture);
         Uploader::EnqueueBufferUpload(vertices, sizeof(vertices), mVertexBuffer);
         Uploader::EnqueueBufferUpload(indices, sizeof(indices), mIndexBuffer);
         Uploader::Flush();
@@ -65,12 +54,13 @@ public:
     ~BlockCompressedTest()
     {
         delete mSampler;
-        delete mTextureView;
-        delete mTexture;
         delete mIndexBuffer;
         delete mVertexBuffer;
         delete mPipeline;
         delete mView;
+
+        AssetManager::Release(mTexture);
+        AssetManager::Shutdown();
     }
 
     void Execute() override
@@ -97,7 +87,7 @@ public:
             BindlessHandle sampler;
             uint pad[2];
         } constants = {
-            mTextureView->GetBindlessHandle(),
+            mTexture->TextureOrImage.View->GetBindlessHandle(),
             mSampler->GetBindlessHandle()
         };
 
@@ -119,8 +109,7 @@ private:
     IRHIBuffer* mVertexBuffer;
     IRHIBuffer* mIndexBuffer;
 
-    IRHITexture* mTexture;
-    IRHITextureView* mTextureView;
+    Asset::Handle mTexture;
     IRHISampler* mSampler;
 };
 

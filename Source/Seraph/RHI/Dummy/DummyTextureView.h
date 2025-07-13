@@ -13,7 +13,7 @@ class DummyTextureView : public IRHITextureView
 {
 public:
     DummyTextureView(DummyDevice* device, RHITextureViewDesc viewDesc);
-    ~DummyTextureView();
+    ~DummyTextureView() override;
 
     uint64 GetTextureID() override { return 0; }
 private:

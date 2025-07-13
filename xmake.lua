@@ -6,6 +6,8 @@
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
 
+set_policy("build.sanitizer.address", true)
+add_defines("SERAPH_ENABLE_LOGGING")
 set_languages("c++20")
 
 if is_plat("windows") then
@@ -17,6 +19,7 @@ else
     before_link(function (target)
         os.cp("Binaries/Mac/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
     end)
+    add_cxxflags("-fobjc-arc")
 end
 
 includes("ThirdParty")
