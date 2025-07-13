@@ -36,14 +36,11 @@ MetalBuffer::MetalBuffer(MetalDevice* device, RHIBufferDesc desc)
         SERAPH_ERROR("Failed to create buffer!");
     }
 
-    device->GetResidencySet()->addAllocation((const MTL::Allocation*)mBuffer);
-
     SERAPH_WHATEVER("Created Metal buffer");
 }
 
 MetalBuffer::~MetalBuffer()
 {
-    mParentDevice->GetResidencySet()->removeAllocation((const MTL::Allocation*)mBuffer);
 }
 
 void MetalBuffer::SetName(const std::string& name)

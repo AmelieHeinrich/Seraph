@@ -19,9 +19,6 @@ MetalTexture::MetalTexture(MetalDevice* device, RHITextureDesc desc)
     mDesc = desc;
 
     MTL::TextureDescriptor* descriptor = MTL::TextureDescriptor::alloc()->init();
-    descriptor->retain();
-
-    // Set descriptor data
     descriptor->setWidth(desc.Width);
     descriptor->setHeight(desc.Height);
     descriptor->setDepth(desc.Depth);
@@ -48,23 +45,16 @@ MetalTexture::MetalTexture(MetalDevice* device, RHITextureDesc desc)
     if (!mTexture) {
         SERAPH_ERROR("Failed to create texture!");
     }
-    device->GetResidencySet()->addAllocation((const MTL::Allocation*)mTexture);
-
-    descriptor->release();
 }
 
 MetalTexture::~MetalTexture()
 {
-    mParentDevice->GetResidencySet()->removeAllocation((const MTL::Allocation*)mTexture);
-    if (mTexture && !mDesc.Reserved) mTexture->release(); 
 }
 
 void MetalTexture::SetName(const std::string& name)
 {
     mLabel = NS::String::alloc()->init(name.c_str(), NS::ASCIIStringEncoding);
-    mLabel->retain();
     mTexture->setLabel(mLabel);
-    mLabel->release();
 }
 
 MTL::PixelFormat MetalTexture::TranslateToMTLPixelFormat(RHITextureFormat format)

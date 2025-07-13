@@ -25,11 +25,9 @@ MetalDevice::MetalDevice(bool validationLayers)
 {
     // Create device
     mDevice = MTL::CreateSystemDefaultDevice();
-    mDevice->retain();
 
     NS::String* deviceString = mDevice->name();
     SERAPH_INFO("Using Metal GPU: %s", deviceString->utf8String());
-    deviceString->release();
 
     // Create residency set
     MTL::ResidencySetDescriptor* descriptor = MTL::ResidencySetDescriptor::alloc()->init();
