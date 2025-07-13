@@ -11,6 +11,7 @@ target("Metal")
         add_files("Source/Metal.cpp")
         add_includedirs("Include/", { public = true })
         add_frameworks("Foundation", "QuartzCore", "Metal", { public = true })
+        add_syslinks("metalirconverter")
     else
         set_kind("headeronly")
     end

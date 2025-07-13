@@ -227,7 +227,6 @@ RayDesc GeneratePrimaryRay(inout RNG rng, uint2 tid)
     return ray;
 }
 
-[shader("compute")]
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID)
 {

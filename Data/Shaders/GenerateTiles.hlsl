@@ -26,7 +26,6 @@ PUSH_CONSTANTS(PushConstants, Push);
 groupshared uint gMinDepth;
 groupshared uint gMaxDepth;
 
-[shader("compute")]
 [numthreads(16, 16, 1)]
 void CSMain(uint3 gid: SV_GroupID, uint3 dtid : SV_DispatchThreadID, uint3 gtid : SV_GroupThreadID)
 {

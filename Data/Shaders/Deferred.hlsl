@@ -181,7 +181,6 @@ float3 EvaluateDirectionalLight(DirectionalLight light, float3 V, float4 worldPo
     return (distributedEnergy * incomingRadiance);
 }
 
-[shader("compute")]
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID)
 {

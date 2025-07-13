@@ -6,6 +6,7 @@
 #pragma once
 
 #include <RHI/ComputePipeline.h>
+#include <MetalCPP/Metal/Metal.hpp>
 
 class MetalDevice;
 
@@ -14,4 +15,7 @@ class MetalComputePipeline : public IRHIComputePipeline
 public:
     MetalComputePipeline(MetalDevice* device, RHIComputePipelineDesc desc);
     ~MetalComputePipeline() override;
+
+private:
+    MTL::ComputePipelineState* mPipelineState;
 };
