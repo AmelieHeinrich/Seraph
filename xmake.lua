@@ -6,7 +6,6 @@
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
 
-set_policy("build.sanitizer.address", true)
 add_defines("SERAPH_ENABLE_LOGGING")
 set_languages("c++20")
 
