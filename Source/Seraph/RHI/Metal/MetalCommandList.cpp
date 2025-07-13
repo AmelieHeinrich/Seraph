@@ -34,6 +34,7 @@ void MetalCommandList::Reset()
 void MetalCommandList::Begin()
 {
     mCommandBuffer = mParentQueue->GetQueue()->commandBuffer();
+    mCommandBuffer->useResidencySet(mParentDevice->GetResidencySet());
 }
 
 void MetalCommandList::End()
