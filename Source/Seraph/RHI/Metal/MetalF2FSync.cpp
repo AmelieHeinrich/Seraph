@@ -25,10 +25,12 @@ uint MetalF2FSync::BeginSynchronize()
 
 void MetalF2FSync::EndSynchronize(IRHICommandList* submitBuffer)
 {
+    MetalCommandList* cmdList = static_cast<MetalCommandList*>(submitBuffer);
 
+    cmdList->GetBuffer()->commit();
 }
 
 void MetalF2FSync::PresentSurface()
 {
-
+    
 }

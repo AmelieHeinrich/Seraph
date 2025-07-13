@@ -21,6 +21,7 @@ public:
 
     void SubmitAndFlushCommandBuffer(IRHICommandList* cmdBuffer) override;
 
+    MTL::CommandQueue* GetQueue() { return mCommandQueue; }
 private:
     MetalDevice* mParentDevice;
 

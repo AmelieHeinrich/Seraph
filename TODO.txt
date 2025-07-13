@@ -1,14 +1,13 @@
+## General
 - Fix CSM biasing
 - Comparison sampler
 
-# Metal
+## Metal
 - BLAS
 - TLAS
 - Bindless Setup
 - Buffer View
 - Texture View
-- Command Queue
-- Compute Pipeline
 - Graphics Pipeline
 - F2F Sync
 - Mesh Pipeline

@@ -12,6 +12,8 @@
 
 #include <RHI/CommandList.h>
 
+#include <MetalCPP/Metal/Metal.hpp>
+
 class MetalDevice;
 class MetalCommandQueue;
 
@@ -64,8 +66,12 @@ public:
     void BeginImGui() override;
     void EndImGui() override;
 
+    MTL::CommandBuffer* GetBuffer() { return mCommandBuffer; }
 private:
     MetalDevice* mParentDevice;
+    MetalCommandQueue* mParentQueue;
+
+    MTL::CommandBuffer* mCommandBuffer;
 
     bool mSingleTime;
 };
