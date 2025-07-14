@@ -135,6 +135,7 @@ void Application::Run()
         mScene->Update(begin.FrameIndex);
         mFrameCount++;
     }
+    mDevice->WaitIdle();
 }
 
 void Application::UI(RenderPassBegin& begin)

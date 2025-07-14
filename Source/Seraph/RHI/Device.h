@@ -28,6 +28,8 @@ class IRHIDevice
 public:
     virtual ~IRHIDevice() = default;
 
+    virtual void WaitIdle() {};
+
     static IRHIDevice* CreateDevice(RHIBackend backend, bool validationLayers);
 
     virtual IRHISurface* CreateSurface(Window* window, IRHICommandQueue* graphicsQueue) = 0;

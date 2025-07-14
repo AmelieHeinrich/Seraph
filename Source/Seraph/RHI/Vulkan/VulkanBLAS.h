@@ -15,7 +15,7 @@ class VulkanBLAS : public IRHIBLAS
 {
 public:
     VulkanBLAS(VulkanDevice* device, RHIBLASDesc desc);
-    ~VulkanBLAS();
+    ~VulkanBLAS() override;
 
     uint64 GetAddress() override;
 private:

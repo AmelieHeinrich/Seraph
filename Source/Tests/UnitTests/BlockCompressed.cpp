@@ -51,7 +51,7 @@ public:
         mPipeline = mStarters.Device->CreateGraphicsPipeline(desc);
     }
 
-    ~BlockCompressedTest()
+    void Cleanup() override
     {
         delete mSampler;
         delete mIndexBuffer;

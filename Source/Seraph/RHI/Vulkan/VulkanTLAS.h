@@ -16,7 +16,7 @@ class VulkanTLAS : public IRHITLAS
 {
 public:
     VulkanTLAS(VulkanDevice* device);
-    ~VulkanTLAS();
+    ~VulkanTLAS() override;
 
     VkAccelerationStructureKHR GetHandle() const { return mHandle; }
 private:

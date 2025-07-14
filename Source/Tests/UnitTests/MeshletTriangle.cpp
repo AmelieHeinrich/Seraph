@@ -23,7 +23,7 @@ public:
         mPipeline = mStarters.Device->CreateMeshPipeline(desc);
     }
 
-    ~MeshletTriangleTest()
+    void Cleanup() override
     {
         delete mPipeline;
         delete mView;

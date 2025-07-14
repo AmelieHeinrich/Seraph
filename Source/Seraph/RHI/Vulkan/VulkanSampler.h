@@ -15,7 +15,7 @@ class VulkanSampler : public IRHISampler
 {
 public:
     VulkanSampler(VulkanDevice* device, RHISamplerDesc desc);
-    ~VulkanSampler();
+    ~VulkanSampler() override;
 
 public:
     VkSampler GetSampler() { return mSampler; }

@@ -7,7 +7,6 @@
 
 ITest::~ITest()
 {
-    SERAPH_INFO("Deleting test data");
 }
 
 TestStarters ITest::CreateStarters(RHIBackend backend)

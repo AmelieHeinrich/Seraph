@@ -16,7 +16,7 @@ class VulkanBuffer : public IRHIBuffer
 {
 public:
     VulkanBuffer(VulkanDevice* device, RHIBufferDesc desc);
-    ~VulkanBuffer();
+    ~VulkanBuffer() override;
 
     void SetName(const std::string& name) override;
 

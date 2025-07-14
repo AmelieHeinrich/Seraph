@@ -56,12 +56,13 @@ public:
         Uploader::Flush();
     }
 
-    ~RayQueryTest()
+    void Cleanup() override
     {
         delete mTLAS;
         delete mBLAS;
         delete mIndexBuffer;
         delete mVertexBuffer;
+        delete mInstanceBuffer;
         delete mComputePipeline;
         delete mView;
     }

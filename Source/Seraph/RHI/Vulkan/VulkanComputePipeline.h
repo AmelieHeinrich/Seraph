@@ -15,7 +15,7 @@ class VulkanComputePipeline : public IRHIComputePipeline
 {
 public:
     VulkanComputePipeline(VulkanDevice* device, RHIComputePipelineDesc desc);
-    ~VulkanComputePipeline();
+    ~VulkanComputePipeline() override;
 
     VkPipeline GetPipeline() const { return mPipeline; }
     VkPipelineLayout GetLayout() const { return mLayout; }

@@ -23,7 +23,7 @@ public:
         mPipeline = mStarters.Device->CreateGraphicsPipeline(desc);
     }
 
-    ~StreamedTriangleTest()
+    void Cleanup() override
     {
         delete mPipeline;
         delete mView;

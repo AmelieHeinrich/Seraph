@@ -15,7 +15,7 @@ class VulkanCommandQueue : public IRHICommandQueue
 {
 public:
     VulkanCommandQueue(IRHIDevice* device, RHICommandQueueType type);
-    ~VulkanCommandQueue();
+    ~VulkanCommandQueue() override;
 
     IRHICommandList* CreateCommandBuffer(bool singleTime) override;
 

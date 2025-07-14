@@ -17,5 +17,5 @@ class VulkanImGuiContext : public IRHIImGuiContext
 {
 public:
     VulkanImGuiContext(VulkanDevice* device, VulkanCommandQueue* queue, Window* window);
-    ~VulkanImGuiContext();
+    ~VulkanImGuiContext() override;
 };

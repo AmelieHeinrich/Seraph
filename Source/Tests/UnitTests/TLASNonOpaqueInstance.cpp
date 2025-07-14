@@ -77,7 +77,7 @@ public:
         Uploader::Flush();
     }
 
-    ~TLASNonOpaqueInstanceTest()
+    void Cleanup() override
     {
         delete mSampler;
         delete mTextureSRV;
@@ -89,6 +89,7 @@ public:
         delete mVBV;
         delete mVertexBuffer;
         delete mComputePipeline;
+        delete mInstanceBuffer;
         delete mView;
     }
 

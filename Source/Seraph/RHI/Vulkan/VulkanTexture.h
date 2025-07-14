@@ -17,7 +17,7 @@ class VulkanTexture : public IRHITexture
 public:
     VulkanTexture() = default;
     VulkanTexture(IRHIDevice* device, RHITextureDesc desc);
-    ~VulkanTexture();
+    ~VulkanTexture() override;
 
     void SetName(const std::string& name) override;
 

@@ -17,6 +17,7 @@ TestResult RHIBaseTest::Run()
     EndAndSubmitCmd();
 
     CopyRenderToScreenshot();
+    mStarters.Device->WaitIdle();
     Cleanup();
     return { std::move(mStarters.ScreenshotData), true };
 }
@@ -61,7 +62,7 @@ void RHIBaseTest::CopyRenderToScreenshot()
     mStarters.ScreenshotBuffer->Unmap();
 }
 
-void RHIBaseTest::Cleanup()
+RHIBaseTest::~RHIBaseTest()
 {
     ITest::DeleteStarts(mStarters);
 }

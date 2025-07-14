@@ -21,6 +21,8 @@ public:
     VulkanDevice(bool validationLayers);
     ~VulkanDevice();
 
+    void WaitIdle() override { vkDeviceWaitIdle(mDevice); }
+
     IRHISurface* CreateSurface(Window* window, IRHICommandQueue* graphicsQueue) override;
     IRHITexture* CreateTexture(RHITextureDesc desc) override;
     IRHITextureView* CreateTextureView(RHITextureViewDesc desc) override;

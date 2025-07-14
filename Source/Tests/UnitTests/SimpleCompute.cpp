@@ -22,7 +22,7 @@ public:
         mComputePipeline = mStarters.Device->CreateComputePipeline(desc);
     }
 
-    ~SimpleComputeTest()
+    void Cleanup() override
     {
         delete mComputePipeline;
         delete mView;

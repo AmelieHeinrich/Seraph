@@ -15,15 +15,15 @@ protected:
 
 public:
     RHIBaseTest(RHIBackend backend);
-    virtual ~RHIBaseTest() = default;
+    ~RHIBaseTest();
 
     TestResult Run();
 
 protected:
     virtual void Execute() = 0;
+    virtual void Cleanup() = 0;
 
     void BeginCmd();
     void EndAndSubmitCmd();
     void CopyRenderToScreenshot();
-    virtual void Cleanup();
 };

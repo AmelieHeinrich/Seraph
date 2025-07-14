@@ -15,7 +15,7 @@ public:
         mView = mStarters.Device->CreateTextureView(RHITextureViewDesc(mStarters.RenderTexture, RHITextureViewType::kRenderTarget));
     }
 
-    ~ClearScreenTest()
+    void Cleanup() override
     {
         delete mView;
     }

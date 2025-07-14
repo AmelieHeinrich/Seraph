@@ -66,7 +66,7 @@ public:
         mPipeline = mStarters.Device->CreateGraphicsPipeline(desc);
     }
 
-    ~TexturedDrawTest()
+    void Cleanup() override
     {
         delete mSampler;
         delete mTextureView;

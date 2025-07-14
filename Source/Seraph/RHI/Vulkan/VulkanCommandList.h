@@ -13,7 +13,7 @@ class VulkanCommandList : public IRHICommandList
 {
 public:
     VulkanCommandList(VulkanDevice* device, VkCommandPool pool, bool singleTime);
-    ~VulkanCommandList();
+    ~VulkanCommandList() override;
 
     void Reset() override;
     void Begin() override;

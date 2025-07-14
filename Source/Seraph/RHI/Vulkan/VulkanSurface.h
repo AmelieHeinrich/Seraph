@@ -18,7 +18,7 @@ class VulkanSurface : public IRHISurface
 {
 public:
     VulkanSurface(IRHIDevice* device, Window* window);
-    ~VulkanSurface();
+    ~VulkanSurface() override;
 
     VkSwapchainKHR GetSwapchain() const { return mSwapchain; }
 private:

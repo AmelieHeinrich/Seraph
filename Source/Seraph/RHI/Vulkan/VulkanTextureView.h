@@ -15,7 +15,7 @@ class VulkanTextureView : public IRHITextureView
 {
 public:
     VulkanTextureView(IRHIDevice* device, RHITextureViewDesc viewDesc);
-    ~VulkanTextureView();
+    ~VulkanTextureView() override;
 
     VkImageView GetView() const { return mImageView; }
 
@@ -26,6 +26,6 @@ private:
 private:
     VulkanDevice* mParentDevice;
 
-    VkImageView mImageView;
-    VkDescriptorSet mImGuiSet;
+    VkImageView mImageView = VK_NULL_HANDLE;
+    VkDescriptorSet mImGuiSet = VK_NULL_HANDLE;
 };

@@ -42,7 +42,7 @@ public:
         mPipeline = mStarters.Device->CreateGraphicsPipeline(desc);
     }
 
-    ~IndexDrawingTest()
+    void Cleanup() override
     {
         delete mIndexBuffer;
         delete mVertexBuffer;

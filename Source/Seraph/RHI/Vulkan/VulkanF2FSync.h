@@ -15,7 +15,7 @@ class VulkanF2FSync : public IRHIF2FSync
 {
 public:
     VulkanF2FSync(VulkanDevice* device, VulkanSurface* surface, VulkanCommandQueue* queue);
-    ~VulkanF2FSync();
+    ~VulkanF2FSync() override;
 
     uint BeginSynchronize() override;
     void EndSynchronize(IRHICommandList* submitBuffer) override;

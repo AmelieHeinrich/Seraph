@@ -15,7 +15,7 @@ class VulkanMeshPipeline : public IRHIMeshPipeline
 {
 public:
     VulkanMeshPipeline(VulkanDevice* device, RHIMeshPipelineDesc desc);
-    ~VulkanMeshPipeline();
+    ~VulkanMeshPipeline() override;
 
     VkPipeline GetPipeline() const { return mPipeline; }
     VkPipelineLayout GetLayout() const { return mLayout; }

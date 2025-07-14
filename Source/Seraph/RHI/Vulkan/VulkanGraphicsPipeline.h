@@ -15,7 +15,7 @@ class VulkanGraphicsPipeline : public IRHIGraphicsPipeline
 {
 public:
     VulkanGraphicsPipeline(VulkanDevice* device, RHIGraphicsPipelineDesc desc);
-    ~VulkanGraphicsPipeline();
+    ~VulkanGraphicsPipeline() override;
 
     VkPipeline GetPipeline() const { return mPipeline; }
     VkPipelineLayout GetLayout() const { return mLayout; }

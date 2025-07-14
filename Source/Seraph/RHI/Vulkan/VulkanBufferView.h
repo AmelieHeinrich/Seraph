@@ -15,7 +15,7 @@ class VulkanBufferView : public IRHIBufferView
 {
 public:
     VulkanBufferView(VulkanDevice* device, RHIBufferViewDesc desc);
-    ~VulkanBufferView();
+    ~VulkanBufferView() override;
 
 private:
     VulkanDevice* mParentDevice;
