@@ -141,6 +141,10 @@ void Debug::UI(RenderPassBegin& begin)
 {
     if (ImGui::TreeNodeEx("Debug", ImGuiTreeNodeFlags_Framed)) {
         ImGui::Checkbox("Use Depth Buffer", &sData.UseDepth);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+            ImGui::SetTooltip("When checked on, lines will always be drawn over geometry.");
+        }
+
         ImGui::TreePop();
     }
 }

@@ -16,6 +16,7 @@
 #include "Passes/Deferred.h"
 #include "Passes/Tonemapping.h"
 #include "Passes/Debug.h"
+#include "Passes/VisualizeMotionVectors.h"
 #include "Passes/CopyToSwapchain.h"
 
 class Renderer
@@ -36,6 +37,7 @@ private:
     SharedPtr<Deferred> mDeferred;
     SharedPtr<Tonemapping> mTonemapping;
     SharedPtr<Debug> mDebug;
+    SharedPtr<VisualizeMotionVectors> mVisualizeMotionVectors;
     SharedPtr<CopyToSwapchain> mCopyToSwapchain;
 
     UnorderedMap<RenderPath, std::vector<SharedPtr<RenderPass>>> mPasses;

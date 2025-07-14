@@ -112,6 +112,10 @@ void Deferred::UI(RenderPassBegin& begin)
 {
     if (ImGui::TreeNodeEx("Deferred", ImGuiTreeNodeFlags_Framed)) {
         ImGui::Checkbox("Show Tile Heatmap", &mShowTileHeatmap);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+            ImGui::SetTooltip("Used to visualize the repartition of point/spot lights throughout the screen tiles. Interpolates between blue, green, yellow and red depending on tile light density.");
+        }
+
         ImGui::TreePop();
     }
 }

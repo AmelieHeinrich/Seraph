@@ -42,6 +42,10 @@ void Pathtracer::UI(RenderPassBegin& begin)
 {
     if (ImGui::TreeNodeEx("Pathtracer", ImGuiTreeNodeFlags_Framed)) {
         ImGui::SliderInt("Bounce Count", (int*)&mBounceCount, 1, 4);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+            ImGui::SetTooltip("How many times the ray should bounce before being terminated.");
+        }
+
         ImGui::TreePop();
     }
 }

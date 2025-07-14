@@ -9,7 +9,7 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
     // Textures
-    RHITextureDesc depthDesc, normalDesc, albedoDesc, pbrDesc;
+    RHITextureDesc depthDesc, normalDesc, albedoDesc, pbrDesc, motionDesc;
     depthDesc.Width = width;
     depthDesc.Height = height;
     depthDesc.Format = RHITextureFormat::kD32_FLOAT;
@@ -30,10 +30,16 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     pbrDesc.Format = RHITextureFormat::kR16G16_FLOAT;
     pbrDesc.Usage = RHITextureUsage::kRenderTarget | RHITextureUsage::kShaderResource;
 
+    motionDesc.Width = width;
+    motionDesc.Height = height;
+    motionDesc.Format = RHITextureFormat::kR16G16_FLOAT;
+    motionDesc.Usage = RHITextureUsage::kRenderTarget | RHITextureUsage::kShaderResource;
+
     RendererResourceManager::CreateTexture(GBUFFER_DEPTH_ID, depthDesc);
     RendererResourceManager::CreateTexture(GBUFFER_NORMAL_ID, normalDesc);
     RendererResourceManager::CreateTexture(GBUFFER_ALBEDO_ID, albedoDesc);
     RendererResourceManager::CreateTexture(GBUFFER_PBR_ID, pbrDesc);
+    RendererResourceManager::CreateTexture(GBUFFER_MOTION_VECTOR_ID, motionDesc);
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kLinear, true));
     RendererResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, RHISamplerDesc(RHISamplerAddress::kWrap, RHISamplerFilter::kNearest, true));
 
@@ -43,7 +49,8 @@ GBuffer::GBuffer(IRHIDevice* device, uint width, uint height)
     pipelineDesc.RenderTargetFormats = {
         normalDesc.Format,
         albedoDesc.Format,
-        pbrDesc.Format
+        pbrDesc.Format,
+        motionDesc.Format
     };
     pipelineDesc.DepthEnabled = true;
     pipelineDesc.DepthWrite = true;
@@ -73,6 +80,7 @@ void GBuffer::Render(RenderPassBegin& begin)
         RendererResource& normalTexture = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kColorWrite);
         RendererResource& albedoTexture = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kColorWrite);
         RendererResource& pbrTexture = RendererResourceManager::Import(GBUFFER_PBR_ID, begin.CommandList, RendererImportType::kColorWrite);
+        RendererResource& motionTexture = RendererResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CommandList, RendererImportType::kColorWrite);
 
         RendererResource& materialSampler = RendererResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
         RendererResource& defaultWhite = RendererResourceManager::Get(DEFAULT_WHITE_TEXTURE);
@@ -80,7 +88,8 @@ void GBuffer::Render(RenderPassBegin& begin)
         std::vector<RHIRenderAttachment> attachments = {
             RHIRenderAttachment(RendererViewRecycler::GetRTV(normalTexture.Texture)),
             RHIRenderAttachment(RendererViewRecycler::GetRTV(albedoTexture.Texture)),
-            RHIRenderAttachment(RendererViewRecycler::GetRTV(pbrTexture.Texture))
+            RHIRenderAttachment(RendererViewRecycler::GetRTV(pbrTexture.Texture)),
+            RHIRenderAttachment(RendererViewRecycler::GetRTV(motionTexture.Texture))
         };
         RHIRenderBegin renderBegin(mWidth, mHeight, attachments, RHIRenderAttachment(RendererViewRecycler::GetDSV(depthTexture.Texture)));
     
@@ -105,10 +114,8 @@ void GBuffer::Render(RenderPassBegin& begin)
                         BindlessHandle Sampler;
                     
                         BindlessHandle VertexBuffer;
-                        uint pad[3];
-
-                        glm::mat4 View;
-                        glm::mat4 Projection;
+                        BindlessHandle CameraBuffer;
+                        uint2 Pad;
                     } constant = {
                         albedoView,
                         normalView,
@@ -116,10 +123,8 @@ void GBuffer::Render(RenderPassBegin& begin)
                         materialSampler.Sampler->GetBindlessHandle(),
 
                         RendererViewRecycler::GetSRV(primitive.VertexBuffer)->GetBindlessHandle(),
-                        {0,0,0},
-
-                        begin.CamData.View,
-                        begin.CamData.Proj
+                        cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
+                        {}
                     };
                 
                     begin.CommandList->SetIndexBuffer(primitive.IndexBuffer);

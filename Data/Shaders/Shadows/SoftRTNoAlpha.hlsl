@@ -65,6 +65,9 @@ struct PushConstants
     uint Sampler;
     uint SceneInstances;
     uint FrameIndex;
+
+    float LightRadius;
+    float3 Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -162,7 +165,7 @@ void CSMain(uint3 dtid: SV_DispatchThreadID)
         float shadow = 0.0f;
 
         // Trace ray, generate random Wi
-        float lightRadius = radians(2.0f);
+        float lightRadius = radians(Push.LightRadius);
         float3 lightTangent = normalize(cross(L, float3(0.0f, 1.0f, 0.0f)));
         float3 lightBitangent = normalize(cross(lightTangent, L));
 

@@ -23,6 +23,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
     mDeferred = std::make_shared<Deferred>(device, width, height);
     mTonemapping = std::make_shared<Tonemapping>(device, width, height);
     mDebug = std::make_shared<Debug>(device, width, height);
+    mVisualizeMotionVectors = std::make_shared<VisualizeMotionVectors>(device, width, height);
     mCopyToSwapchain = std::make_shared<CopyToSwapchain>(device, width, height);
 
     // Setup Pathtracer
@@ -45,6 +46,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
         mDeferred,
         mTonemapping,
         mDebug,
+        mVisualizeMotionVectors,
         mCopyToSwapchain
     };
 

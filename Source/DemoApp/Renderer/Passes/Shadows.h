@@ -69,4 +69,7 @@ private:
 
     // Hard RT 
     float mNormalBias = 0.001f;
+
+    // Soft RT
+    float mLightRadius = 2.0f;
 };

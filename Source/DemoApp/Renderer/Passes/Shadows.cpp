@@ -73,7 +73,7 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
     }
     CODE_BLOCK("Create Soft RT resources") {
         RHIComputePipelineDesc computeDesc = {};
-        computeDesc.PushConstantSize = sizeof(uint) * 12;
+        computeDesc.PushConstantSize = sizeof(uint) * 16;
 
         PipelineReloader::SubscribeCompute("Shadows/SoftRT.hlsl", computeDesc, "CSMain");
         PipelineReloader::SubscribeCompute("Shadows/SoftRTNoAlpha.hlsl", computeDesc, "CSMain");
@@ -425,6 +425,9 @@ void Shadows::TraceSoftShadowRays(RenderPassBegin& begin)
             BindlessHandle Sampler;
             BindlessHandle Instances;
             uint FrameIndex;
+
+            float LightRadius;
+            float3 Pad;
         } constants = {
             begin.RenderScene->GetLights().GetSunBufferView(begin.FrameIndex)->GetBindlessHandle(),
             RendererViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
@@ -439,7 +442,10 @@ void Shadows::TraceSoftShadowRays(RenderPassBegin& begin)
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
             materialSampler.Sampler->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneInstanceBuffer())->GetBindlessHandle(),
-            begin.FrameCount
+            begin.FrameCount,
+
+            mLightRadius,
+            {}
         };
 
         IRHIComputePipeline* pipeline = mAlphaTest
@@ -471,17 +477,42 @@ void Shadows::UI(RenderPassBegin& begin)
     if (ImGui::TreeNodeEx("Shadows", ImGuiTreeNodeFlags_Framed)) {
         const char* modes[] = { "None", "CSM (Experimental)", "Hard RT", "Soft RT" };
         ImGui::Combo("Shadow Technique", (int*)&mMode, modes, 4, 4);
+        
         ImGui::Checkbox("Alpha Test", &mAlphaTest);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+            ImGui::SetTooltip("Whether or not to use alpha testing for shadows. This can tank performance depending on the technique, so use at your own risk.");
+        }
 
         switch (mMode) {
-            case ShadowMode::kSoftRT:
+            case ShadowMode::kSoftRT: {
+                ImGui::SliderFloat("Normal Bias", &mNormalBias, 0.001f, 0.01f);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("The offset at which the shadow ray is traced based on the surface normal.");
+                }
+  
+                ImGui::SliderFloat("Light Radius", &mLightRadius, 0.0f, 10.0f);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("When tracing shadow rays, the directional light is treated as an area light to generate random shadow rays sampled on its surface. You can pick the area light radius using this slider.");
+                }
+                break;
+            }
             case ShadowMode::kHardRT: {
                 ImGui::SliderFloat("Normal Bias", &mNormalBias, 0.001f, 0.01f);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("The offset at which the shadow ray is traced based on the surface normal.");
+                }
                 break;
             }
             case ShadowMode::kCSM: {
                 ImGui::SliderFloat("Shadow Split Lambda", &mSplitLambda, 0.01f, 0.99f);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("Used to calculate the repartition of cascade splits through the view depth. Lower values mean a more linear repartition whilst higher values means a more exponenitla repartition.");
+                }
+
                 ImGui::Checkbox("Update Cascades", &mUpdateCascades);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                    ImGui::SetTooltip("When checked off, cascade matrices will not be updated and will be drawn using the debug renderer.");
+                }
                 break;
             }
             default: {
