@@ -9,10 +9,18 @@ static const float CAMERA_FAR = 150.0f;
 struct Camera
 {
     column_major float4x4 View;
+    column_major float4x4 PrevView;
     column_major float4x4 Proj;
+    column_major float4x4 PrevProj;
     column_major float4x4 ViewProj;
+    column_major float4x4 PrevViewProj;
+
     column_major float4x4 InvView;
+    column_major float4x4 PrevInvView;
     column_major float4x4 InvProj;
+    column_major float4x4 PrevInvProj;
     column_major float4x4 InvViewProj;
+    column_major float4x4 PrevInvViewProj;
+
     float4 Position;
 };

@@ -134,6 +134,14 @@ void Application::Run()
         }
         mScene->Update(begin.FrameIndex);
         mFrameCount++;
+
+        // Update prev matrices
+        begin.CamData.PrevProj = begin.CamData.Proj;
+        begin.CamData.PrevView = begin.CamData.View;
+        begin.CamData.PrevViewProj = begin.CamData.ViewProj;
+        begin.CamData.PrevInvProj = begin.CamData.InvProj;
+        begin.CamData.PrevInvView = begin.CamData.InvView;
+        begin.CamData.PrevInvViewProj = begin.CamData.InvViewProj;
     }
     mDevice->WaitIdle();
 }

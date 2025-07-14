@@ -16,11 +16,19 @@ enum class RenderPath
 struct CameraData
 {
     glm::mat4 View;
+    glm::mat4 PrevView;
     glm::mat4 Proj;
+    glm::mat4 PrevProj;
     glm::mat4 ViewProj;
+    glm::mat4 PrevViewProj;
+
     glm::mat4 InvView;
+    glm::mat4 PrevInvView;
     glm::mat4 InvProj;
+    glm::mat4 PrevInvProj;
     glm::mat4 InvViewProj;
+    glm::mat4 PrevInvViewProj;
+
     float4 Position;
 };
 
