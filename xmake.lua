@@ -13,7 +13,7 @@ if is_plat("windows") then
     before_link(function (target)
         os.cp("Binaries/Windows/*", "$(buildir)/$(plat)/$(arch)/$(mode)/")
     end)
-    add_defines("ENABLE_PIX")
+    add_defines("USE_PIX")
 else
     add_rpathdirs("Binaries/Mac/")
     before_link(function (target)

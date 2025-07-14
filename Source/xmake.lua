@@ -24,13 +24,13 @@ target("Seraph")
                     "Seraph/World/*.h")
 
     add_includedirs("Seraph")
-    add_defines("ENABLE_PIX", "GLM_ENABLE_EXPERIMENTAL", { public = true })
+    add_defines("GLM_ENABLE_EXPERIMENTAL", { public = true })
     add_deps("SDL3", "DXC", "ImGui", "JSON", "STB", "GLM", "CGLTF", "MikkTSpace", { public = true })
 
     if is_plat("windows") then
         add_deps("DirectX", "Vulkan", "PIX", "NVTT", { public = true })
         add_syslinks("user32", { public = true })
-        add_defines("SERAPH_VULKAN", "SERAPH_D3D12", "SERAPH_DUMMY")
+        add_defines("SERAPH_VULKAN", "SERAPH_D3D12", "SERAPH_DUMMY", { public = true })
         add_files("Seraph/RHI/Vulkan/*.cpp",
                   "Seraph/RHI/D3D12/*.cpp",
                   "Seraph/RHI/Dummy/*.cpp",
@@ -38,7 +38,7 @@ target("Seraph")
                   "Seraph/Asset/Windows/*.cpp")
     else
         add_deps("Metal", { public = true })
-        add_defines("SERAPH_DUMMY", "SERAPH_METAL")
+        add_defines("SERAPH_DUMMY", "SERAPH_METAL", { public = true })
         add_files("Seraph/Core/Mac/*.cpp",
                   "Seraph/Asset/Mac/*.cpp",
                   "Seraph/RHI/Dummy/*.cpp",
@@ -69,7 +69,11 @@ target("DemoApp")
     add_headerfiles("DemoApp/**.h")
     add_includedirs(".", "Seraph")
     add_deps("Seraph")
-    add_defines("GLM_FORCE_DEPTH_ZERO_TO_ONE", "ENABLE_PIX")
+    add_defines("GLM_FORCE_DEPTH_ZERO_TO_ONE")
+
+    if is_plat("windows") then
+        add_deps("PIX")
+    end
 
     if is_mode("debug") then
         set_symbols("debug")

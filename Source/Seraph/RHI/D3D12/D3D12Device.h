@@ -10,6 +10,7 @@
 #include <Agility/d3d12.h>
 #include <dxgi1_6.h>
 #include <D3D12MA/D3D12MemAlloc.h>
+#include <PIX/pix3.h>
 
 #include "D3D12BindlessManager.h"
 
