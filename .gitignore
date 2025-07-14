@@ -15,5 +15,6 @@ Data/Tests/*.png
 Data/TestReport.json
 
 # Garbage data and fatass stuff
-.cache/*.stf
+.cache
 Data/Models/NewSponza
+Screenshots

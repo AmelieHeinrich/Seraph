@@ -1,5 +1,5 @@
 {
     "width": 1920,
-    "height": 1080,
-    "backend": "Vulkan"
+    "height": 1040,
+    "backend": "Default"
 }
