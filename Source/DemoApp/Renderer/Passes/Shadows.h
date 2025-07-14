@@ -44,10 +44,19 @@ public:
     void UI(RenderPassBegin& begin) override;
 private:
     void None(RenderPassBegin& begin);
-    void CSM(RenderPassBegin& begin);
-    void HardRT(RenderPassBegin& begin);
-    void SoftRT(RenderPassBegin& begin);
     
+    void CSM(RenderPassBegin& begin);
+    void UpdateCascades(RenderPassBegin& begin);
+    void DrawCascades(RenderPassBegin& begin);
+    void PopulateCSMVisibilityMask(RenderPassBegin& begin);
+
+    void HardRT(RenderPassBegin& begin);
+
+    void SoftRT(RenderPassBegin& begin);
+    void TraceSoftShadowRays(RenderPassBegin& begin);
+    void SVGFTemporal(RenderPassBegin& begin);
+    void SVGFSpatial(RenderPassBegin& begin);
+
 private:
     bool mAlphaTest = true;
     ShadowMode mMode = ShadowMode::kSoftRT;

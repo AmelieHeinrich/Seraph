@@ -131,6 +131,14 @@ void Shadows::None(RenderPassBegin& begin)
 void Shadows::CSM(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("CSM");
+    UpdateCascades(begin);
+    DrawCascades(begin);
+    PopulateCSMVisibilityMask(begin);
+    begin.CommandList->PopMarker();
+}
+
+void Shadows::UpdateCascades(RenderPassBegin& begin)
+{
     CODE_BLOCK("Update Cascade Matrices") {
         uint cascadeSize = SHADOW_CASCADE_QUALITY;
         std::vector<float> splits(SHADOW_CASCADE_COUNT + 1);
@@ -215,6 +223,10 @@ void Shadows::CSM(RenderPassBegin& begin)
         memcpy(ptr, mCascades.data(), mCascades.size() * sizeof(ShadowCascade));
         mCascadeBuffers[begin.FrameIndex]->Unmap();
     }
+}
+
+void Shadows::DrawCascades(RenderPassBegin& begin)
+{
     CODE_BLOCK("Draw Cascades") {
         // Draw that shyte
         for (int i = 0; i < SHADOW_CASCADE_COUNT; i++) {
@@ -269,6 +281,10 @@ void Shadows::CSM(RenderPassBegin& begin)
             begin.CommandList->PopMarker();
         }
     }
+}
+
+void Shadows::PopulateCSMVisibilityMask(RenderPassBegin& begin)
+{
     CODE_BLOCK("Populate visibility mask") {
         begin.CommandList->PushMarker("Populate visibility mask");
 
@@ -321,7 +337,6 @@ void Shadows::CSM(RenderPassBegin& begin)
 
         begin.CommandList->PopMarker();
     }
-    begin.CommandList->PopMarker();
 }
 
 void Shadows::HardRT(RenderPassBegin& begin)
@@ -379,6 +394,15 @@ void Shadows::HardRT(RenderPassBegin& begin)
 void Shadows::SoftRT(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Soft RT Shadows");
+    TraceSoftShadowRays(begin);
+    SVGFTemporal(begin);
+    SVGFSpatial(begin);
+    begin.CommandList->PopMarker();
+}
+
+void Shadows::TraceSoftShadowRays(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("Trace Rays");
     CODE_BLOCK("Execute") {
         RendererResource& output = RendererResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CommandList, RendererImportType::kShaderWrite);
         RendererResource& gbufferDepth = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
@@ -428,6 +452,20 @@ void Shadows::SoftRT(RenderPassBegin& begin)
     begin.CommandList->PopMarker();
 }
 
+void Shadows::SVGFTemporal(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("SVGF Temporal");
+
+    begin.CommandList->PopMarker();
+}
+
+void Shadows::SVGFSpatial(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("SVGF Spatial");
+
+    begin.CommandList->PopMarker();
+}
+
 void Shadows::UI(RenderPassBegin& begin)
 {
     if (ImGui::TreeNodeEx("Shadows", ImGuiTreeNodeFlags_Framed)) {
@@ -436,6 +474,7 @@ void Shadows::UI(RenderPassBegin& begin)
         ImGui::Checkbox("Alpha Test", &mAlphaTest);
 
         switch (mMode) {
+            case ShadowMode::kSoftRT:
             case ShadowMode::kHardRT: {
                 ImGui::SliderFloat("Normal Bias", &mNormalBias, 0.001f, 0.01f);
                 break;

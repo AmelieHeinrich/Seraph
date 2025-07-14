@@ -33,9 +33,9 @@ Metal backend is tested on an M2 chip.
 
 ## WIP
 
-- Metal backend
 - Raytraced soft shadows
 - SVGF denoising
+- Metal backend
 
 ## Planned
 
