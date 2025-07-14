@@ -7,26 +7,13 @@
 
 RendererResource::~RendererResource()
 {
-    switch (Type)
-    {
-        case RendererResourceType::kBuffer: {
-            delete Buffer;
-            break;
-        }
-        case RendererResourceType::kRingBuffer: {
-            for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-                delete RingBufferViews[i];
-                delete RingBuffer[i];
-            }
-            break;
-        }
-        case RendererResourceType::kTexture: {
-            delete Texture;
-            break;
-        }
-        case RendererResourceType::kSampler: {
-            delete Sampler;
-            break;
+    if (Buffer) delete Buffer;
+    if (RingBuffer[0]) {
+        for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+            if (RingBufferViews[i]) delete RingBufferViews[i];
+            if (RingBuffer[i]) delete RingBuffer[i];
         }
     }
+    if (Texture) delete Texture;
+    if (Sampler) delete Sampler;
 }

@@ -71,6 +71,13 @@ Shadows::Shadows(IRHIDevice* device, uint width, uint height)
         PipelineReloader::SubscribeCompute("Shadows/HardRT.hlsl", computeDesc, "CSMain");
         PipelineReloader::SubscribeCompute("Shadows/HardRTNoAlpha.hlsl", computeDesc, "CSMain");
     }
+    CODE_BLOCK("Create Soft RT resources") {
+        RHIComputePipelineDesc computeDesc = {};
+        computeDesc.PushConstantSize = sizeof(uint) * 12;
+
+        PipelineReloader::SubscribeCompute("Shadows/SoftRT.hlsl", computeDesc, "CSMain");
+        PipelineReloader::SubscribeCompute("Shadows/SoftRTNoAlpha.hlsl", computeDesc, "CSMain");
+    }
 }
 
 Shadows::~Shadows()
@@ -93,6 +100,10 @@ void Shadows::Render(RenderPassBegin& begin)
         }
         case ShadowMode::kHardRT: {
             HardRT(begin);
+            break;
+        }
+        case ShadowMode::kSoftRT: {
+            SoftRT(begin);
             break;
         }
         default: {
@@ -358,6 +369,58 @@ void Shadows::HardRT(RenderPassBegin& begin)
         IRHIComputePipeline* pipeline = mAlphaTest
                                       ? PipelineReloader::GetCompute("Shadows/HardRT.hlsl")
                                       : PipelineReloader::GetCompute("Shadows/HardRTNoAlpha.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+        begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
+    }
+    begin.CommandList->PopMarker();
+}
+
+void Shadows::SoftRT(RenderPassBegin& begin)
+{
+    begin.CommandList->PushMarker("Soft RT Shadows");
+    CODE_BLOCK("Execute") {
+        RendererResource& output = RendererResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CommandList, RendererImportType::kShaderWrite);
+        RendererResource& gbufferDepth = RendererResourceManager::Import(GBUFFER_DEPTH_ID, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& gbufferNormal = RendererResourceManager::Import(GBUFFER_NORMAL_ID, begin.CommandList, RendererImportType::kShaderRead);
+        RendererResource& cameraBuffer = RendererResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
+        RendererResource& materialSampler = RendererResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
+
+        struct PushConstants {
+            BindlessHandle SunArray;
+            BindlessHandle Output;
+            BindlessHandle AS;
+            float NormalBias;
+
+            uint Width;
+            uint Height;
+            BindlessHandle Depth;
+            BindlessHandle Normal;
+
+            BindlessHandle Camera;
+            BindlessHandle Sampler;
+            BindlessHandle Instances;
+            uint FrameIndex;
+        } constants = {
+            begin.RenderScene->GetLights().GetSunBufferView(begin.FrameIndex)->GetBindlessHandle(),
+            RendererViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
+            begin.RenderScene->GetTLAS()->GetBindlessHandle(),
+            mNormalBias,
+
+            mWidth,
+            mHeight,
+            RendererViewRecycler::GetTextureView(RHITextureViewDesc(gbufferDepth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+            RendererViewRecycler::GetSRV(gbufferNormal.Texture)->GetBindlessHandle(),
+
+            cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
+            materialSampler.Sampler->GetBindlessHandle(),
+            RendererViewRecycler::GetSRV(begin.RenderScene->GetSceneInstanceBuffer())->GetBindlessHandle(),
+            begin.FrameCount
+        };
+
+        IRHIComputePipeline* pipeline = mAlphaTest
+                                      ? PipelineReloader::GetCompute("Shadows/SoftRT.hlsl")
+                                      : PipelineReloader::GetCompute("Shadows/SoftRTNoAlpha.hlsl");
         begin.CommandList->SetComputePipeline(pipeline);
         begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);

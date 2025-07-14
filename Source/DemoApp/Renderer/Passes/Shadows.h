@@ -46,10 +46,11 @@ private:
     void None(RenderPassBegin& begin);
     void CSM(RenderPassBegin& begin);
     void HardRT(RenderPassBegin& begin);
-
+    void SoftRT(RenderPassBegin& begin);
+    
 private:
     bool mAlphaTest = true;
-    ShadowMode mMode = ShadowMode::kCSM;
+    ShadowMode mMode = ShadowMode::kSoftRT;
 
     // CSM
     StaticArray<ShadowCascade, SHADOW_CASCADE_COUNT> mCascades;

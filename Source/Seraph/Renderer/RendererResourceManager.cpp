@@ -35,14 +35,16 @@ void RendererResourceManager::Initialize(IRHIDevice* device)
 
 void RendererResourceManager::Shutdown()
 {
-    for (auto& resource : sData.Resources)
-        delete resource.second;
+    for (auto& [_, resource] : sData.Resources) {
+        delete resource;
+    }
     sData.Resources.clear();
 }
 
 void RendererResourceManager::CreateTexture(const std::string& name, RHITextureDesc desc)
 {
     RendererResource* resource = new RendererResource;
+    memset(resource, 0, sizeof(RendererResource));
     resource->Type = RendererResourceType::kTexture;
     resource->Texture = sData.Device->CreateTexture(std::move(desc));
     resource->Texture->SetName(name);
@@ -52,6 +54,7 @@ void RendererResourceManager::CreateTexture(const std::string& name, RHITextureD
 void RendererResourceManager::CreateBuffer(const std::string& name, RHIBufferDesc desc)
 {
     RendererResource* resource = new RendererResource;
+    memset(resource, 0, sizeof(RendererResource));
     resource->Type = RendererResourceType::kBuffer;
     resource->Buffer = sData.Device->CreateBuffer(std::move(desc));
     resource->Buffer->SetName(name);
@@ -61,6 +64,7 @@ void RendererResourceManager::CreateBuffer(const std::string& name, RHIBufferDes
 void RendererResourceManager::CreateRingBuffer(const std::string& name, uint size)
 {
     RendererResource* resource = new RendererResource;
+    memset(resource, 0, sizeof(RendererResource));
     resource->Type= RendererResourceType::kRingBuffer;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         resource->RingBuffer[i] = sData.Device->CreateBuffer(RHIBufferDesc(size, 0, RHIBufferUsage::kConstant));
@@ -73,6 +77,7 @@ void RendererResourceManager::CreateRingBuffer(const std::string& name, uint siz
 void RendererResourceManager::CreateSampler(const std::string& name, RHISamplerDesc desc)
 {
     RendererResource* resource = new RendererResource;
+    memset(resource, 0, sizeof(RendererResource));
     resource->Type = RendererResourceType::kSampler;
     resource->Sampler = sData.Device->CreateSampler(std::move(desc));
     sData.Resources[name] = std::move(resource);
