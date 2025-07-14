@@ -12,6 +12,7 @@ RendererResourceManager::Data RendererResourceManager::sData;
 void RendererResourceManager::Initialize(IRHIDevice* device)
 {
     sData.Device = device;
+    sData.Resources.clear();
 
     RHITextureDesc defaultDesc = {};
     defaultDesc.Width = 1;
@@ -35,52 +36,49 @@ void RendererResourceManager::Initialize(IRHIDevice* device)
 
 void RendererResourceManager::Shutdown()
 {
-    for (auto& [_, resource] : sData.Resources) {
-        delete resource;
-    }
     sData.Resources.clear();
 }
 
 void RendererResourceManager::CreateTexture(const std::string& name, RHITextureDesc desc)
 {
-    RendererResource* resource = new RendererResource;
-    memset(resource, 0, sizeof(RendererResource));
+    auto resource = std::make_shared<RendererResource>();
+    resource->Name = name;
     resource->Type = RendererResourceType::kTexture;
     resource->Texture = sData.Device->CreateTexture(std::move(desc));
     resource->Texture->SetName(name);
-    sData.Resources[name] = std::move(resource);
+    sData.Resources[name] = resource;
 }
 
 void RendererResourceManager::CreateBuffer(const std::string& name, RHIBufferDesc desc)
 {
-    RendererResource* resource = new RendererResource;
-    memset(resource, 0, sizeof(RendererResource));
+    auto resource = std::make_shared<RendererResource>();
+    resource->Name = name;
     resource->Type = RendererResourceType::kBuffer;
     resource->Buffer = sData.Device->CreateBuffer(std::move(desc));
     resource->Buffer->SetName(name);
-    sData.Resources[name] = std::move(resource);
+    sData.Resources[name] = resource;
 }
 
 void RendererResourceManager::CreateRingBuffer(const std::string& name, uint size)
 {
-    RendererResource* resource = new RendererResource;
-    memset(resource, 0, sizeof(RendererResource));
-    resource->Type= RendererResourceType::kRingBuffer;
+    auto resource = std::make_shared<RendererResource>();
+    resource->Name = name;
+    resource->Type = RendererResourceType::kRingBuffer;
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
         resource->RingBuffer[i] = sData.Device->CreateBuffer(RHIBufferDesc(size, 0, RHIBufferUsage::kConstant));
         resource->RingBufferViews[i] = sData.Device->CreateBufferView(RHIBufferViewDesc(resource->RingBuffer[i], RHIBufferViewType::kConstant));
-        resource->RingBuffer[i]->SetName(name);
+        resource->RingBuffer[i]->SetName(name + "_frame_" + std::to_string(i));
     }
-    sData.Resources[name] = std::move(resource);
+    sData.Resources[name] = resource;
 }
 
 void RendererResourceManager::CreateSampler(const std::string& name, RHISamplerDesc desc)
 {
-    RendererResource* resource = new RendererResource;
-    memset(resource, 0, sizeof(RendererResource));
+    auto resource = std::make_shared<RendererResource>();
+    resource->Name = name;
     resource->Type = RendererResourceType::kSampler;
     resource->Sampler = sData.Device->CreateSampler(std::move(desc));
-    sData.Resources[name] = std::move(resource);
+    sData.Resources[name] = resource;
 }
 
 RendererResource& RendererResourceManager::Get(const std::string& name)
@@ -90,7 +88,7 @@ RendererResource& RendererResourceManager::Get(const std::string& name)
 
 RendererResource& RendererResourceManager::Import(const std::string& name, IRHICommandList* list, RendererImportType type)
 {
-    RendererResource* resource = sData.Resources[name];
+    SharedPtr<RendererResource> resource = sData.Resources[name];
     switch (resource->Type)
     {
     case RendererResourceType::kBuffer: {

@@ -7,6 +7,8 @@
 
 RendererResource::~RendererResource()
 {
+    SERAPH_INFO("Deleting renderer resource %s", Name.c_str());
+
     if (Buffer) delete Buffer;
     if (RingBuffer[0]) {
         for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {

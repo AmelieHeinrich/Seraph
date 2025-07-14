@@ -52,7 +52,7 @@ struct RHITextureDesc
     uint MipLevels = 1;
     RHITextureFormat Format;
     RHITextureUsage Usage;
-    bool Reserved; // Used by RHI for internal swapchain images
+    bool Reserved = false; // Used by RHI for internal swapchain images
 };
 
 class IRHIDevice;

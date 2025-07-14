@@ -57,6 +57,7 @@ Debug::~Debug()
         delete sData.VertexBuffer[i];
         delete sData.TransferBuffer[i];
     }
+    delete sData.NoDepthPipeline;
     delete sData.Pipeline;
 }
 

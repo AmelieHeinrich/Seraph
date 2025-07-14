@@ -18,6 +18,7 @@ enum class RendererResourceType
 struct RendererResource
 {
     RendererResourceType Type;
+    std::string Name;
 
     IRHIBuffer* Buffer = nullptr;
     StaticArray<IRHIBuffer*, FRAMES_IN_FLIGHT> RingBuffer;

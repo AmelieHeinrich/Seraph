@@ -36,6 +36,6 @@ public:
 private:
     static struct Data {
         IRHIDevice* Device;
-        UnorderedMap<std::string, RendererResource*> Resources;
+        UnorderedMap<std::string, SharedPtr<RendererResource>> Resources;
     } sData;
 };
