@@ -37,6 +37,10 @@ private:
 
 void Compressor::RecurseFolder(const std::string& path)
 {
+    if (!FileSystem::Exists(".cache")) {
+        FileSystem::CreateDirectory(".cache/");
+    }
+
     for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
         std::string entryPath = dirEntry.path().string();
         std::replace(entryPath.begin(), entryPath.end(), '\\', '/');

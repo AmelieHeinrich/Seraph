@@ -4,6 +4,7 @@
 //
 
 #include "Renderer.h"
+#include "Screenshotter.h"
 
 #include <ImGui/imgui.h>
 

@@ -8,6 +8,7 @@
 #include <DemoApp/Renderer/RenderPass.h>
 
 constexpr const char* TONEMAPPING_LDR_ID = "Tonemapping/LDR";
+constexpr const char* TONEMAPPING_SCREENSHOT_ID = "Tonemapping/Screenshot";
 
 class Tonemapping : public RenderPass
 {

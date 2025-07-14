@@ -26,6 +26,7 @@ public:
 
     static bool Exists(const std::string& path);
     static uint GetFileSize(const std::string& path);
+    static void CreateDirectory(const std::string& path);
     
     static FileTime GetWriteTime(const std::string& path);
 private:

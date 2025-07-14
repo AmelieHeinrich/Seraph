@@ -17,6 +17,7 @@ struct ImageData
 class Image
 {
 public:
+    static void WriteImageData(uint8* data, int width, int height, const std::string& path);
     static void WriteImageData(const ImageData& data, const std::string& path);
     static void WriteImageRGB(const float* data, int width, int height, const std::string& path);
 

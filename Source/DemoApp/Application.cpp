@@ -6,6 +6,7 @@
 #include "Application.h"
 #include "Renderer/Passes/Tonemapping.h"
 #include "Renderer/Passes/Debug.h"
+#include "Renderer/Screenshotter.h"
 
 #include <chrono>
 #include <glm/gtc/type_ptr.hpp>
@@ -29,6 +30,7 @@ Application::Application(const ApplicationSpecs& specs)
     AssetManager::Initialize(mDevice);
     mGraphicsQueue = mDevice->CreateCommandQueue(RHICommandQueueType::kGraphics);
     Uploader::Initialize(mDevice, mGraphicsQueue);
+    Screenshotter::Initialize(mDevice, mGraphicsQueue, specs.WindowWidth, specs.WindowHeight);
 
     mWindow = SharedPtr<Window>(new Window(specs.Backend, specs.WindowWidth, specs.WindowHeight, "Seraph"));
     mSurface = mDevice->CreateSurface(mWindow.get(), mGraphicsQueue);
@@ -56,6 +58,7 @@ Application::Application(const ApplicationSpecs& specs)
 
 Application::~Application()
 {
+    Screenshotter::Shutdown();
     Uploader::Shutdown();
 
     delete mScene;
@@ -85,6 +88,11 @@ void Application::Run()
         auto time = std::chrono::high_resolution_clock::now();
         float delta = (std::chrono::duration<float>(lastFrame - time).count());
         lastFrame = time;
+
+        // Check for screenshot
+        if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
+            Screenshotter::EnqueueScreenshot();
+        }
 
         // Begin fill info
         RenderPassBegin begin;
@@ -142,6 +150,9 @@ void Application::Run()
         begin.CamData.PrevInvProj = begin.CamData.InvProj;
         begin.CamData.PrevInvView = begin.CamData.InvView;
         begin.CamData.PrevInvViewProj = begin.CamData.InvViewProj;
+
+        // Process screenshot
+        Screenshotter::ProcessScreenshot();
     }
     mDevice->WaitIdle();
 }
@@ -192,7 +203,7 @@ void Application::UI(RenderPassBegin& begin)
             ImGui::Text("Backend : %s", mStringBackend.c_str());
             ImGui::Separator();
             ImGui::Text("Debug Menu: F1");
-            ImGui::Text("Screenshot: (DISABLED)");
+            ImGui::Text("Screenshot: F2");
             ImGui::Text("Hide Overlay: F3");
             ImGui::Separator();
             if (ImGui::RadioButton("Rasterized", mPath == RenderPath::kBasic)) mPath = RenderPath::kBasic;

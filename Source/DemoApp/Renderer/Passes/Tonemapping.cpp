@@ -8,6 +8,8 @@
 #include "GBuffer.h"
 #include "Pathtracer.h"
 
+#include <DemoApp/Renderer/Screenshotter.h>
+
 Tonemapping::Tonemapping(IRHIDevice* device, uint width, uint height)
     : RenderPass(device, width, height)
 {
@@ -19,6 +21,7 @@ Tonemapping::Tonemapping(IRHIDevice* device, uint width, uint height)
     hdrDesc.Usage = RHITextureUsage::kShaderResource | RHITextureUsage::kStorage | RHITextureUsage::kRenderTarget;
     
     RendererResourceManager::CreateTexture(TONEMAPPING_LDR_ID, hdrDesc);
+    RendererResourceManager::CreateTexture(TONEMAPPING_SCREENSHOT_ID, hdrDesc);
 
     // Pipeline
     RHIComputePipelineDesc desc = {};
@@ -40,7 +43,7 @@ void Tonemapping::Configure(RenderPath path)
 void Tonemapping::Render(RenderPassBegin& begin)
 {
     begin.CommandList->PushMarker("Tonemapping");
-    {
+    CODE_BLOCK("Tonemap") {
         RendererResource& hdr = RendererResourceManager::Import(mInputID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kShaderWrite);
 
@@ -59,6 +62,14 @@ void Tonemapping::Render(RenderPassBegin& begin)
         begin.CommandList->SetComputePipeline(pipeline);
         begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
+    }
+    CODE_BLOCK("Copy For Screenshots") {
+        if (Screenshotter::WantsScreenshot()) {
+            RendererResource& src = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kTransferSource);
+            RendererResource& dst = RendererResourceManager::Import(TONEMAPPING_SCREENSHOT_ID, begin.CommandList, RendererImportType::kTransferDest);
+            
+            begin.CommandList->CopyTextureToTexture(dst.Texture, src.Texture);
+        }
     }
     begin.CommandList->PopMarker();
 }

@@ -102,3 +102,8 @@ uint FileSystem::GetFileSize(const std::string& path)
         return 0;
     return s.st_size;  
 }
+
+void FileSystem::CreateDirectory(const std::string& path)
+{
+    std::filesystem::create_directory(path);
+}

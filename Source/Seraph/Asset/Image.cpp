@@ -28,6 +28,12 @@ void ConvertToRGBA8(const float* linearRGB, uint8_t* outRGBA8, int width, int he
     }
 }
 
+void Image::WriteImageData(uint8* data, int width, int height, const std::string& path)
+{
+    stbi_write_png(path.data(), width, height, 4, data, width * 4);
+    SERAPH_INFO("Wrote image file to %s", path.data());
+}
+
 void Image::WriteImageData(const ImageData& data, const std::string& path)
 {
     stbi_write_png(path.data(), data.Width, data.Height, 4, data.Pixels.data(), data.Width * 4);
