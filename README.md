@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Minimum requirements is a SM6.6 capable GPU with raytracing and mesh shading capabilities, running Vulkan 1.3, the latest version of D3D12 and Metal 3.
+Minimum requirements is a SM6.6 capable GPU with raytracing and mesh shading capabilities, running Vulkan 1.3 and the latest version of D3D12. If you're on Mac, minimum requirements is a GPU supporting Metal 3.
 The Vulkan backend requires VK_EXT_mutable_descriptor.
 
 ## Disclaimer
@@ -24,12 +24,10 @@ Metal backend is tested on an M2 chip.
 
 ## Notable Features
 
-- Complete RHI with D3D12/Vulkan/Dummy support -- Bindless, raytracing, mesh shaders, GPU readback. Metal backend currently WIP.
-- Test Suite for RHI -- Generates JSON report used to render results in simple web page
-- Asset compression and caching
-- Automatic shader hot reloading
+- RHI: D3D12/Vulkan/Dummy support with bindless, raytracing, mesh shaders, GPU readback... Metal backend currently WIP.
 - Techniques: Tiled light culling, deferred shading
 - Lighting: Microfacet BRDF, CSM, raytraced hard shadows
+- Tooling: RHI test suite, asset caching, shader hot reloading, debug renderer and motion vector visualizer
 
 ## WIP
 
@@ -46,6 +44,9 @@ Metal backend is tested on an M2 chip.
 - Temporal Anti-Aliasing
 - Bloom
 - 6-pass Bokeh DOF
+- GPU particles
+- GPU profiler
+- Eye adaptation
 
 ## Planned tests
 
