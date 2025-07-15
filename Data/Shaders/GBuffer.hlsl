@@ -29,8 +29,9 @@ DEFINE_SRV_ARRAY(VertexInput);
 struct VertexOutput
 {
     float4 Position : SV_Position;
-    float4 PrevPosition : POSITION0;
-    float4 WorldPosition : POSITION1;
+    float4 CurrPosition : POSITION1;
+    float4 PrevPosition : POSITION2;
+    float4 WorldPosition : POSITION3;
     float3 Normal : NORMAL;
     float2 UV : TEXCOORD;
     float4 Tangent : TANGENT;
@@ -99,6 +100,7 @@ VertexOutput VSMain(uint vid : SV_VertexID)
 
     VertexOutput output = (VertexOutput)0;
     output.Position = mul(camera.Proj, mul(camera.View, float4(input.Position, 1.0f)));
+    output.CurrPosition = mul(camera.Proj, mul(camera.View, float4(input.Position, 1.0f)));
     output.PrevPosition = mul(camera.PrevProj, mul(camera.PrevView, float4(input.Position, 1.0f)));
     output.WorldPosition = float4(input.Position, 1.0f);
     output.Normal = input.Normal;
@@ -112,13 +114,13 @@ FragmentOutput FSMain(VertexOutput input)
     Texture2D<float4> texture = BindlessTexture2DFloat4_Load(NonUniformResourceIndex(Push.MyTexture));
     SamplerState sampler = BindlessSampler_Load(Push.MySampler);
 
-    float2 ndcCurrent = input.Position.xy / input.Position.w;
+    float2 ndcCurrent = input.CurrPosition.xy / input.CurrPosition.w;
     float2 ndcPrev = input.PrevPosition.xy / input.PrevPosition.w;
     
     float2 screenCurrent = ndcCurrent * 0.5 + 0.5;
     float2 screenPrev = ndcPrev * 0.5 + 0.5;
-    screenCurrent.y = 1.0 - screenCurrent.y;
-    screenPrev.y = 1.0 - screenPrev.y;
+    float2 diff = screenCurrent - screenPrev;
+    diff *= float2(-1.0f, 1.0f);
 
     FragmentOutput output = (FragmentOutput)0;
     output.Albedo = texture.Sample(sampler, input.UV);
@@ -126,6 +128,6 @@ FragmentOutput FSMain(VertexOutput input)
         discard;
     output.Normal = float4(GetNormal(input), 1.0f);
     output.PBR = GetPBR(input);
-    output.MotionVector = screenCurrent - screenPrev;
+    output.MotionVector = diff;
     return output;
 }

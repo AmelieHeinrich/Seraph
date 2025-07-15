@@ -24,7 +24,32 @@ VisualizeMotionVectors::~VisualizeMotionVectors()
 
 void VisualizeMotionVectors::Render(RenderPassBegin& begin)
 {
-    
+    if (!mEnable)
+        return;
+
+    begin.CommandList->PushMarker("Visualize Motion Vectors");
+    CODE_BLOCK("Render") {
+        RendererResource& ldr = RendererResourceManager::Import(TONEMAPPING_LDR_ID, begin.CommandList, RendererImportType::kShaderWrite);
+        RendererResource& motionVec = RendererResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CommandList, RendererImportType::kShaderRead);
+
+        struct PushConstants {
+            BindlessHandle MotionVector;
+            BindlessHandle Output;
+            uint Width;
+            uint Height;
+        } constants = {
+            RendererViewRecycler::GetSRV(motionVec.Texture)->GetBindlessHandle(),
+            RendererViewRecycler::GetUAV(ldr.Texture)->GetBindlessHandle(),
+            mWidth,
+            mHeight
+        };
+
+        IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("VisualizeMotionVectors.hlsl");
+        begin.CommandList->SetComputePipeline(pipeline);
+        begin.CommandList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+        begin.CommandList->Dispatch((mWidth + 7) / 8, (mHeight + 7) / 8, 1);
+    }
+    begin.CommandList->PopMarker();
 }
 
 void VisualizeMotionVectors::UI(RenderPassBegin& begin)

@@ -160,39 +160,43 @@ void CSMain(uint3 dtid: SV_DispatchThreadID)
     // Logic
     float attenuation = clamp(dot(N, L), 0.0, 1.0);
     if (attenuation > 0.0f) {
-        RNG rng;
-        rng.Init(dtid.xy, Push.FrameIndex * 1923);
         float shadow = 0.0f;
 
-        // Trace ray, generate random Wi
-        float lightRadius = radians(Push.LightRadius);
-        float3 lightTangent = normalize(cross(L, float3(0.0f, 1.0f, 0.0f)));
-        float3 lightBitangent = normalize(cross(lightTangent, L));
+        const int SAMPLE_COUNT = 1;
+        for (int i = 0; i < SAMPLE_COUNT; i++) {
+            RNG rng;
+            rng.Init(dtid.xy, Push.FrameIndex * 1923 + i);
 
-        // Calculate disk point
-        float2 randSample = rng.NextFloat2();
-        float pointRadius = lightRadius * sqrt(randSample.x);
-        float pointAngle = randSample.y * 2.0f * PI;
-        float2 diskPoint = float2(pointRadius * cos(pointAngle), pointRadius * sin(pointAngle));
+            // Trace ray, generate random Wi
+            float lightRadius = radians(Push.LightRadius);
+            float3 lightTangent = normalize(cross(L, float3(0.0f, 1.0f, 0.0f)));
+            float3 lightBitangent = normalize(cross(lightTangent, L));
 
-        // Wi
-        float3 Wi = normalize(L + diskPoint.x * lightTangent + diskPoint.y * lightBitangent);
+            // Calculate disk point
+            float2 randSample = rng.NextFloat2();
+            float pointRadius = lightRadius * sqrt(randSample.x);
+            float pointAngle = randSample.y * 2.0f * PI;
+            float2 diskPoint = float2(pointRadius * cos(pointAngle), pointRadius * sin(pointAngle));
 
-        RayDesc ray;
-        ray.Origin = worldPosition.xyz + N * Push.NormalBias;
-        ray.Direction = Wi;
-        ray.TMin = 0.001f;
-        ray.TMax = 10000.0f;
+            // Wi
+            float3 Wi = normalize(L + diskPoint.x * lightTangent + diskPoint.y * lightBitangent);
 
-        RayQuery<RAY_FLAG_NONE> q;
-        q.TraceRayInline(sceneAS, RAY_FLAG_NONE, 0xFF, ray);
-        while (q.Proceed()) {
-            if (q.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE) {
-                CheckTransparency(q);
+            RayDesc ray;
+            ray.Origin = worldPosition.xyz + N * Push.NormalBias;
+            ray.Direction = Wi;
+            ray.TMin = 0.001f;
+            ray.TMax = 10000.0f;
+
+            RayQuery<RAY_FLAG_NONE> q;
+            q.TraceRayInline(sceneAS, RAY_FLAG_NONE, 0xFF, ray);
+            while (q.Proceed()) {
+                if (q.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE) {
+                    CheckTransparency(q);
+                }
             }
-        }
 
-        shadow += (q.CommittedStatus() != COMMITTED_TRIANGLE_HIT);
-        output[dtid.xy] = shadow;
+            shadow += (q.CommittedStatus() != COMMITTED_TRIANGLE_HIT);
+        }
+        output[dtid.xy] = shadow / SAMPLE_COUNT;
     }
 }

@@ -31,7 +31,6 @@ float2 ArrowTileCenterCoord(float2 pos)
     return (floor(pos / ARROW_TILE_SIZE) + 0.5) * ARROW_TILE_SIZE;
 }
 
-
 float Arrow(float2 p, float2 v)
 {
     // Make everything relative to the center, which may be fractional
@@ -85,7 +84,7 @@ float Arrow(float2 p, float2 v)
     }
 }
 
-float2 Field(uint tid)
+float2 Field(uint3 tid)
 {
     Texture2D<float2> Velocity = BindlessTexture2DFloat2_Load(Push.VelocityID);
     return Velocity.Load(tid);
@@ -101,14 +100,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     
     // Current pixel position in screen space
     float2 pixelPos = float2(dtid.xy);
-    
-    // Get the center coordinate of the arrow tile containing this pixel
-    float2 tileCenter = ArrowTileCenterCoord(pixelPos);
-    
-    // Sample the velocity field at the tile center
-    // Convert tile center back to texture coordinates for sampling
-    uint2 tileCenterTexCoord = uint2(tileCenter);
-    float2 velocityUV = Field(tileCenterTexCoord);
+    float2 velocityUV = Field(dtid);
     
     // Convert UV velocity to pixel velocity
     // UV velocity * screen dimensions = pixel velocity
