@@ -48,7 +48,7 @@ D3D12Texture::~D3D12Texture()
 
 void D3D12Texture::SetName(const std::string& name)
 {
-    mResource->SetName(MULTIBYTE_TO_UNICODE(name.data()));
+    mResource->SetName(UTF::AsciiToWide(name).data());
 }
 
 DXGI_FORMAT D3D12Texture::TranslateToDXGIFormat(RHITextureFormat format)
