@@ -57,7 +57,7 @@ SamplerState BindlessSampler_Load(uint index)
 #ifdef VULKAN
     result = gSamplerHandles[index];
 #else
-    result = ResourceDescriptorHeap[index];
+    result = SamplerDescriptorHeap[index];
 #endif
     return result;
 }
