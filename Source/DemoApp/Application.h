@@ -39,6 +39,7 @@ private:
     StaticArray<IRHICommandList*, FRAMES_IN_FLIGHT> mCommandBuffers;
     IRHIF2FSync* mF2FSync;
     IRHIImGuiContext* mImGuiContext;
+    RenderPassBegin mBegin;
 
     Renderer* mRenderer;
     Scene* mScene;

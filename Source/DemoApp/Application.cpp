@@ -95,44 +95,43 @@ void Application::Run()
         }
 
         // Begin fill info
-        RenderPassBegin begin;
-        begin.FrameCount = mFrameCount;
-        begin.FrameIndex = mF2FSync->BeginSynchronize();
-        begin.CommandList = mCommandBuffers[begin.FrameIndex];
-        begin.SwapchainTexture = mSurface->GetTexture(begin.FrameIndex);
-        begin.SwapchainTextureView = mSurface->GetTextureView(begin.FrameIndex);
-        begin.RenderScene = mScene;
-        begin.CamData.Proj = mCamera.Projection();
-        begin.CamData.View = mCamera.View();
-        begin.CamData.ViewProj = begin.CamData.Proj * begin.CamData.View;
-        begin.CamData.InvProj = glm::inverse(begin.CamData.Proj);
-        begin.CamData.InvView = glm::inverse(begin.CamData.View);
-        begin.CamData.InvViewProj = glm::inverse(begin.CamData.Proj * begin.CamData.View);
-        begin.CamData.Position = float4(mCamera.Position(), 1.0f);
+        mBegin.FrameCount = mFrameCount;
+        mBegin.FrameIndex = mF2FSync->BeginSynchronize();
+        mBegin.CommandList = mCommandBuffers[mBegin.FrameIndex];
+        mBegin.SwapchainTexture = mSurface->GetTexture(mBegin.FrameIndex);
+        mBegin.SwapchainTextureView = mSurface->GetTextureView(mBegin.FrameIndex);
+        mBegin.RenderScene = mScene;
+        mBegin.CamData.Proj = mCamera.Projection();
+        mBegin.CamData.View = mCamera.View();
+        mBegin.CamData.ViewProj = mBegin.CamData.Proj * mBegin.CamData.View;
+        mBegin.CamData.InvProj = glm::inverse(mBegin.CamData.Proj);
+        mBegin.CamData.InvView = glm::inverse(mBegin.CamData.View);
+        mBegin.CamData.InvViewProj = glm::inverse(mBegin.CamData.Proj * mBegin.CamData.View);
+        mBegin.CamData.Position = float4(mCamera.Position(), 1.0f);
 
         // Record command list
-        RHITextureBarrier endGuiBarrier(begin.SwapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kAllCommands, RHIResourceLayout::kPresent);
-        RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(begin.SwapchainTextureView, false) }, {});
+        RHITextureBarrier endGuiBarrier(mBegin.SwapchainTexture, RHIResourceAccess::kColorAttachmentWrite, RHIResourceAccess::kMemoryRead, RHIPipelineStage::kColorAttachmentOutput, RHIPipelineStage::kAllCommands, RHIResourceLayout::kPresent);
+        RHIRenderBegin renderBegin(mSpecs.WindowWidth, mSpecs.WindowHeight, { RHIRenderAttachment(mBegin.SwapchainTextureView, false) }, {});
 
-        begin.CommandList->Reset();
-        begin.CommandList->Begin();
+        mBegin.CommandList->Reset();
+        mBegin.CommandList->Begin();
 
         // Render
-        mRenderer->Render(mPath, begin);
+        mRenderer->Render(mPath, mBegin);
         
         // ImGui
-        begin.CommandList->PushMarker("ImGui");
-        begin.CommandList->BeginRendering(renderBegin);
-        begin.CommandList->BeginImGui();
-        UI(begin);
-        begin.CommandList->EndImGui();
-        begin.CommandList->EndRendering();
-        begin.CommandList->Barrier(endGuiBarrier);
-        begin.CommandList->PopMarker();
+        mBegin.CommandList->PushMarker("ImGui");
+        mBegin.CommandList->BeginRendering(renderBegin);
+        mBegin.CommandList->BeginImGui();
+        UI(mBegin);
+        mBegin.CommandList->EndImGui();
+        mBegin.CommandList->EndRendering();
+        mBegin.CommandList->Barrier(endGuiBarrier);
+        mBegin.CommandList->PopMarker();
         
         // Synchronize frame
-        begin.CommandList->End();
-        mF2FSync->EndSynchronize(mCommandBuffers[begin.FrameIndex]);
+        mBegin.CommandList->End();
+        mF2FSync->EndSynchronize(mCommandBuffers[mBegin.FrameIndex]);
         mF2FSync->PresentSurface();
 
         // Update
@@ -140,16 +139,16 @@ void Application::Run()
         if (!mUIOpened) {
             mCamera.Update(delta, 16, 9, mFrameCount);
         }
-        mScene->Update(begin.FrameIndex);
+        mScene->Update(mBegin.FrameIndex);
         mFrameCount++;
 
         // Update prev matrices
-        begin.CamData.PrevProj = begin.CamData.Proj;
-        begin.CamData.PrevView = begin.CamData.View;
-        begin.CamData.PrevViewProj = begin.CamData.ViewProj;
-        begin.CamData.PrevInvProj = begin.CamData.InvProj;
-        begin.CamData.PrevInvView = begin.CamData.InvView;
-        begin.CamData.PrevInvViewProj = begin.CamData.InvViewProj;
+        mBegin.CamData.PrevProj = mBegin.CamData.Proj;
+        mBegin.CamData.PrevView = mBegin.CamData.View;
+        mBegin.CamData.PrevViewProj = mBegin.CamData.ViewProj;
+        mBegin.CamData.PrevInvProj = mBegin.CamData.InvProj;
+        mBegin.CamData.PrevInvView = mBegin.CamData.InvView;
+        mBegin.CamData.PrevInvViewProj = mBegin.CamData.InvViewProj;
 
         // Process screenshot
         Screenshotter::ProcessScreenshot();
@@ -157,7 +156,7 @@ void Application::Run()
     mDevice->WaitIdle();
 }
 
-void Application::UI(RenderPassBegin& begin)
+void Application::UI(RenderPassBegin& mBegin)
 {
     if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
         mUIOpened = !mUIOpened;
@@ -213,7 +212,7 @@ void Application::UI(RenderPassBegin& begin)
 
         // Renderer settings
         if (mRendererSettingsOpened) {
-            mRenderer->UI(mPath, begin);
+            mRenderer->UI(mPath, mBegin);
         }
     }
 }

@@ -13,6 +13,7 @@
 #include "Passes/LightCulling.h"
 #include "Passes/GBuffer.h"
 #include "Passes/Shadows.h"
+#include "Passes/Reflections.h"
 #include "Passes/Deferred.h"
 #include "Passes/Tonemapping.h"
 #include "Passes/Debug.h"
@@ -33,6 +34,7 @@ private:
     SharedPtr<PathtracerDenoise> mPathtracerDenoise;
     SharedPtr<GBuffer> mGBuffer;
     SharedPtr<Shadows> mShadows;
+    SharedPtr<Reflections> mReflections;
     SharedPtr<LightCulling> mLightCulling;
     SharedPtr<Deferred> mDeferred;
     SharedPtr<Tonemapping> mTonemapping;

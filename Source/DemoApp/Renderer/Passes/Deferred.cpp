@@ -7,6 +7,7 @@
 #include "GBuffer.h"
 #include "LightCulling.h"
 #include "Shadows.h"
+#include "Reflections.h"
 
 #include <ImGui/imgui.h>
 
@@ -24,7 +25,7 @@ Deferred::Deferred(IRHIDevice* device, uint width, uint height)
 
     // Pipeline
     RHIComputePipelineDesc desc = {};
-    desc.PushConstantSize = sizeof(uint) * 20;
+    desc.PushConstantSize = sizeof(uint) * 24;
    
     PipelineReloader::SubscribeCompute("Deferred.hlsl", desc, "CSMain");
 }
@@ -46,8 +47,10 @@ void Deferred::Render(RenderPassBegin& begin)
         RendererResource& albedo = RendererResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& pbr = RendererResourceManager::Import(GBUFFER_PBR_ID, begin.CommandList, RendererImportType::kShaderRead);
         RendererResource& output = RendererResourceManager::Import(DEFERRED_HDR_TEXTURE_ID, begin.CommandList, RendererImportType::kShaderWrite);
+
         RendererResource& shadowMask = RendererResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CommandList, RendererImportType::kShaderRead);
-        
+        RendererResource& reflectionMask = RendererResourceManager::Import(REFLECTIONS_CHANNEL_ID, begin.CommandList, RendererImportType::kShaderRead);
+
         struct Constants {
             BindlessHandle depthHandle;
             BindlessHandle normalHandle;
@@ -73,6 +76,9 @@ void Deferred::Render(RenderPassBegin& begin)
             uint slCount;
             BindlessHandle sunArray;
             BindlessHandle shadowMask;
+
+            BindlessHandle reflectionsMask;
+            float3 pad2;
         } constants = {
             RendererViewRecycler::GetTextureView(RHITextureViewDesc(depth.Texture, RHITextureViewType::kShaderRead, RHITextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             RendererViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
@@ -97,7 +103,10 @@ void Deferred::Render(RenderPassBegin& begin)
             begin.RenderScene->GetLights().GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
             static_cast<uint>(begin.RenderScene->GetLights().SpotLights.size()),
             begin.RenderScene->GetLights().GetSunBufferView(begin.FrameIndex)->GetBindlessHandle(),
-            RendererViewRecycler::GetSRV(shadowMask.Texture)->GetBindlessHandle()
+            RendererViewRecycler::GetSRV(shadowMask.Texture)->GetBindlessHandle(),
+
+            RendererViewRecycler::GetSRV(reflectionMask.Texture)->GetBindlessHandle(),
+            {}
         };
     
         IRHIComputePipeline* pipeline = PipelineReloader::GetCompute("Deferred.hlsl");

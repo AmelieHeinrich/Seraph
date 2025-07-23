@@ -37,6 +37,9 @@ struct PushConstants
     uint SpotLightCount;
     uint SunArray;
     uint ShadowMask;
+
+    uint ReflectionMask;
+    uint3 Pad;
 };
 
 DEFINE_SRV_ARRAY(uint);
@@ -192,6 +195,7 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     Texture2D<float4> albedo = BindlessTexture2DFloat4_Load(Push.Albedo);
     Texture2D<float2> pbr = BindlessTexture2DFloat2_Load(Push.PBR);
     Texture2D<float> shadowMask = BindlessTexture2DFloat_Load(Push.ShadowMask);
+    Texture2D<float4> reflectionMask = BindlessTexture2DFloat4_Load(Push.ReflectionMask);
     RWTexture2D<float4> output = BindlessRWTexture2DFloat4_Load(Push.Output);
     StructuredBuffer<PointLight> pointLights = BindlessSRV_PointLight_Load(Push.PointLightArray);
     StructuredBuffer<SpotLight> spotLights = BindlessSRV_SpotLight_Load(Push.SpotLightArray);
@@ -220,7 +224,7 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     float3 V = normalize(cameraPosition - worldPosition.xyz);
     float3 finalColor = GetTileColor(tile.Count) * Push.ShowTileHeatmap;
 
-    finalColor += EvaluateDirectionalLight(sun[0], V, worldPosition, N, materialColor, metallic, roughness) * shadowMask.Load(tid);
+    // Evaluate direct diffuse/specular from local lights
     for (int i = 0; i < tile.Count; i++) {
         uint encoded = bins[tile.Offset + i];
         bool isSpot = (encoded & (1u << 31)) != 0;
@@ -234,6 +238,15 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
         }
         finalColor += contrib;
     }
+
+    // Evaluate direct diffuse/specular from sun
+    finalColor += EvaluateDirectionalLight(sun[0], V, worldPosition, N, materialColor, metallic, roughness) * shadowMask.Load(tid);
+
+    // Evaluate indirect specular from mask
+    finalColor += reflectionMask.Load(tid).rgb;
+
+    // Evaluate indirect diffuse from mask
+    // TODO
 
     output[tid.xy] = float4(finalColor, 1.0);
 }

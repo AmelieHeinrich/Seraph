@@ -20,6 +20,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
     mPathtracerDenoise = std::make_shared<PathtracerDenoise>(device, width, height);
     mGBuffer = std::make_shared<GBuffer>(device, width, height);
     mShadows = std::make_shared<Shadows>(device, width, height);
+    mReflections = std::make_shared<Reflections>(device, width, height);
     mLightCulling = std::make_shared<LightCulling>(device, width, height);
     mDeferred = std::make_shared<Deferred>(device, width, height);
     mTonemapping = std::make_shared<Tonemapping>(device, width, height);
@@ -43,6 +44,7 @@ Renderer::Renderer(IRHIDevice* device, uint width, uint height)
         mTLASPrepare,
         mGBuffer,
         mShadows,
+        mReflections,
         mLightCulling,
         mDeferred,
         mTonemapping,
