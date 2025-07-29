@@ -1,0 +1,27 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-15 22:59:19
+//
+
+#ifndef BINDLESS_KDS
+#define BINDLESS_KDS
+
+static const uint INVALID_DESCRIPTOR = 0x00000000;
+
+#ifdef D3D12
+    #define PUSH_CONSTANTS(Type, Name) ConstantBuffer<Type> Name : register(b0)
+#elif VULKAN
+    #define PUSH_CONSTANTS(Type, Name) [[vk::push_constant]] ConstantBuffer<Type> Name : register(b0)
+    [[vk::binding(2, 0)]] RaytracingAccelerationStructure gRaytracingASArray[];
+#endif
+
+RaytracingAccelerationStructure LoadRaytracingWorld(uint index)
+{
+#ifdef D3D12
+    return ResourceDescriptorHeap[index];
+#elif VULKAN
+    return gRaytracingASArray[index];
+#endif
+}
+
+#endif

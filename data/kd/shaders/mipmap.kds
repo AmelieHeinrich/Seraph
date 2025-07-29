@@ -1,0 +1,37 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-21 23:10:01
+//
+
+#include "common/bindless.kds"
+
+#pragma compute CSMain
+
+struct PushConstants
+{
+    uint SrcIndex;
+    uint DstIndex;
+    uint SamplerIndex;
+    uint Pad;
+
+    float2 MipSize;
+    float2 Size;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 tid : SV_DispatchThreadID)
+{
+    // Load resources
+    Texture2D<float4> SrcTexture = ResourceDescriptorHeap[Push.SrcIndex];
+    RWTexture2D<float4> DstTexture = ResourceDescriptorHeap[Push.DstIndex];
+    SamplerState BilinearClamp = SamplerDescriptorHeap[Push.SamplerIndex];
+
+    float2 texcoords = (1.0f / Push.MipSize) * (tid.xy + 0.5);
+
+	//The samplers linear interpolation will mix the four pixel values to the new pixels color
+	float4 color = SrcTexture.SampleLevel(BilinearClamp, texcoords, 0);
+
+	// Write the final color into the destination texture.
+	DstTexture[tid.xy] = color;
+}

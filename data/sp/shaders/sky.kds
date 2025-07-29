@@ -1,0 +1,82 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-20 15:50:11
+//
+
+#include "kd/shaders/common/bindless.kds"
+
+#pragma vertex VSMain
+#pragma pixel PSMain
+
+static const float3 CubeVertices[] = {
+    float3(-1.0f,  1.0f, -1.0f),
+    float3(-1.0f, -1.0f, -1.0f),
+    float3( 1.0f, -1.0f, -1.0f),
+    float3( 1.0f, -1.0f, -1.0f),
+    float3( 1.0f,  1.0f, -1.0f),
+    float3(-1.0f,  1.0f, -1.0f),   
+    float3(-1.0f, -1.0f,  1.0f),
+    float3(-1.0f, -1.0f, -1.0f),
+    float3(-1.0f,  1.0f, -1.0f),
+    float3(-1.0f,  1.0f, -1.0f),
+    float3(-1.0f,  1.0f,  1.0f),
+    float3(-1.0f, -1.0f,  1.0f),
+    float3( 1.0f, -1.0f, -1.0f),
+    float3( 1.0f, -1.0f,  1.0f),
+    float3( 1.0f,  1.0f,  1.0f),
+    float3( 1.0f,  1.0f,  1.0f),
+    float3( 1.0f,  1.0f, -1.0f),
+    float3( 1.0f, -1.0f, -1.0f),
+    float3(-1.0f, -1.0f,  1.0f),
+    float3(-1.0f,  1.0f,  1.0f),
+    float3( 1.0f,  1.0f,  1.0f),
+    float3( 1.0f,  1.0f,  1.0f),
+    float3( 1.0f, -1.0f,  1.0f),
+    float3(-1.0f, -1.0f,  1.0f),
+    float3(-1.0f,  1.0f, -1.0f),
+    float3( 1.0f,  1.0f, -1.0f),
+    float3( 1.0f,  1.0f,  1.0f),
+    float3( 1.0f,  1.0f,  1.0f),
+    float3(-1.0f,  1.0f,  1.0f),
+    float3(-1.0f,  1.0f, -1.0f),
+    float3(-1.0f, -1.0f, -1.0f),
+    float3(-1.0f, -1.0f,  1.0f),
+    float3( 1.0f, -1.0f, -1.0f),
+    float3( 1.0f, -1.0f, -1.0f),
+    float3(-1.0f, -1.0f,  1.0f),
+    float3( 1.0f, -1.0f,  1.0f)
+};
+
+struct VertexOut
+{
+    float4 Position : SV_POSITION;
+    float3 LocalPosition : COLOR0;
+};
+
+struct PushConstants
+{
+    uint EnvMap;
+    uint Sampler;
+    uint2 Pad;
+
+    column_major float4x4 ModelViewProjection;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+VertexOut VSMain(uint vid : SV_VertexID)
+{
+    VertexOut output = (VertexOut)0;
+    output.Position = mul(Push.ModelViewProjection, float4(CubeVertices[vid], 1.0));
+    output.LocalPosition = CubeVertices[vid];
+    return output;
+}
+
+float4 PSMain(VertexOut input) : SV_Target
+{
+    TextureCube<float4> EnvironmentMap = ResourceDescriptorHeap[Push.EnvMap];
+    SamplerState CubeSampler = SamplerDescriptorHeap[Push.Sampler];
+
+    float3 env_vector = normalize(input.LocalPosition);
+    float4 color = EnvironmentMap.SampleLevel(CubeSampler, env_vector, 0);
+    return color;
+}

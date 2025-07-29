@@ -1,12 +1,12 @@
 --
--- > Notice: Amélie Heinrich @ 2025
--- > Create Time: 2025-06-03 18:56:56
+-- > Notice: Floating Trees Inc. @ 2025
+-- > Create Time: 2025-07-18 14:04:12
 --
 
-target("STB")
+target("stb")
     set_kind("static")
-    set_group("Dependencies")
+    set_group("Third Party")
 
-    add_files("Source/stb.c")
-    add_headerfiles("Include/*.h")
-    add_includedirs("Include", { public = true })
+    add_includedirs("include", { public = true })
+    add_files("src/*.cpp")
+    add_headerfiles("include/*.h")

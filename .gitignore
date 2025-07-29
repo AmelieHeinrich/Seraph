@@ -1,20 +1,14 @@
 # IDE
 .vscode
-vsxmake2022
+.vs
+generated
 
-# Build cache
-build
+# Binaries
 .xmake
+build
+kaleidoscope.txt
 
-# Log stuff
-seraph.log
-imgui.ini
-
-# Tests
-Data/Tests/*.png
-Data/TestReport.json
-
-# Garbage data and fatass stuff
-.cache
-Data/Models/NewSponza
-Screenshots
+# Data I don't want
+blend
+screenshots
+data/kd/tests/*.png

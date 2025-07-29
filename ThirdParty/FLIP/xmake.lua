@@ -1,11 +1,11 @@
 --
--- > Notice: Amélie Heinrich @ 2025
--- > Create Time: 2025-06-04 17:52:30
+-- > Notice: Floating Trees Inc. @ 2025
+-- > Create Time: 2025-07-26 00:12:25
 --
 
-target("FLIP")
+target("flip")
     set_kind("headeronly")
-    set_group("Dependencies")
+    set_group("Third Party")
 
-    add_headerfiles("Include/FLIP.h")
-    add_includedirs("Include", { public = true })
+    add_headerfiles("flip.h")
+    add_includedirs(".", { public = true })

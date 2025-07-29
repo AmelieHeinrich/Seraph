@@ -1,12 +1,12 @@
 --
--- > Notice: Amélie Heinrich @ 2025
--- > Create Time: 2025-06-13 19:34:08
+-- > Notice: Floating Trees Inc. @ 2025
+-- > Create Time: 2025-07-18 17:26:11
 --
 
-target("MikkTSpace")
+target("mikktspace")
     set_kind("static")
-    set_group("Dependencies")
+    set_group("Third Party")
 
-    add_files("Include/MikkTSpace/mikktspace.c")
-    add_headerfiles("Include/MikkTSpace/mikktspace.h")
-    add_includedirs("Include", { public = true })
+    add_headerfiles("include/*.h")
+    add_files("src/*.c")
+    add_includedirs("include/", { public = true })

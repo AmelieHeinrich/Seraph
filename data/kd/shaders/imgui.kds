@@ -1,0 +1,63 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-17 21:46:32
+//
+
+#include "common/bindless.kds"
+
+#pragma vertex VSMain
+#pragma pixel PSMain
+
+struct VertexInput
+{
+    float2 Position : POSITION;
+    float2 UV : TEXCOORD;
+    uint Color : COLOR;
+};
+
+struct PixelInput
+{
+    float4 Position : SV_POSITION;
+    float4 Color : COLOR;  // unpacked float4 color
+    float2 UV : TEXCOORD;
+};
+
+struct PushConstants
+{
+    float4x4 ProjectionMatrix;
+
+    int VertexIndex;
+    int SamplerIndex;
+    int TextureIndex;
+    int VertexOffset;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+PixelInput VSMain(uint vertexID : SV_VertexID)
+{
+    StructuredBuffer<VertexInput> vertices = ResourceDescriptorHeap[Push.VertexIndex];
+    VertexInput input = vertices[vertexID + Push.VertexOffset];
+
+    // Unpack color from uint to float4 (normalized)
+    float4 color;
+    color.r = (input.Color & 0xFF) / 255.0;
+    color.g = ((input.Color >> 8) & 0xFF) / 255.0;
+    color.b = ((input.Color >> 16) & 0xFF) / 255.0;
+    color.a = ((input.Color >> 24) & 0xFF) / 255.0;
+
+    PixelInput output;
+    output.Position = mul(Push.ProjectionMatrix, float4(input.Position, 0.f, 1.f));
+    output.Color = color;
+    output.UV = input.UV;
+    return output;
+}
+
+float4 PSMain(PixelInput input) : SV_Target
+{
+    SamplerState sampler = SamplerDescriptorHeap[Push.SamplerIndex];
+    Texture2D<float4> texture = ResourceDescriptorHeap[Push.TextureIndex];
+
+    float4 texColor = texture.Sample(sampler, input.UV);
+    float4 outColor = input.Color * texColor;
+    return outColor;
+}

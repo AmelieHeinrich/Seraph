@@ -1,20 +1,21 @@
 --
--- > Notice: Amélie Heinrich @ 2025
--- > Create Time: 2025-05-28 07:07:07
+-- > Notice: Floating Trees Inc. @ 2025
+-- > Create Time: 2025-07-05 18:16:44
 --
 
--- Include every third party project
-includes("CGLTF")
-includes("DirectX")
-includes("DXC")
-includes("FLIP")
-includes("GLM")
-includes("ImGui")
-includes("JSON")
-includes("MikkTSpace")
-includes("NVTT")
-includes("PIX")
-includes("SDL3")
-includes("STB")
-includes("Vulkan")
-includes("Metal")
+includes("catch2")
+includes("cgltf")
+includes("directx")
+includes("dxc")
+includes("flip")
+includes("glm")
+includes("imgui")
+includes("jolt")
+includes("json")
+includes("mikktspace")
+includes("pix")
+includes("sdl3")
+includes("spirv-reflect")
+includes("stb")
+includes("vma")
+includes("volk")

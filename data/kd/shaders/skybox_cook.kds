@@ -1,0 +1,65 @@
+//
+// > Notice: Amélie Heinrich @ 2025
+// > Create Time: 2025-02-17 16:25:42
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "kd/shaders/common/math.kds"
+
+#pragma compute CSMain
+
+struct Constants
+{
+    uint HDRInput;
+    uint CubemapOutput;
+    uint CubeSampler;
+    uint Pad;
+
+    uint Width;
+    uint Height;
+    uint2 Pad1;
+};
+PUSH_CONSTANTS(Constants, Settings);
+
+[numthreads(32, 32, 1)]
+void CSMain(uint3 ThreadID : SV_DispatchThreadID)
+{
+    Texture2D<float4> HDR = ResourceDescriptorHeap[Settings.HDRInput];
+    RWTexture2DArray<float4> Cube = ResourceDescriptorHeap[Settings.CubemapOutput];
+    SamplerState Sampler = SamplerDescriptorHeap[Settings.CubeSampler];
+
+    // Normalized screen UVs [0,1]
+    float2 st = ThreadID.xy / float2(Settings.Width, Settings.Height);
+    
+    // Convert to range [-1,1], flip Y if needed (you can remove 1.0 - st.y if not needed)
+    float2 uv = 2.0 * float2(st.x, 1.0 - st.y) - float2(1.0, 1.0);
+
+    // Initialize cube face direction
+    float3 dir = float3(0.0f, 0.0f, 0.0f);
+    switch (ThreadID.z)
+    {
+        case 0: dir = float3( 1.0,  uv.y, -uv.x); break; // +X
+        case 1: dir = float3(-1.0,  uv.y,  uv.x); break; // -X
+        case 2: dir = float3( uv.x,  1.0, -uv.y); break; // +Y
+        case 3: dir = float3( uv.x, -1.0,  uv.y); break; // -Y
+        case 4: dir = float3( uv.x,  uv.y,  1.0); break; // +Z
+        case 5: dir = float3(-uv.x, uv.y, -1.0); break; // -Z
+    }
+
+    // Normalize direction vector
+    float3 v = normalize(dir);
+
+    // Convert direction to spherical coordinates
+    float phi   = atan2(v.z, v.x);  // [-PI, PI]
+    float theta = acos(v.y);        // [0, PI]
+
+    // Map to [0,1] UVs for equirectangular map
+    float u = (phi + PI) / (2.0 * PI); // → [0,1]
+    float v_coord = theta / PI;        // → [0,1]
+
+    // Sample from HDR texture
+    float4 color = HDR.SampleLevel(Sampler, float2(u, v_coord), 0.0);
+
+    // Write to cubemap array layer
+    Cube[ThreadID] = pow(color, 2.2);
+}

@@ -3,15 +3,13 @@
 -- > Create Time: 2025-06-01 13:39:38
 --
 
-target("DirectX")
-    set_group("Dependencies")
+target("directx")
+    set_kind("static")
+    set_group("Third Party")
 
+    add_headerfiles("Include/Agility/**.h")
+    add_includedirs("Include", { public = true })
+    
     if is_plat("windows") then
-        set_kind("static")
-        add_headerfiles("Include/Agility/**.h")
-        add_files("Source/D3D12MemAlloc.cpp")
-        add_includedirs("Include", { public = true })
         add_syslinks("d3d12", "dxgi", { public = true })
-    else
-        set_kind("headeronly")
     end

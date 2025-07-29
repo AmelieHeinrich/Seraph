@@ -1,0 +1,123 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-20 13:41:57
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "sp/shaders/common/camera.kds"
+
+#pragma vertex VSMain
+#pragma pixel PSMain
+
+struct Vertex
+{
+    float3 Position;
+    float3 Normal;
+    float4 Tangent;
+    float2 UV;
+};
+
+struct VertexOutput
+{
+    float4 Position : SV_Position;
+    float4 CurrPosition : POSITION1;
+    float4 PrevPosition : POSITION2;
+    float4 WorldPosition : POSITION3;
+    float3 Normal : NORMAL;
+    float2 UV : TEXCOORD;
+    float4 Tangent : TANGENT;
+};
+
+struct FragmentOutput
+{
+    float4 Normal : SV_Target0;
+    float4 Albedo : SV_Target1;
+    float2 PBR : SV_Target2;
+    float2 MotionVector : SV_Target3;
+};
+
+struct PushConstants
+{
+    uint MyVertexBuffer;
+    uint MyTexture;
+    uint MyNormalTexture;
+    uint MyPBRTexture;
+    
+    uint MySampler;
+    uint MyCameraBuffer;
+    uint2 Pad;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+float3 GetNormal(VertexOutput input)
+{
+    if (Push.MyNormalTexture == INVALID_DESCRIPTOR)
+        return normalize(input.Normal);
+
+    Texture2D<float4> texture = ResourceDescriptorHeap[Push.MyNormalTexture];
+    SamplerState sampler = SamplerDescriptorHeap[Push.MySampler];
+
+    float3 normalSample = texture.Sample(sampler, input.UV).xyz * 2.0f - 1.0f;
+
+    // Reconstruct TBN matrix
+    float3 N = normalize(input.Normal);
+    float3 T = normalize(input.Tangent.xyz);
+    float3 B = cross(N, T) * input.Tangent.w;
+
+    float3x3 TBN = float3x3(T, B, N);
+
+    // Transform normal to world space
+    float3 worldNormal = normalize(mul(normalSample, TBN));
+    return worldNormal;
+}
+
+float2 GetPBR(VertexOutput input)
+{
+    if (Push.MyPBRTexture == INVALID_DESCRIPTOR)
+        return float2(0.0f, 0.0f);
+
+    Texture2D<float4> texture = ResourceDescriptorHeap[Push.MyPBRTexture];
+    SamplerState sampler = SamplerDescriptorHeap[Push.MySampler];
+
+    float4 colorData = texture.Sample(sampler, input.UV);
+    return float2(colorData.b, colorData.g);
+}
+VertexOutput VSMain(uint vid : SV_VertexID)
+{
+    ConstantBuffer<Camera> camera = ResourceDescriptorHeap[Push.MyCameraBuffer];
+    StructuredBuffer<Vertex> vertices = ResourceDescriptorHeap[Push.MyVertexBuffer];
+    Vertex input = vertices[vid];
+
+    VertexOutput output = (VertexOutput)0;
+    output.Position = mul(camera.Proj, mul(camera.View, float4(input.Position, 1.0f)));
+    output.CurrPosition = mul(camera.Proj, mul(camera.View, float4(input.Position, 1.0f)));
+    output.PrevPosition = mul(camera.PrevProj, mul(camera.PrevView, float4(input.Position, 1.0f)));
+    output.WorldPosition = float4(input.Position, 1.0f);
+    output.Normal = input.Normal;
+    output.UV = input.UV;
+    output.Tangent = input.Tangent;
+    return output;
+}
+
+FragmentOutput PSMain(VertexOutput input)
+{
+    Texture2D<float4> texture = ResourceDescriptorHeap[Push.MyTexture];
+    SamplerState sampler = SamplerDescriptorHeap[Push.MySampler];
+
+    float2 ndcCurrent = input.CurrPosition.xy / input.CurrPosition.w;
+    float2 ndcPrev = input.PrevPosition.xy / input.PrevPosition.w;
+    
+    float2 screenCurrent = ndcCurrent * 0.5 + 0.5;
+    float2 screenPrev = ndcPrev * 0.5 + 0.5;
+    float2 diff = screenCurrent - screenPrev;
+    diff *= float2(-1.0f, 1.0f);
+
+    FragmentOutput output = (FragmentOutput)0;
+    output.Albedo = texture.Sample(sampler, input.UV);
+    if (output.Albedo.a < 0.25)
+        discard;
+    output.Normal = float4(GetNormal(input), 1.0f);
+    output.PBR = GetPBR(input);
+    output.MotionVector = diff;
+    return output;
+}

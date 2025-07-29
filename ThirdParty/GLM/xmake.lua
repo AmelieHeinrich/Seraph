@@ -3,9 +3,10 @@
 -- > Create Time: 2025-06-05 22:27:27
 --
 
-target("GLM")
+target("glm")
     set_kind("headeronly")
-    set_group("Dependencies")
+    set_group("Third Party")
 
     add_headerfiles("Include/**.hpp")
     add_includedirs("Include/", { public = true })
+    add_defines("GLM_ENABLE_EXPERIMENTAL", { public = true })

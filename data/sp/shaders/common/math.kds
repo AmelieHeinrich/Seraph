@@ -1,0 +1,25 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-28 20:24:25
+//
+
+static const float PI = 3.14159265359;
+
+float4 GetWorldFromDepth(float2 uv, float depth, float4x4 invViewProj)
+{
+    // Convert UV to NDC
+    float2 ndc = uv * 2.0 - 1.0;
+    float4 clipPos = float4(ndc, depth, 1.0);
+    clipPos.y *= -1.0; // Flip Y if needed (API-dependent)
+
+    // Unproject from clip space to world space
+    float4 worldPos = mul(invViewProj, clipPos);
+    worldPos /= worldPos.w;
+
+    return worldPos;
+}
+
+float LinearizeDepth(float depthNDC, float nearZ, float farZ)
+{
+    return nearZ * farZ / (farZ - depthNDC * (farZ - nearZ));
+}

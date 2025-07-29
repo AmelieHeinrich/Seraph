@@ -1,11 +1,11 @@
 --
--- > Notice: Amélie Heinrich @ 2025
--- > Create Time: 2025-06-03 13:49:13
+-- > Notice: Floating Trees Inc. @ 2025
+-- > Create Time: 2025-07-29 18:58:57
 --
 
-target("JSON")
+target("json")
     set_kind("headeronly")
-    set_group("Dependencies")
-
-    add_headerfiles("Include/**.hpp")
-    add_includedirs("Include", { public = true })
+    set_group("Third Party")
+    
+    add_headerfiles("*.hpp")
+    add_includedirs(".", { public = true })

@@ -1,0 +1,13 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-07-20 15:19:07
+//
+
+#ifndef MATH_H
+#define MATH_H
+
+#define PI 3.14159265357
+#define TWO_PI (2 * PI)
+#define EPSILON 0.0001
+
+#endif

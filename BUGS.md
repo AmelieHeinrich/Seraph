@@ -1,4 +1,0 @@
-- Vulkan device creation fails on AMD
-- D3D12 device losts on AMD (RT issue?)
-- Test suite crashes on Windows
-- No device wait idle after window closing

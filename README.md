@@ -1,39 +1,42 @@
-# Seraph : A showcase renderer for all my graphics programming skills
+# Seraph : A showcase renderer for all my graphics programming skills, powered by the Kaleidoscope engine
 
 ## Requirements
 
-Minimum requirements is a SM6.6 capable GPU with raytracing and mesh shading capabilities, running Vulkan 1.3 and the latest version of D3D12. If you're on Mac, minimum requirements is a GPU supporting Metal 3.
-The Vulkan backend requires VK_EXT_mutable_descriptor.
+Minspec for D3D12: GCN/Pascal.
+Minspec for Vulkan: GCN/Turing. (Turing because of VK_EXT_mutable_descriptor)
+This sample makes heavy use of raytracing.
+
+## Building and running
+
+This sample is built upon the [Kaleidoscope](https://github.com/Floating-Trees-Inc/Kaleidoscope) engine, that uses xmake as it's build system.\
+Changing configs: `xmake f --mode={debug, release, releasedbg}`\
+Building: `xmake`\
+Running: `xmake run`\
 
 ## Disclaimer
 
 If you have an NVIDIA card, both backends are tested and thus work.
 It is currently **untested** on AMD and Intel cards since I do not have the hardware. However it is likely that it will not work.
-Metal backend is tested on an M2 chip.
 
 ## Screenshots
 
 ### Tiled Light Culling
-![](.github/june15.png)
+![](.github/tiled.png)
 
 ### Raytraced Hard Shadows
-![](.github/july7.png)
-
-### Test Suite
-![](.github/test2.png)
+![](.github/hard_shadows.png)
 
 ## Notable Features
 
-- RHI: D3D12/Vulkan/Dummy support with bindless, raytracing, mesh shaders, GPU readback... Metal backend currently WIP.
 - Techniques: Tiled light culling, deferred shading
 - Lighting: Microfacet BRDF, CSM, raytraced hard shadows
-- Tooling: RHI test suite, asset caching, shader hot reloading, debug renderer and motion vector visualizer
+- Tooling: Motion vector visualizer
 
 ## WIP
 
 - Raytraced soft shadows
 - SVGF denoising
-- Metal backend
+- Pathtracing
 
 ## Planned
 
@@ -45,12 +48,4 @@ Metal backend is tested on an M2 chip.
 - Bloom
 - 6-pass Bokeh DOF
 - GPU particles
-- GPU profiler
 - Eye adaptation
-
-## Planned tests
-
-- Indirect draw
-- Indirect draw indexed
-- Indirect dispatch
-- Indirect dispatch mesh
