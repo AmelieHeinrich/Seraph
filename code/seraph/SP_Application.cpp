@@ -141,6 +141,7 @@ namespace SP
                 mBegin.CamData.InvView = glm::inverse(mBegin.CamData.View);
                 mBegin.CamData.InvViewProj = glm::inverse(mBegin.CamData.Proj * mBegin.CamData.View);
                 mBegin.CamData.Position = float4(mCamera.Position(), 1.0f);
+                mBegin.FrameCount++;
 
                 mBegin.CmdList->Reset();
                 mBegin.CmdList->Begin();

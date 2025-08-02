@@ -37,6 +37,7 @@ namespace SP
         int Width;
         int Height;
         uint FrameIndex;
+        uint FrameCount;
         KGPU::ITexture* SwapTexture;
         KGPU::ITextureView* SwapView;
         KGPU::ICommandList* CmdList;

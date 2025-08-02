@@ -45,7 +45,8 @@ struct PushConstants
     
     uint MySampler;
     uint MyCameraBuffer;
-    uint2 Pad;
+    uint Width;
+    uint Height;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -82,6 +83,7 @@ float2 GetPBR(VertexOutput input)
     float4 colorData = texture.Sample(sampler, input.UV);
     return float2(colorData.b, colorData.g);
 }
+
 VertexOutput VSMain(uint vid : SV_VertexID)
 {
     ConstantBuffer<Camera> camera = ResourceDescriptorHeap[Push.MyCameraBuffer];
@@ -111,6 +113,7 @@ FragmentOutput PSMain(VertexOutput input)
     float2 screenPrev = ndcPrev * 0.5 + 0.5;
     float2 diff = screenCurrent - screenPrev;
     diff *= float2(-1.0f, 1.0f);
+    diff *= float2(Push.Width, Push.Height);
 
     FragmentOutput output = (FragmentOutput)0;
     output.Albedo = texture.Sample(sampler, input.UV);

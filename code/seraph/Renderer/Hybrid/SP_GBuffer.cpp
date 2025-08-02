@@ -44,7 +44,9 @@ namespace SP
         motionDesc.Usage = KGPU::TextureUsage::kRenderTarget | KGPU::TextureUsage::kShaderResource;
 
         Gfx::ResourceManager::CreateTexture(GBUFFER_DEPTH_ID, depthDesc);
+        Gfx::ResourceManager::CreateTexture(GBUFFER_PREV_DEPTH_ID, depthDesc);
         Gfx::ResourceManager::CreateTexture(GBUFFER_NORMAL_ID, normalDesc);
+        Gfx::ResourceManager::CreateTexture(GBUFFER_PREV_NORMAL_ID, normalDesc);
         Gfx::ResourceManager::CreateTexture(GBUFFER_ALBEDO_ID, albedoDesc);
         Gfx::ResourceManager::CreateTexture(GBUFFER_PBR_ID, pbrDesc);
         Gfx::ResourceManager::CreateTexture(GBUFFER_MOTION_VECTOR_ID, motionDesc);
@@ -71,6 +73,14 @@ namespace SP
     void GBuffer::Render(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::GBuffer::Render");
+
+        RenderScene(begin);
+        CopyToHistory(begin);
+    }
+
+    void GBuffer::RenderScene(RenderPassBegin& begin)
+    {
+        KGPU::ScopedMarker _(begin.CmdList, "SP::GBuffer::RenderScene");
 
         // Upload camera data
         Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
@@ -114,7 +124,8 @@ namespace SP
 
                 KGPU::BindlessHandle Sampler;
                 KGPU::BindlessHandle Camera;
-                KGPU::float2 Pad;
+                int Width;
+                int Height;
             } constants = {
                 entity.Primitive->GetVertexBufferView()->GetBindlessHandle(),
                 albedoView,
@@ -123,7 +134,8 @@ namespace SP
 
                 materialSampler.Sampler->GetBindlessHandle(),
                 cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
-                {}
+                begin.Width,
+                begin.Height
             };
 
             begin.CmdList->SetIndexBuffer(entity.Primitive->GetIndexBuffer());
@@ -134,5 +146,18 @@ namespace SP
     
         if (Gfx::Manager::GetDevice()->SupportsRaytracing())
             begin.World->GetRTWorld()->Build(begin.CmdList);
+    }
+
+    void GBuffer::CopyToHistory(RenderPassBegin& begin)
+    {
+        KGPU::ScopedMarker _(begin.CmdList, "SP::GBuffer::CopyToHistory");
+    
+        Gfx::Resource& depthTexture = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
+        Gfx::Resource& normalTexture = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
+        Gfx::Resource& prevDepthTexture = Gfx::ResourceManager::Import(GBUFFER_PREV_DEPTH_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
+        Gfx::Resource& prevNormalTexture = Gfx::ResourceManager::Import(GBUFFER_PREV_NORMAL_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
+    
+        begin.CmdList->CopyTextureToTexture(prevDepthTexture.Texture, depthTexture.Texture);
+        begin.CmdList->CopyTextureToTexture(prevNormalTexture.Texture, normalTexture.Texture);
     }
 }

@@ -29,9 +29,15 @@ namespace SP
         sunMaskDesc.Width = width;
         sunMaskDesc.Height = height;
         sunMaskDesc.Usage = KGPU::TextureUsage::kShaderResource | KGPU::TextureUsage::kRenderTarget | KGPU::TextureUsage::kStorage;
-        sunMaskDesc.Format = KGPU::TextureFormat::kR32_FLOAT;
         
+        sunMaskDesc.Format = KGPU::TextureFormat::kR16_FLOAT;
         Gfx::ResourceManager::CreateTexture(SHADOWS_SUN_MASK_ID, sunMaskDesc);
+        
+        sunMaskDesc.Format = KGPU::TextureFormat::kR16_FLOAT;
+        Gfx::ResourceManager::CreateTexture(SHADOWS_PREVIOUS_SUN_MASK_ID, sunMaskDesc);
+
+        sunMaskDesc.Format = KGPU::TextureFormat::kR16_UINT;
+        Gfx::ResourceManager::CreateTexture(SHADOWS_SUN_MASK_LENGTH_ID, sunMaskDesc);
 
         // Create cascades and cascade buffer
         KGPU::TextureDesc cascadeDesc;
@@ -78,6 +84,7 @@ namespace SP
         CODE_BLOCK("Create Soft RT resources") {
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt.kds");
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt_no_alpha.kds");
+           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_temporal.kds");
         }
     }
 
@@ -388,6 +395,17 @@ namespace SP
         TraceSoftShadowRays(begin);
         SVGFTemporal(begin);
         SVGFSpatial(begin);
+        CopyHistory(begin);
+    }
+    
+    void Shadows::CopyHistory(RenderPassBegin& begin)
+    {
+        KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::CopyHistory");
+
+        Gfx::Resource& output = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
+        Gfx::Resource& prev = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
+    
+        begin.CmdList->CopyTextureToTexture(prev.Texture, output.Texture);
     }
     
     void Shadows::TraceSoftShadowRays(RenderPassBegin& begin)
@@ -433,7 +451,7 @@ namespace SP
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
             materialSampler.Sampler->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(begin.World->GetSceneInstanceBuffer())->GetBindlessHandle(),
-            0,
+            begin.FrameCount,
 
             mLightRadius,
             Gfx::ViewRecycler::GetSRV(begin.World->GetSceneMaterialBuffer())->GetBindlessHandle(),
@@ -450,7 +468,57 @@ namespace SP
 
     void Shadows::SVGFTemporal(RenderPassBegin& begin)
     {
+        if (!mAccumulate)
+            return;
+
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SVGFTemporal");
+    
+        Gfx::Resource& prevMask = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& currentMask = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& motionVector = Gfx::ResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& normal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& prevNormal = Gfx::ResourceManager::Import(GBUFFER_PREV_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& depth = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& prevDepth = Gfx::ResourceManager::Import(GBUFFER_PREV_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& history = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_LENGTH_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
+
+        struct Constants {
+            KGPU::BindlessHandle PrevID;
+            KGPU::BindlessHandle CurrID;
+            KGPU::BindlessHandle HistoryID;
+            KGPU::BindlessHandle MotionVectorID;
+
+            int Width;
+            int Height;
+            KGPU::BindlessHandle NormalID;
+            KGPU::BindlessHandle PrevNormalID;
+
+            KGPU::BindlessHandle DepthID;
+            KGPU::BindlessHandle PrevDepthID;
+            KGPU::BindlessHandle CameraBuffer;
+            uint Pad;
+        } constants = {
+            Gfx::ViewRecycler::GetUAV(prevMask.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetUAV(currentMask.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetUAV(history.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetSRV(motionVector.Texture)->GetBindlessHandle(),
+
+            begin.Width,
+            begin.Height,
+            Gfx::ViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetSRV(prevNormal.Texture)->GetBindlessHandle(),
+
+            Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(depth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(prevDepth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+            cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
+            0
+        };
+
+        auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/svgf_temporal.kds");
+        begin.CmdList->SetComputePipeline(pipeline);
+        begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+        begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
     }
 
     void Shadows::SVGFSpatial(RenderPassBegin& begin)
@@ -506,6 +574,8 @@ namespace SP
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
                     ImGui::SetTooltip("When tracing shadow rays, the directional light is treated as an area light to generate random shadow rays sampled on its surface. You can pick the area light radius using this slider.");
                 }
+
+                ImGui::Checkbox("Accumulate", &mAccumulate);
                 break;
             }
             case ShadowMode::kHardRT: {

@@ -11,6 +11,9 @@ namespace SP
 {
     constexpr const char* GBUFFER_DEPTH_ID = "GBuffer/Depth";
     constexpr const char* GBUFFER_NORMAL_ID = "GBuffer/Normal";
+    constexpr const char* GBUFFER_PREV_DEPTH_ID = "GBuffer/PrevDepth";
+    constexpr const char* GBUFFER_PREV_NORMAL_ID = "GBuffer/PrevNormal";
+
     constexpr const char* GBUFFER_ALBEDO_ID = "GBuffer/Albedo";
     constexpr const char* GBUFFER_PBR_ID = "GBuffer/PBR";
     constexpr const char* GBUFFER_MOTION_VECTOR_ID = "GBuffer/MotionVector";
@@ -25,5 +28,8 @@ namespace SP
         ~GBuffer() = default;
 
         void Render(RenderPassBegin& begin) override;
+    private:
+        void RenderScene(RenderPassBegin& begin);
+        void CopyToHistory(RenderPassBegin& begin);
     };
 }

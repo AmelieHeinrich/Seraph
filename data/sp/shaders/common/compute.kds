@@ -3,7 +3,7 @@
 // > Create Time: 2025-07-28 20:23:46
 //
 
-float2 TexelToUV(uint2 texel, float2 dispatchSize)
+float2 TexelToUV(uint2 tid, float2 imageSize)
 {
-    return ((float2)texel + 0.5f) / dispatchSize;
+    return ((float2)tid + 0.5f) / imageSize;
 }

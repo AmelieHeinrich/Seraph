@@ -9,7 +9,9 @@
 
 namespace SP
 {
-    constexpr const char* SHADOWS_SUN_MASK_ID = "Shadows/SunMask";
+    constexpr const char* SHADOWS_PREVIOUS_SUN_MASK_ID = "Shadows/PrevSunMask"; // Previous noisy render
+    constexpr const char* SHADOWS_SUN_MASK_LENGTH_ID = "Shadows/SunMaskLength"; // Length of the accumulated samples per pixel
+    constexpr const char* SHADOWS_SUN_MASK_ID = "Shadows/SunMask"; // Denoised output
     constexpr const char* SHADOWS_CASCADE_0 = "Shadows/Cascade0";
     constexpr const char* SHADOWS_CASCADE_1 = "Shadows/Cascade1";
     constexpr const char* SHADOWS_CASCADE_2 = "Shadows/Cascade2";
@@ -55,6 +57,7 @@ namespace SP
         void HardRT(RenderPassBegin& begin);
 
         void SoftRT(RenderPassBegin& begin);
+        void CopyHistory(RenderPassBegin& begin);
         void TraceSoftShadowRays(RenderPassBegin& begin);
         void SVGFTemporal(RenderPassBegin& begin);
         void SVGFSpatial(RenderPassBegin& begin);
@@ -73,6 +76,7 @@ namespace SP
         float mNormalBias = 0.001f;
 
         // Soft RT
-        float mLightRadius = 2.0f;
+        float mLightRadius = 0.2f;
+        bool mAccumulate = false;
     };
 }
