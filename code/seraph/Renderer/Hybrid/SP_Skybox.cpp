@@ -11,6 +11,7 @@
 #include <Graphics/Gfx_ViewRecycler.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui.h>
 
 namespace SP
 {
@@ -29,6 +30,9 @@ namespace SP
 
     void Skybox::Render(RenderPassBegin& begin)
     {
+        if (!mEnable)
+            return;
+
         KGPU::ScopedMarker _(begin.CmdList, "SP::Skybox::Render");
 
         Gfx::Resource& depthTexture = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kDepthWrite);
@@ -58,5 +62,13 @@ namespace SP
         begin.CmdList->SetGraphicsConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Draw(36, 1, 0, 0);
         begin.CmdList->EndRendering();
+    }
+
+    void Skybox::UI(RenderPassBegin& begin)
+    {
+        if (ImGui::TreeNodeEx("Skybox", ImGuiTreeNodeFlags_Framed)) {
+            ImGui::Checkbox("Enabled", &mEnable);
+            ImGui::TreePop();
+        }
     }
 }

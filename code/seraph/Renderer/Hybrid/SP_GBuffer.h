@@ -20,6 +20,7 @@ namespace SP
     constexpr const char* GBUFFER_CAMERA_CBV_ID = "GBuffer/CameraBuffer";
     constexpr const char* GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID = "GBuffer/DefaultMaterialSampler";
     constexpr const char* GBUFFER_DEFAULT_NEAREST_SAMPLER_ID = "GBuffer/DefaultNearestSampler";
+    constexpr const char* DEFAULT_GRID_TEXTURE = "GBuffer/DefaultGridTexture";
 
     class GBuffer : public RenderPass
     {
@@ -28,8 +29,12 @@ namespace SP
         ~GBuffer() = default;
 
         void Render(RenderPassBegin& begin) override;
+        void UI(RenderPassBegin& begin) override;
     private:
         void RenderScene(RenderPassBegin& begin);
         void CopyToHistory(RenderPassBegin& begin);
+
+    private:
+        const char* mDefaultTextureID = Gfx::DEFAULT_WHITE_TEXTURE;
     };
 }

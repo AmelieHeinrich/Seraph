@@ -8,6 +8,10 @@
 
 #include <Graphics/Gfx_ShaderManager.h>
 #include <Graphics/Gfx_ViewRecycler.h>
+#include <Graphics/Gfx_Uploader.h>
+#include <Graphics/Gfx_Mipmapper.h>
+
+#include <imgui.h>
 
 namespace SP
 {
@@ -68,6 +72,13 @@ namespace SP
 
         // Camera CBV
         Gfx::ResourceManager::CreateRingBuffer(GBUFFER_CAMERA_CBV_ID, KOS::Align<uint>(sizeof(CameraData), 256));
+   
+        // Grid
+        KDA::Texture texture = KDA::TextureLoader::LoadFromFile("data/kd/textures/default.png", true);
+
+        Gfx::ResourceManager::CreateTexture(DEFAULT_GRID_TEXTURE, texture.ToTextureDesc());
+        Gfx::Uploader::EnqueueTextureUploadRaw(texture.Bytes.data(), texture.Bytes.size(), Gfx::ResourceManager::Get(DEFAULT_GRID_TEXTURE).Texture, false);
+        Gfx::Mipmapper::ComputeMipmaps(Gfx::ResourceManager::Get(DEFAULT_GRID_TEXTURE).Texture);
     }
 
     void GBuffer::Render(RenderPassBegin& begin)
@@ -76,6 +87,23 @@ namespace SP
 
         RenderScene(begin);
         CopyToHistory(begin);
+    }
+
+    void GBuffer::UI(RenderPassBegin& begin)
+    {
+        if (ImGui::TreeNodeEx("GBuffer", ImGuiTreeNodeFlags_Framed)) {
+            static int currentChoice = 0; // 0 = White, 1 = Grid
+            const char* items[] = { "White Texture", "Grid Texture" };
+
+            if (ImGui::Combo("Default Texture", &currentChoice, items, IM_ARRAYSIZE(items))) {
+                if (currentChoice == 0)
+                    mDefaultTextureID = Gfx::DEFAULT_WHITE_TEXTURE;
+                else
+                    mDefaultTextureID = DEFAULT_GRID_TEXTURE;
+            }
+
+            ImGui::TreePop();
+        }
     }
 
     void GBuffer::RenderScene(RenderPassBegin& begin)
@@ -95,7 +123,7 @@ namespace SP
         Gfx::Resource& pbrTexture = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
         Gfx::Resource& motionTexture = Gfx::ResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
         Gfx::Resource& materialSampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
-        Gfx::Resource& defaultWhite = Gfx::ResourceManager::Get(Gfx::DEFAULT_WHITE_TEXTURE);
+        Gfx::Resource& defaultWhite = Gfx::ResourceManager::Get(mDefaultTextureID);
 
         // Begin render
         KC::Array<KGPU::RenderAttachment> attachments = {
