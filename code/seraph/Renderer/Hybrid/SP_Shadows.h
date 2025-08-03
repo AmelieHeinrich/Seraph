@@ -77,6 +77,6 @@ namespace SP
 
         // Soft RT
         float mLightRadius = 0.2f;
-        bool mAccumulate = false;
+        bool mAccumulate = true;
     };
 }

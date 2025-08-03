@@ -482,6 +482,7 @@ namespace SP
         Gfx::Resource& prevDepth = Gfx::ResourceManager::Import(GBUFFER_PREV_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& history = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_LENGTH_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
         Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
+        Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
 
         struct Constants {
             KGPU::BindlessHandle PrevID;
@@ -497,7 +498,7 @@ namespace SP
             KGPU::BindlessHandle DepthID;
             KGPU::BindlessHandle PrevDepthID;
             KGPU::BindlessHandle CameraBuffer;
-            uint Pad;
+            KGPU::BindlessHandle BilinearSamplerID;
         } constants = {
             Gfx::ViewRecycler::GetUAV(prevMask.Texture)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetUAV(currentMask.Texture)->GetBindlessHandle(),
@@ -512,7 +513,7 @@ namespace SP
             Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(depth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(prevDepth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
-            0
+            sampler.Sampler->GetBindlessHandle()
         };
 
         auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/svgf_temporal.kds");

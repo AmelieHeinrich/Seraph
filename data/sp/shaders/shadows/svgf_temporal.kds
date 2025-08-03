@@ -25,51 +25,57 @@ struct PushConstants
     uint DepthID;
     uint PrevDepthID;
     uint CameraBuffer;
-    uint Pad;
+    uint SamplerID;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
-bool DoPlaneCheck(uint3 tid, float2 historyCoord)
+bool DoPlaneCheck(uint2 tid, float2 currUV, float2 historyUV)
 {
     Texture2D<float> depth = ResourceDescriptorHeap[Push.DepthID];
     Texture2D<float> prevDepth = ResourceDescriptorHeap[Push.PrevDepthID];
     Texture2D<float4> normal = ResourceDescriptorHeap[Push.NormalID];
     ConstantBuffer<Camera> camera = ResourceDescriptorHeap[Push.CameraBuffer];
+    SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
-    float2 uv = TexelToUV(tid.xy, float2(Push.Width, Push.Height));
-    float2 prevUV = TexelToUV(historyCoord, float2(Push.Width, Push.Height));
-    float3 currPosition = GetViewFromDepth(uv, depth.Load(tid), camera.InvView).xyz;
-    float3 prevPosition = GetViewFromDepth(prevUV, prevDepth.Load(tid), camera.InvView).xyz;
-    float3 currNormal = normal.Load(tid).rgb;
+    // reconstruct positions
+    float currZ = depth.Sample(bilinearSampler, currUV);
+    float prevZ = prevDepth.Sample(bilinearSampler, historyUV);
+    float3 currNormal = normal.Load(uint3(tid,0)).rgb;
 
-    float3 toCurrent = currPosition - prevPosition;
+    float3 currPos = GetViewFromDepth(currUV, currZ, camera.InvProj).xyz;
+    float3 prevPos = GetViewFromDepth(historyUV, prevZ, camera.InvProj).xyz;
+
+    float3 toCurrent = currPos - prevPos;
     float distToPlane = abs(dot(toCurrent, currNormal));
-
     return distToPlane < 5.0f;
 }
 
-bool DoNormalCheck(uint3 tid, float2 historyCoord)
+bool DoNormalCheck(uint2 tid, float2 currUV, float2 historyUV)
 {
     Texture2D<float4> normal = ResourceDescriptorHeap[Push.NormalID];
-    Texture2D<float4> prev = ResourceDescriptorHeap[Push.PrevNormalID];
+    Texture2D<float4> prevNormalTex = ResourceDescriptorHeap[Push.PrevNormalID];
+    SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
-    float3 currNormal = normal.Load(tid).rgb;
-    float3 prevNormal = prev.Load(uint3(historyCoord, 1.0)).rgb;
-
-    if (pow(abs(dot(currNormal, prevNormal)), 2) > 0.1f)
-        return false;
-    else
-        return true;    
+    float3 currNormal = normalize(normal.Sample(bilinearSampler, currUV).rgb);
+    float3 prevNormal = normalize(prevNormalTex.Sample(bilinearSampler, historyUV).rgb);
+    // accept if angle < ~25°
+    return dot(currNormal, prevNormal) > 0.9f;
 }
 
-bool IsSampleValid(uint3 tid)
+bool IsSampleValid(uint2 tid)
 {
     Texture2D<float2> motionVec = ResourceDescriptorHeap[Push.MotionID];
-    float2 motionVector = motionVec.Load(tid);
-    float2 historyPosition = tid.xy + motionVector;
+    float2 motionVector = motionVec.Load(uint3(tid,0));
+    float2 currUV = TexelToUV(tid, float2(Push.Width, Push.Height));
+    float2 historyUV = currUV + motionVector;
 
-    if (!DoPlaneCheck(tid, historyPosition)) return false;
-    if (!DoNormalCheck(tid, historyPosition)) return false;
+    // reject if outside screen
+    if (historyUV.x < 0.0 || historyUV.x > 1.0 ||
+        historyUV.y < 0.0 || historyUV.y > 1.0)
+        return false;
+
+    if (!DoPlaneCheck(tid, currUV, historyUV)) return false;
+    if (!DoNormalCheck(tid, currUV, historyUV)) return false;
     return true;
 }
 
@@ -83,17 +89,32 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     RWTexture2D<float> curr = ResourceDescriptorHeap[Push.CurrID];
     RWTexture2D<uint> history = ResourceDescriptorHeap[Push.HistoryID];
 
-    float prevSample = prev[dtid.xy];
-    float currSample = curr[dtid.xy];
-    uint historyLength = history[dtid.xy];
+    uint2 pixel = dtid.xy;
+    float prevSample = prev[pixel];
+    float currSample = curr[pixel];
+    uint historyLength = history[pixel];
 
-    if (IsSampleValid(dtid)) {
-        currSample = lerp(prevSample, currSample, 1.0 / historyLength);
-        history[dtid.xy]++;
+    if (IsSampleValid(pixel)) {
+        historyLength = min(historyLength + 1, 32);
+        float neighborhoodMin = +10000000000000000;
+        float neighborhoodMax = -10000000000000000;
+
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                float n = curr[pixel + int2(dx,dy)];
+                neighborhoodMin = min(neighborhoodMin, n);
+                neighborhoodMax = max(neighborhoodMax, n);
+            }
+        }
+
+        // clamp history to reasonable range
+        prevSample = clamp(prevSample, neighborhoodMin, neighborhoodMax);
+        float alpha = max(1.0 / historyLength, 0.05);
+        currSample = lerp(prevSample, currSample, alpha);
+        history[pixel] = historyLength;
     } else {
-        history[dtid.xy] = 1;
-        prev[dtid.xy] = currSample;
+        history[pixel] = 1;
     }
 
-    curr[dtid.xy] = currSample;
+    curr[pixel] = currSample;
 }

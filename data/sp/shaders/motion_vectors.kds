@@ -100,9 +100,16 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     
     // Current pixel position in screen space
     float2 pixelPos = float2(dtid.xy);
+    float2 velocityUV = Field(dtid);
     
-    // Read motion vectors (already in pixel space)
-    float2 velocityPixels = Field(dtid);
+    // Convert UV velocity to pixel velocity
+    // UV velocity * screen dimensions = pixel velocity
+    float2 velocityPixels = velocityUV * float2(Push.Width, Push.Height);
+    
+    // Scale the velocity for better visualization
+    // You can adjust this scaling factor to make arrows more visible
+    float velocityScale = 0.5; // Adjust this value as needed
+    velocityPixels *= velocityScale;
     
     // Calculate arrow alpha
     float arrowAlpha = Arrow(pixelPos, velocityPixels);

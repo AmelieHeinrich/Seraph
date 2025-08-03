@@ -106,21 +106,22 @@ FragmentOutput PSMain(VertexOutput input)
     Texture2D<float4> texture = ResourceDescriptorHeap[Push.MyTexture];
     SamplerState sampler = SamplerDescriptorHeap[Push.MySampler];
 
-    float2 ndcCurrent = input.CurrPosition.xy / input.CurrPosition.w;
+    float2 ndcCurr = input.CurrPosition.xy / input.CurrPosition.w;
     float2 ndcPrev = input.PrevPosition.xy / input.PrevPosition.w;
-    
-    float2 screenCurrent = ndcCurrent * 0.5 + 0.5;
-    float2 screenPrev = ndcPrev * 0.5 + 0.5;
-    float2 diff = screenCurrent - screenPrev;
-    diff *= float2(-1.0f, 1.0f);
-    diff *= float2(Push.Width, Push.Height);
+
+    // Convert to [0,1] uv-space
+    float2 uvCurr = ndcCurr * 0.5 + 0.5;
+    float2 uvPrev = ndcPrev * 0.5 + 0.5;
+
+    // Motion = where it *was* (prev) - where it *is* (curr)
+    float2 motion = uvPrev - uvCurr;
+    motion *= float2(-1.0f, 1.0f);
 
     FragmentOutput output = (FragmentOutput)0;
     output.Albedo = texture.Sample(sampler, input.UV);
-    if (output.Albedo.a < 0.25)
-        discard;
+    if (output.Albedo.a < 0.25) discard;
     output.Normal = float4(GetNormal(input), 1.0f);
     output.PBR = GetPBR(input);
-    output.MotionVector = diff;
+    output.MotionVector = motion;
     return output;
 }
