@@ -26,8 +26,20 @@ struct PushConstants
     uint PrevDepthID;
     uint CameraBuffer;
     uint SamplerID;
+
+    uint PrevMomentsID;
+    uint MomentsID;
+    uint2 Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
+
+bool DoOffscreenCheck(float2 historyUV)
+{
+    if (historyUV.x < 0.0 || historyUV.x > 1.0 ||
+        historyUV.y < 0.0 || historyUV.y > 1.0)
+        return false;
+    return true;
+}
 
 bool DoPlaneCheck(uint2 tid, float2 currUV, float2 historyUV)
 {
@@ -62,18 +74,21 @@ bool DoNormalCheck(uint2 tid, float2 currUV, float2 historyUV)
     return dot(currNormal, prevNormal) > 0.9f;
 }
 
-bool IsSampleValid(uint2 tid)
+bool DoMeshIDCheck(uint2 tid, float2 currUV, float2 historyUV)
 {
-    Texture2D<float2> motionVec = ResourceDescriptorHeap[Push.MotionID];
-    float2 motionVector = motionVec.Load(uint3(tid,0));
-    float2 currUV = TexelToUV(tid, float2(Push.Width, Push.Height));
-    float2 historyUV = currUV + motionVector;
+    Texture2D<float4> normal = ResourceDescriptorHeap[Push.NormalID];
+    Texture2D<float4> prevNormalTex = ResourceDescriptorHeap[Push.PrevNormalID];
+    SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
-    // reject if outside screen
-    if (historyUV.x < 0.0 || historyUV.x > 1.0 ||
-        historyUV.y < 0.0 || historyUV.y > 1.0)
-        return false;
+    float curr = normal.Sample(bilinearSampler, currUV).a;
+    float prev = prevNormalTex.Sample(bilinearSampler, historyUV).a;
+    return curr == prev;
+}
 
+bool IsSampleValid(uint2 tid, float2 currUV, float2 historyUV)
+{
+    if (!DoOffscreenCheck(historyUV)) return false;
+    if (!DoMeshIDCheck(tid, currUV, historyUV)) return false;
     if (!DoPlaneCheck(tid, currUV, historyUV)) return false;
     if (!DoNormalCheck(tid, currUV, historyUV)) return false;
     return true;
@@ -85,17 +100,28 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     if (dtid.x >= Push.Width || dtid.y >= Push.Height)
         return;
 
-    RWTexture2D<float> prev = ResourceDescriptorHeap[Push.PrevID];
     RWTexture2D<float> curr = ResourceDescriptorHeap[Push.CurrID];
     RWTexture2D<uint> history = ResourceDescriptorHeap[Push.HistoryID];
+    RWTexture2D<float2> currMoments = ResourceDescriptorHeap[Push.MomentsID];
+    Texture2D<float2> prevMoments = ResourceDescriptorHeap[Push.PrevMomentsID];
+    Texture2D<float> prev = ResourceDescriptorHeap[Push.PrevID];
+    Texture2D<float2> motionVec = ResourceDescriptorHeap[Push.MotionID];
+    SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
     uint2 pixel = dtid.xy;
-    float prevSample = prev[pixel];
+    float2 currUV = TexelToUV(pixel, float2(Push.Width, Push.Height));
+
+    float prevSample = prev.Sample(bilinearSampler, currUV);
     float currSample = curr[pixel];
     uint historyLength = history[pixel];
+    float2 motionVector = motionVec.Load(dtid);
+    float2 historyUV = currUV + motionVector;
 
-    if (IsSampleValid(pixel)) {
-        historyLength = min(historyLength + 1, 32);
+    float2 newMoments = 0.0f;
+    float2 moments = prevMoments.Sample(bilinearSampler, historyUV);
+
+    if (IsSampleValid(pixel, currUV, historyUV)) {
+        historyLength = min(historyLength + 1, 128);
         float neighborhoodMin = +10000000000000000;
         float neighborhoodMax = -10000000000000000;
 
@@ -106,15 +132,26 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
                 neighborhoodMax = max(neighborhoodMax, n);
             }
         }
-
-        // clamp history to reasonable range
+        float mean = moments.x;
+        float var  = max(moments.y - mean * mean, 0.0);
+        float sigma = sqrt(var);
+        float lower = mean - 3.0 * sigma;
+        float upper = mean + 3.0 * sigma;
         prevSample = clamp(prevSample, neighborhoodMin, neighborhoodMax);
-        float alpha = max(1.0 / historyLength, 0.05);
+
+        float alpha = max(1.0 / historyLength, 0.01);
         currSample = lerp(prevSample, currSample, alpha);
         history[pixel] = historyLength;
+
+        newMoments.r = currSample;
+        newMoments.g = newMoments.r * newMoments.r;
+        newMoments = lerp(moments, newMoments, alpha);
     } else {
+        newMoments.r = currSample;
+        newMoments.g = newMoments.r * newMoments.r;
         history[pixel] = 1;
     }
 
+    currMoments[pixel] = newMoments;
     curr[pixel] = currSample;
 }

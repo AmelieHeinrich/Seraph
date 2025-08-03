@@ -9,9 +9,12 @@
 
 namespace SP
 {
-    constexpr const char* SHADOWS_PREVIOUS_SUN_MASK_ID = "Shadows/PrevSunMask"; // Previous noisy render
-    constexpr const char* SHADOWS_SUN_MASK_LENGTH_ID = "Shadows/SunMaskLength"; // Length of the accumulated samples per pixel
-    constexpr const char* SHADOWS_SUN_MASK_ID = "Shadows/SunMask"; // Denoised output
+    constexpr const char* SHADOWS_PREVIOUS_SUN_MASK_ID = "Shadows/PrevSunMask";
+    constexpr const char* SHADOWS_SUN_MASK_LENGTH_ID = "Shadows/SunMaskLength";
+    constexpr const char* SHADOWS_SUN_MASK_SCRATCH_ID = "Shadows/SunMaskScratch";
+    constexpr const char* SHADOWS_SUN_MASK_ID = "Shadows/SunMask";
+    constexpr const char* SHADOWS_MOMENTS_ID = "Shadows/Moments";
+    constexpr const char* SHADOWS_PREV_MOMENTS_ID = "Shadows/PrevMoments";
     constexpr const char* SHADOWS_CASCADE_0 = "Shadows/Cascade0";
     constexpr const char* SHADOWS_CASCADE_1 = "Shadows/Cascade1";
     constexpr const char* SHADOWS_CASCADE_2 = "Shadows/Cascade2";
@@ -78,5 +81,9 @@ namespace SP
         // Soft RT
         float mLightRadius = 0.2f;
         bool mAccumulate = true;
+        int mAtrousIteration = 3;
+        float mSigmaNormal = 128.0f;
+        float mSigmaDepth = 1.0f;
+        float mSigmaVariance = 4.0f;
     };
 }

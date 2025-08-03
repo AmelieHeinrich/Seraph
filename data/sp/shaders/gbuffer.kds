@@ -47,6 +47,9 @@ struct PushConstants
     uint MyCameraBuffer;
     uint Width;
     uint Height;
+
+    uint MeshID;
+    uint3 Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -120,7 +123,7 @@ FragmentOutput PSMain(VertexOutput input)
     FragmentOutput output = (FragmentOutput)0;
     output.Albedo = texture.Sample(sampler, input.UV);
     if (output.Albedo.a < 0.25) discard;
-    output.Normal = float4(GetNormal(input), 1.0f);
+    output.Normal = float4(GetNormal(input), Push.MeshID);
     output.PBR = GetPBR(input);
     output.MotionVector = motion;
     return output;

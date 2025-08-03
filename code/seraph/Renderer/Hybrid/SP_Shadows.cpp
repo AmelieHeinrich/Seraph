@@ -32,12 +32,15 @@ namespace SP
         
         sunMaskDesc.Format = KGPU::TextureFormat::kR16_FLOAT;
         Gfx::ResourceManager::CreateTexture(SHADOWS_SUN_MASK_ID, sunMaskDesc);
-        
-        sunMaskDesc.Format = KGPU::TextureFormat::kR16_FLOAT;
         Gfx::ResourceManager::CreateTexture(SHADOWS_PREVIOUS_SUN_MASK_ID, sunMaskDesc);
+        Gfx::ResourceManager::CreateTexture(SHADOWS_SUN_MASK_SCRATCH_ID, sunMaskDesc);
 
         sunMaskDesc.Format = KGPU::TextureFormat::kR16_UINT;
         Gfx::ResourceManager::CreateTexture(SHADOWS_SUN_MASK_LENGTH_ID, sunMaskDesc);
+        
+        sunMaskDesc.Format = KGPU::TextureFormat::kR16G16_FLOAT;
+        Gfx::ResourceManager::CreateTexture(SHADOWS_MOMENTS_ID, sunMaskDesc);
+        Gfx::ResourceManager::CreateTexture(SHADOWS_PREV_MOMENTS_ID, sunMaskDesc);
 
         // Create cascades and cascade buffer
         KGPU::TextureDesc cascadeDesc;
@@ -85,6 +88,7 @@ namespace SP
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt.kds");
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt_no_alpha.kds");
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_temporal.kds");
+           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_spatial.kds");
         }
     }
 
@@ -393,9 +397,11 @@ namespace SP
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SoftRT");
 
         TraceSoftShadowRays(begin);
-        SVGFTemporal(begin);
-        SVGFSpatial(begin);
-        CopyHistory(begin);
+        if (mAccumulate) {
+            SVGFTemporal(begin);
+            SVGFSpatial(begin);
+            CopyHistory(begin);
+        }
     }
     
     void Shadows::CopyHistory(RenderPassBegin& begin)
@@ -404,8 +410,11 @@ namespace SP
 
         Gfx::Resource& output = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
         Gfx::Resource& prev = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
+        Gfx::Resource& moments = Gfx::ResourceManager::Import(SHADOWS_MOMENTS_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
+        Gfx::Resource& prevMoments = Gfx::ResourceManager::Import(SHADOWS_PREV_MOMENTS_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
     
         begin.CmdList->CopyTextureToTexture(prev.Texture, output.Texture);
+        begin.CmdList->CopyTextureToTexture(prevMoments.Texture, moments.Texture);
     }
     
     void Shadows::TraceSoftShadowRays(RenderPassBegin& begin)
@@ -468,18 +477,17 @@ namespace SP
 
     void Shadows::SVGFTemporal(RenderPassBegin& begin)
     {
-        if (!mAccumulate)
-            return;
-
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SVGFTemporal");
     
-        Gfx::Resource& prevMask = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& prevMask = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& currentMask = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
         Gfx::Resource& motionVector = Gfx::ResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& normal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& prevNormal = Gfx::ResourceManager::Import(GBUFFER_PREV_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& depth = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& prevDepth = Gfx::ResourceManager::Import(GBUFFER_PREV_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& moments = Gfx::ResourceManager::Import(SHADOWS_MOMENTS_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& prevMoments = Gfx::ResourceManager::Import(SHADOWS_PREV_MOMENTS_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& history = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_LENGTH_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
         Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
         Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
@@ -499,8 +507,12 @@ namespace SP
             KGPU::BindlessHandle PrevDepthID;
             KGPU::BindlessHandle CameraBuffer;
             KGPU::BindlessHandle BilinearSamplerID;
+
+            KGPU::BindlessHandle PrevMoments;
+            KGPU::BindlessHandle CurrMoments;
+            KGPU::float2 Pad;
         } constants = {
-            Gfx::ViewRecycler::GetUAV(prevMask.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetSRV(prevMask.Texture)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetUAV(currentMask.Texture)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetUAV(history.Texture)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(motionVector.Texture)->GetBindlessHandle(),
@@ -513,7 +525,11 @@ namespace SP
             Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(depth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(prevDepth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
-            sampler.Sampler->GetBindlessHandle()
+            sampler.Sampler->GetBindlessHandle(),
+
+            Gfx::ViewRecycler::GetUAV(moments.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetSRV(prevMoments.Texture)->GetBindlessHandle(),
+            {}
         };
 
         auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/svgf_temporal.kds");
@@ -525,6 +541,58 @@ namespace SP
     void Shadows::SVGFSpatial(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SVGFSpatial");
+
+        auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/svgf_spatial.kds");
+        begin.CmdList->SetComputePipeline(pipeline);
+
+        for (int i = 0; i < mAtrousIteration; i++) {
+            KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SVGFSpatial(Iteration=" + std::to_string(i) + ")");
+
+            const char* srcID = (i % 2 == 0) ? SHADOWS_SUN_MASK_ID : SHADOWS_SUN_MASK_SCRATCH_ID;
+            const char* dstID = (i % 2 == 0) ? SHADOWS_SUN_MASK_SCRATCH_ID : SHADOWS_SUN_MASK_ID;
+
+            Gfx::Resource& src = Gfx::ResourceManager::Import(srcID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& dst = Gfx::ResourceManager::Import(dstID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+            Gfx::Resource& normal = Gfx::ResourceManager::Get(GBUFFER_NORMAL_ID);
+            Gfx::Resource& depth = Gfx::ResourceManager::Get(GBUFFER_DEPTH_ID);
+            Gfx::Resource& moments = Gfx::ResourceManager::Import(SHADOWS_MOMENTS_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
+
+            struct Constants {
+                KGPU::BindlessHandle SrcID;
+                KGPU::BindlessHandle DstID;
+                KGPU::BindlessHandle NormalID;
+                KGPU::BindlessHandle DepthID;
+            
+                KGPU::BindlessHandle MomentsID;
+                int Width;
+                int Height;
+                float SigmaNormal;
+            
+                float SigmaDepth;
+                float SigmaVariance;
+                uint Stride;
+                KGPU::BindlessHandle Sampler;
+            } constants = {
+                Gfx::ViewRecycler::GetSRV(src.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetUAV(dst.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(depth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+
+                Gfx::ViewRecycler::GetSRV(moments.Texture)->GetBindlessHandle(),
+                begin.Width,
+                begin.Height,
+                mSigmaNormal,
+
+                mSigmaDepth,
+                mSigmaVariance,
+                1u << i,
+                sampler.Sampler->GetBindlessHandle()
+            };
+
+            begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        }
     }
 
     void Shadows::UI(RenderPassBegin& begin)
@@ -576,7 +644,14 @@ namespace SP
                     ImGui::SetTooltip("When tracing shadow rays, the directional light is treated as an area light to generate random shadow rays sampled on its surface. You can pick the area light radius using this slider.");
                 }
 
-                ImGui::Checkbox("Accumulate", &mAccumulate);
+                if (ImGui::TreeNodeEx("SVGF", ImGuiTreeNodeFlags_Framed)) {
+                    ImGui::Checkbox("Accumulate", &mAccumulate);
+                    ImGui::SliderInt("A-Trous Iterations", &mAtrousIteration, 0, 5);
+                    ImGui::SliderFloat("Sigma Variance", &mSigmaVariance, 0.1f, 16.0f);
+                    ImGui::SliderFloat("Sigma Normal", &mSigmaNormal, 0.1f, 256.0f);
+                    ImGui::SliderFloat("Sigma Depth", &mSigmaDepth, 0.1f, 2.0f);
+                    ImGui::TreePop();
+                }
                 break;
             }
             case ShadowMode::kHardRT: {

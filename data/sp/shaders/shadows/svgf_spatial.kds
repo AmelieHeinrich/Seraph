@@ -1,0 +1,95 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-03 20:31:38
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "sp/shaders/common/camera.kds"
+#include "sp/shaders/common/math.kds"
+#include "sp/shaders/common/compute.kds"
+
+#pragma compute CSMain
+
+struct Constants
+{
+    uint SrcID;
+    uint DstID;
+    uint NormalID;
+    uint DepthID;
+
+    uint MomentsID;
+    uint Width;
+    uint Height;
+    float SigmaNormal;
+
+    float SigmaDepth;
+    float SigmaVariance;
+    uint Stride;
+    uint Sampler;
+};
+PUSH_CONSTANTS(Constants, Push);
+
+static const float Kernel[5] = { 1.0/16.0, 1.0/4.0, 3.0/8.0, 1.0/4.0, 1.0/16.0 };
+
+float AtrousPass(
+    uint2 pixel,
+    float2 uv,
+    int stride,
+    Texture2D<float> Src,
+    Texture2D<float4> Normal,
+    Texture2D<float> Depth,
+    Texture2D<float2> Moments,
+    SamplerState sampler
+)
+{
+    float2 moments = Moments.Load(uint3(pixel, 0));
+    float3 Np = normalize(Normal.Load(uint3(pixel, 0)).rgb);
+    float  Dp = Depth.Load(uint3(pixel, 0));
+    float  Vp = max(0.0f, moments.g - moments.r * moments.r);
+
+    float sumShadow = 0.0;
+    float sumW   = 0.0;
+
+    [unroll] for (int ky = -2; ky <= 2; ++ky)
+    {
+        [unroll] for (int kx = -2; kx <= 2; ++kx)
+        {
+            int2 offs = int2(kx * stride, ky * stride);
+            int2 q = int2(pixel) + offs;
+            if (q.x < 0 || q.y < 0 || q.x >= Push.Width || q.y >= Push.Height) continue;
+            float w = Kernel[kx+2] * Kernel[ky+2];
+
+            float3 Nq = normalize(Normal.Load(uint3(q, 0)).rgb);
+            float  Dq = Depth.Load(uint3(q, 0));
+            float2 kernelMoments = Moments.Load(uint3(q, 0));
+            float  Vq = max(0.0f, kernelMoments.g - kernelMoments.r * kernelMoments.r);
+
+            // Edge-stopping weights
+            w *= exp(-max(0, 1.0 - dot(Np, Nq)) * Push.SigmaNormal);
+            w *= exp(-abs(Dp - Dq) * Push.SigmaDepth);
+            w *= exp(-abs(Vp - Vq) * Push.SigmaVariance);
+
+            sumShadow += w * Src[q];
+            sumW += w;
+        }
+    }
+    return sumShadow / max(sumW, 1e-6);
+}
+
+[numthreads(8,8,1)]
+void CSMain(uint3 tid : SV_DispatchThreadID)
+{
+    if (tid.x >= Push.Width || tid.y >= Push.Height) return;
+    uint2 pixel = tid.xy;
+    float2 uv   = TexelToUV(pixel, float2(Push.Width, Push.Height));
+
+    Texture2D<float>   Src      = ResourceDescriptorHeap[Push.SrcID];
+    RWTexture2D<float> Dst      = ResourceDescriptorHeap[Push.DstID];
+    Texture2D<float4>  Normal   = ResourceDescriptorHeap[Push.NormalID];
+    Texture2D<float>   Depth    = ResourceDescriptorHeap[Push.DepthID];
+    Texture2D<float2>  Moments  = ResourceDescriptorHeap[Push.MomentsID];
+    SamplerState sampler        = SamplerDescriptorHeap[Push.Sampler];
+
+    float filtered = AtrousPass(pixel, uv, Push.Stride, Src, Normal, Depth, Moments, sampler);
+    Dst[pixel] = filtered;
+}

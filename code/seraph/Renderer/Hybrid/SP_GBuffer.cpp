@@ -139,6 +139,8 @@ namespace SP
         begin.CmdList->BeginRendering(renderBegin);
         begin.CmdList->SetGraphicsPipeline(pipeline);
         begin.CmdList->SetRenderSize(begin.Width, begin.Height);
+
+        uint index = 0;
         begin.World->ForEach([&](RenderEntity entity, Gfx::Material* material){
             KGPU::BindlessHandle albedoView = material->GetAlbedoView() ? material->GetAlbedoView()->GetBindlessHandle() : Gfx::ViewRecycler::GetSRV(defaultWhite.Texture)->GetBindlessHandle();
             KGPU::BindlessHandle normalView = material->GetNormalView() ? material->GetNormalView()->GetBindlessHandle() : KGPU::BINDLESS_INVALID_HANDLE;
@@ -154,6 +156,9 @@ namespace SP
                 KGPU::BindlessHandle Camera;
                 int Width;
                 int Height;
+
+                uint MeshIndex;
+                KGPU::uint3 Pad;
             } constants = {
                 entity.Primitive->GetVertexBufferView()->GetBindlessHandle(),
                 albedoView,
@@ -163,7 +168,10 @@ namespace SP
                 materialSampler.Sampler->GetBindlessHandle(),
                 cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
                 begin.Width,
-                begin.Height
+                begin.Height,
+
+                index++,
+                {}
             };
 
             begin.CmdList->SetIndexBuffer(entity.Primitive->GetIndexBuffer());
