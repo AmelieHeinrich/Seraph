@@ -29,19 +29,19 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 ## Notable Features
 
 - Techniques: Tiled light culling, deferred shading
-- Lighting: Microfacet BRDF, CSM, raytraced hard shadows
+- Lighting: Microfacet BRDF
+- Shadows: CSM, Hard RT, Soft RT with 3 denoisers : (Ground-Truth, Gaussian, SVGF)
 - Tooling: Motion vector visualizer
 
 ## WIP
 
-- Raytraced soft shadows
-- SVGF denoising
+- Clean up denoising
+- RTAO
 - Pathtracing
 
 ## Planned
 
 - Raytraced reflections
-- Raytraced AO
 - Dynamic Diffuse Global Illumination
 - Cluster culling & LODing via mesh shaders
 - Temporal Anti-Aliasing
@@ -49,3 +49,4 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - 6-pass Bokeh DOF
 - GPU particles
 - Eye adaptation
+
