@@ -62,7 +62,7 @@ float CalculateShadowCascade(float4 world, float3 N, float3 L, int layer)
     float bias0 = max(slopeBias * (1.0 - dot(N, L)), minBias) * texelSize0;
     float bias1 = max(slopeBias * (1.0 - dot(N, L)), minBias) * texelSize1;
 
-    int kernelSize = 1;
+    int kernelSize = 2;
 
     float shadow0 = PCFCascade(shadowMap0, sampler, world, cascade0.View, cascade0.Proj, bias0, kernelSize);
     float shadow1 = PCFCascade(shadowMap1, sampler, world, cascade1.View, cascade1.Proj, bias1, kernelSize);

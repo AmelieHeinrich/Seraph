@@ -23,14 +23,17 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 ### Tiled Light Culling
 ![](.github/tiled.png)
 
-### Raytraced Hard Shadows
-![](.github/hard_shadows.png)
+### Shadows
+| CSM | Hard RT | Soft RT (Ground Truth Denoised) |
+|---------|---------|---------|
+| ![](.github/csm.png) | ![](.github/shrt.png) | ![](.github/ssrt.png) |
+
 
 ## Notable Features
 
 - Techniques: Tiled light culling, deferred shading
 - Lighting: Microfacet BRDF
-- Shadows: CSM, Hard RT, Soft RT with 3 denoisers : (Ground-Truth, Gaussian, SVGF)
+- Shadows: CSM, Hard RT, Soft RT with 2 denoisers : (Ground-Truth, SVGF -- experimental)
 - Tooling: Motion vector visualizer
 
 ## WIP

@@ -90,7 +90,7 @@ namespace SP
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt_no_alpha.kds");
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_temporal.kds");
            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_spatial.kds");
-           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/gaussian.kds");
+           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/ground_truth.kds");
         }
     }
 
@@ -399,12 +399,17 @@ namespace SP
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SoftRT");
 
         TraceSoftShadowRays(begin);
-        if (mDenoiser == ShadowDenoiser::kGaussian) {
-            DenoiseGaussian(begin);
-        } else if (mDenoiser == ShadowDenoiser::kSVGF) {
-            SVGFTemporal(begin);
-            SVGFSpatial(begin);
-            CopyHistory(begin);
+        switch (mDenoiser) {
+            case ShadowDenoiser::kGroundTruth: {
+                DenoiseGroundTruth(begin);
+                break;
+            }
+            case ShadowDenoiser::kSVGF: {
+                SVGFTemporal(begin);
+                SVGFSpatial(begin);
+                CopyHistory(begin);
+                break;
+            }
         }
     }
     
@@ -464,7 +469,7 @@ namespace SP
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
             materialSampler.Sampler->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(begin.World->GetSceneInstanceBuffer())->GetBindlessHandle(),
-            mDenoiser == ShadowDenoiser::kSVGF ? begin.FrameCount : 0,
+            begin.FrameCount,
 
             mLightRadius,
             Gfx::ViewRecycler::GetSRV(begin.World->GetSceneMaterialBuffer())->GetBindlessHandle(),
@@ -479,74 +484,54 @@ namespace SP
         begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
     }
 
-    void Shadows::DenoiseGaussian(RenderPassBegin& begin)
+    void Shadows::DenoiseGroundTruth(RenderPassBegin& begin)
     {
-        if (!mBEnabled)
-            return;
-
-        KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::DenoiseBilateral");
+        KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::DenoiseGroundTruth");
         CODE_BLOCK("Denoise") {
-            KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::DenoiseBilateral(Denoise)");
+            KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::DenoiseGroundTruth(Denoise)");
 
             // Import resources
-            Gfx::Resource& depth = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
-            Gfx::Resource& currentMask = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
-            Gfx::Resource& scratchMask = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_SCRATCH_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
-            Gfx::Resource& scratchMask2 = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_SCRATCH2_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+            Gfx::Resource& prevMask = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& currentMask = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+            Gfx::Resource& historyID = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_LENGTH_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+            Gfx::Resource& motionVec = Gfx::ResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& nearestSampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
 
             struct PushConstants {
-                KGPU::BindlessHandle ShadowID;
-                KGPU::BindlessHandle OutShadowID;
-                KGPU::BindlessHandle DepthID;
+                KGPU::BindlessHandle PrevID;
+                KGPU::BindlessHandle CurrID;
+                KGPU::BindlessHandle HistoryID;
+                KGPU::BindlessHandle MotionID;
+            
                 int Width;
                 int Height;
-                int Direction;
-                int Radius;
-                float SigmaSpatial;
-                float SigmaDepthRange;
-                float ZNear;
-                KGPU::float2 Pad;
+                KGPU::BindlessHandle SamplerID;
+                uint Pad;
             } constants = {
-                {},
-                {}, 
-                Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(depth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetSRV(prevMask.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetUAV(currentMask.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetSRV(historyID.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetSRV(motionVec.Texture)->GetBindlessHandle(),
+
                 begin.Width,
-                
                 begin.Height,
-                0, // Direction will be set per pass
-                mBRadius,
-                mBSigmaSpatialVariance,
-                
-                mBSigmaDepthVariance,
-                CAMERA_NEAR,
-                {}
+                nearestSampler.Sampler->GetBindlessHandle(),
+                0
             };
 
-            auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/bilateral.kds");
+            auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/ground_truth.kds");
             begin.CmdList->SetComputePipeline(pipeline);
-
-            // --- Horizontal pass ---
-            constants.ShadowID = Gfx::ViewRecycler::GetSRV(currentMask.Texture)->GetBindlessHandle();
-            constants.OutShadowID = Gfx::ViewRecycler::GetUAV(scratchMask.Texture)->GetBindlessHandle();
-            constants.Direction = 0;
-            begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
-
-            // --- Vertical pass ---
-            constants.ShadowID = Gfx::ViewRecycler::GetSRV(scratchMask.Texture)->GetBindlessHandle();
-            constants.OutShadowID = Gfx::ViewRecycler::GetUAV(scratchMask2.Texture)->GetBindlessHandle();
-            constants.Direction = 1;
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
             begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
         }
 
-        CODE_BLOCK("Copy Scratch2 to Current") {
-            KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::DenoiseBilateral(Copy)");
+        CODE_BLOCK("Copy to History") {
+            KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::DenoiseGroundTruth(Copy)");
 
-            Gfx::Resource& currentMask   = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
-            Gfx::Resource& scratchMask2  = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_SCRATCH2_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
+            Gfx::Resource& currentMask   = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferSource);
+            Gfx::Resource& prevMask  = Gfx::ResourceManager::Import(SHADOWS_PREVIOUS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kTransferDest);
 
-            begin.CmdList->CopyTextureToTexture(currentMask.Texture, scratchMask2.Texture);
+            begin.CmdList->CopyTextureToTexture(prevMask.Texture, currentMask.Texture);
         }
     }
 
@@ -726,7 +711,7 @@ namespace SP
                     ImGui::SetTooltip("When tracing shadow rays, the directional light is treated as an area light to generate random shadow rays sampled on its surface. You can pick the area light radius using this slider.");
                 }
 
-                const char* denoiserModes[] = { "Gaussian", "SVGF" };
+                const char* denoiserModes[] = { "Ground Truth", "SVGF" };
                 ImGui::Combo("Denoiser", (int*)&mDenoiser, denoiserModes, IM_ARRAYSIZE(denoiserModes));
                 if (ImGui::TreeNodeEx("Denoiser Settings", ImGuiTreeNodeFlags_Framed)) {
                     if (mDenoiser == ShadowDenoiser::kSVGF) {
@@ -735,9 +720,6 @@ namespace SP
                         ImGui::SliderFloat("Sigma Variance", &mSVGFSigmaVariance, 0.1f, 16.0f);
                         ImGui::SliderFloat("Sigma Normal", &mSVGFSigmaNormal, 0.1f, 256.0f);
                         ImGui::SliderFloat("Sigma Depth", &mSVGFSigmaDepth, 0.1f, 2.0f);
-                    } else {
-                        ImGui::Checkbox("Enable", &mBEnabled);
-                        ImGui::SliderInt("Kernel Radius", &mBRadius, 1, 10);
                     }
                     ImGui::TreePop();
                 }

@@ -54,8 +54,8 @@ bool DoPlaneCheck(uint2 tid, float2 currUV, float2 historyUV)
     float prevZ = prevDepth.Sample(bilinearSampler, historyUV);
     float3 currNormal = normal.Load(uint3(tid,0)).rgb;
 
-    float3 currPos = GetViewFromDepth(currUV, currZ, camera.InvProj).xyz;
-    float3 prevPos = GetViewFromDepth(historyUV, prevZ, camera.InvProj).xyz;
+    float3 currPos = GetWorldFromDepth(currUV, currZ, camera.InvViewProj).xyz;
+    float3 prevPos = GetWorldFromDepth(historyUV, prevZ, camera.InvViewProj).xyz;
 
     float3 toCurrent = currPos - prevPos;
     float distToPlane = abs(dot(toCurrent, currNormal));
@@ -70,7 +70,6 @@ bool DoNormalCheck(uint2 tid, float2 currUV, float2 historyUV)
 
     float3 currNormal = normalize(normal.Sample(bilinearSampler, currUV).rgb);
     float3 prevNormal = normalize(prevNormalTex.Sample(bilinearSampler, historyUV).rgb);
-    // accept if angle < ~25°
     return dot(currNormal, prevNormal) > 0.9f;
 }
 

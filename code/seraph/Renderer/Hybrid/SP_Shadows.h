@@ -34,7 +34,7 @@ namespace SP
 
     enum class ShadowDenoiser : uint
     {
-        kGaussian,
+        kGroundTruth,
         kSVGF
     };
     
@@ -69,7 +69,7 @@ namespace SP
         void SoftRT(RenderPassBegin& begin);
         void CopyHistory(RenderPassBegin& begin);
         void TraceSoftShadowRays(RenderPassBegin& begin);
-        void DenoiseGaussian(RenderPassBegin& begin);
+        void DenoiseGroundTruth(RenderPassBegin& begin);
         void SVGFTemporal(RenderPassBegin& begin);
         void SVGFSpatial(RenderPassBegin& begin);
 
@@ -88,15 +88,11 @@ namespace SP
 
         // Soft RT
         float mLightRadius = 0.2f;
-        ShadowDenoiser mDenoiser = ShadowDenoiser::kSVGF;
+        ShadowDenoiser mDenoiser = ShadowDenoiser::kGroundTruth;
         bool mAccumulate = true;
         bool mDoAtrous = true;
         float mSVGFSigmaNormal = 128.0f;
         float mSVGFSigmaDepth = 1.0f;
         float mSVGFSigmaVariance = 4.0f;
-        bool mBEnabled = true;
-        int mBRadius = 5;
-        float mBSigmaSpatialVariance = 5.0;
-        float mBSigmaDepthVariance = 50;
     };
 }

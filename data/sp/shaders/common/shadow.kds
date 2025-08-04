@@ -29,11 +29,25 @@ float PCFCascade(
         return 1.0;
 
     // Compute texel size for PCF kernel sampling
-    float2 texelSize = 1.0 / SHADOW_MAP_SIZE;
+    float2 texelSize = 1.0 / float2(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
-    // Poisson disk PCF sampling
-    float sampledDepth = ShadowMap.SampleLevel(regularSampler, shadowUV, 0.0);
-    return ndcPosition.z - bias > sampledDepth ? 0.0 : 1.;
+    float shadow = 0.0;
+    int samples = 0;
+
+    // Simple square kernel PCF
+    for (int y = -kernelSize; y <= kernelSize; ++y)
+    {
+        for (int x = -kernelSize; x <= kernelSize; ++x)
+        {
+            float2 offset = float2(x, y) * texelSize;
+            float sampledDepth = ShadowMap.SampleLevel(regularSampler, shadowUV + offset, 0.0);
+
+            shadow += (ndcPosition.z - bias > sampledDepth) ? 0.0 : 1.0;
+            samples++;
+        }
+    }
+
+    return shadow / samples; // average result
 }
 
 float4 GetCascadeColor(int layer)
