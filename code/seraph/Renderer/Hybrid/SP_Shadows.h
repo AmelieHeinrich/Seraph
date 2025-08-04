@@ -12,6 +12,7 @@ namespace SP
     constexpr const char* SHADOWS_PREVIOUS_SUN_MASK_ID = "Shadows/PrevSunMask";
     constexpr const char* SHADOWS_SUN_MASK_LENGTH_ID = "Shadows/SunMaskLength";
     constexpr const char* SHADOWS_SUN_MASK_SCRATCH_ID = "Shadows/SunMaskScratch";
+    constexpr const char* SHADOWS_SUN_MASK_SCRATCH2_ID = "Shadows/SunMaskScratch2";
     constexpr const char* SHADOWS_SUN_MASK_ID = "Shadows/SunMask";
     constexpr const char* SHADOWS_MOMENTS_ID = "Shadows/Moments";
     constexpr const char* SHADOWS_PREV_MOMENTS_ID = "Shadows/PrevMoments";
@@ -29,6 +30,12 @@ namespace SP
         kCSM,
         kHardRT,
         kSoftRT
+    };
+
+    enum class ShadowDenoiser : uint
+    {
+        kGaussian,
+        kSVGF
     };
     
     struct ShadowCascade
@@ -62,6 +69,7 @@ namespace SP
         void SoftRT(RenderPassBegin& begin);
         void CopyHistory(RenderPassBegin& begin);
         void TraceSoftShadowRays(RenderPassBegin& begin);
+        void DenoiseGaussian(RenderPassBegin& begin);
         void SVGFTemporal(RenderPassBegin& begin);
         void SVGFSpatial(RenderPassBegin& begin);
 
@@ -80,10 +88,15 @@ namespace SP
 
         // Soft RT
         float mLightRadius = 0.2f;
+        ShadowDenoiser mDenoiser = ShadowDenoiser::kSVGF;
         bool mAccumulate = true;
-        int mAtrousIteration = 3;
-        float mSigmaNormal = 128.0f;
-        float mSigmaDepth = 1.0f;
-        float mSigmaVariance = 4.0f;
+        bool mDoAtrous = true;
+        float mSVGFSigmaNormal = 128.0f;
+        float mSVGFSigmaDepth = 1.0f;
+        float mSVGFSigmaVariance = 4.0f;
+        bool mBEnabled = true;
+        int mBRadius = 5;
+        float mBSigmaSpatialVariance = 5.0;
+        float mBSigmaDepthVariance = 50;
     };
 }
