@@ -120,12 +120,12 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float2 moments = prevMoments.Sample(bilinearSampler, historyUV);
 
     if (IsSampleValid(pixel, currUV, historyUV)) {
-        historyLength = min(historyLength + 1, 128);
+        historyLength = min(historyLength + 1, 32);
         float neighborhoodMin = +10000000000000000;
         float neighborhoodMax = -10000000000000000;
 
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -3; dy <= 3; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
                 float n = curr[pixel + int2(dx,dy)];
                 neighborhoodMin = min(neighborhoodMin, n);
                 neighborhoodMax = max(neighborhoodMax, n);

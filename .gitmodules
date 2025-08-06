@@ -1,0 +1,3 @@
+[submodule "ext/kaleidoscope"]
+	path = ext/kaleidoscope
+	url = https://github.com/Floating-Trees-Inc/Kaleidoscope

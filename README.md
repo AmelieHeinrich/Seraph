@@ -38,18 +38,20 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 
 ## WIP
 
-- Clean up denoising
-- RTAO
-- Pathtracing
+- Fix SVGF
+- SSAO/RTAO
 
 ## Planned
 
+- Bloom
+- TAA
+- Chromatic Aberration
+- 6-pass Bokeh DOF
 - Raytraced reflections
 - Dynamic Diffuse Global Illumination
 - Cluster culling & LODing via mesh shaders
-- Temporal Anti-Aliasing
-- Bloom
-- 6-pass Bokeh DOF
 - GPU particles
 - Eye adaptation
+- ReSTIR Local Shadows
+- Pathtracer
 
