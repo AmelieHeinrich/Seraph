@@ -77,20 +77,34 @@ namespace SP
             pipelineDesc.DepthOperation = KGPU::DepthOperation::kLess;
             pipelineDesc.CullMode = KGPU::CullMode::kBack;
 
-            Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/shadows/csm.kds", pipelineDesc);
-            Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/shadows/csm_no_alpha.kds", pipelineDesc);
-            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/csm_populate.kds");
+            Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/shadows/csm/alpha.kds", pipelineDesc);
+            Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/shadows/csm/no_alpha.kds", pipelineDesc);
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/csm/populate.kds");
         }
         CODE_BLOCK("Create Hard RT resources") {
-            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/hard_rt.kds");
-            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/hard_rt_no_alpha.kds");
+            RaytracingPipelineDesc hardRTDesc;
+            hardRTDesc.PayloadDesc = sizeof(uint);
+            hardRTDesc.PushConstantSize = sizeof(uint) * 12;
+            hardRTDesc.RecursionDepth = 1;
+
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/hard_rt/alpha.kds");
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/hard_rt/no_alpha.kds");
+            Gfx::ShaderManager::SubscribeRaytracing("data/sp/shaders/shadows/hard_rt/no_alpha_pipeline.kds", hardRTDesc);
+            Gfx::ShaderManager::SubscribeRaytracing("data/sp/shaders/shadows/hard_rt/alpha_pipeline.kds", hardRTDesc);
         }
         CODE_BLOCK("Create Soft RT resources") {
-           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt.kds");
-           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt_no_alpha.kds");
-           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_temporal.kds");
-           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/svgf_spatial.kds");
-           Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/ground_truth.kds");
+            RaytracingPipelineDesc hardRTDesc;
+            hardRTDesc.PayloadDesc = sizeof(uint);
+            hardRTDesc.PushConstantSize = sizeof(uint) * 16;
+            hardRTDesc.RecursionDepth = 1;
+
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt/alpha.kds");
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/soft_rt/no_alpha.kds");
+            Gfx::ShaderManager::SubscribeRaytracing("data/sp/shaders/shadows/soft_rt/no_alpha_pipeline.kds", hardRTDesc);
+            Gfx::ShaderManager::SubscribeRaytracing("data/sp/shaders/shadows/soft_rt/alpha_pipeline.kds", hardRTDesc);
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/denoise/svgf_temporal.kds");
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/denoise/svgf_spatial.kds");
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/denoise/ground_truth.kds");
         }
     }
 
@@ -252,8 +266,8 @@ namespace SP
             KGPU::ScopedMarker marker(begin.CmdList, "Cascade " + std::to_string(i));
 
             KGPU::IGraphicsPipeline* pipeline = mAlphaTest
-                                           ? Gfx::ShaderManager::GetGraphics("data/sp/shaders/shadows/csm.kds")
-                                           : Gfx::ShaderManager::GetGraphics("data/sp/shaders/shadows/csm_no_alpha.kds");
+                                           ? Gfx::ShaderManager::GetGraphics("data/sp/shaders/shadows/csm/alpha.kds")
+                                           : Gfx::ShaderManager::GetGraphics("data/sp/shaders/shadows/csm/no_alpha.kds");
             const char* indexToID[4] = { SHADOWS_CASCADE_0, SHADOWS_CASCADE_1,SHADOWS_CASCADE_2, SHADOWS_CASCADE_3 };
 
             Gfx::Resource& depthTexture = Gfx::ResourceManager::Import(indexToID[i], begin.CmdList, Gfx::ImportType::kDepthWrite);
@@ -338,7 +352,7 @@ namespace SP
             uint2(0)
         };
 
-        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/csm_populate.kds");
+        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/csm/populate.kds");
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
@@ -386,12 +400,21 @@ namespace SP
             Gfx::ViewRecycler::GetSRV(begin.World->GetSceneMaterialBuffer())->GetBindlessHandle()
         };
 
-        KGPU::IComputePipeline* pipeline = mAlphaTest
-                                      ? Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/hard_rt.kds")
-                                      : Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/hard_rt_no_alpha.kds");
-        begin.CmdList->SetComputePipeline(pipeline);
-        begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        if (!mUsePipeline) {
+            KGPU::IComputePipeline* pipeline = mAlphaTest
+                                          ? Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/hard_rt/alpha.kds")
+                                          : Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/hard_rt/no_alpha.kds");
+            begin.CmdList->SetComputePipeline(pipeline);
+            begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        } else {
+            KGPU::IRaytracingPipeline* pipeline = mAlphaTest
+                                          ? Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/hard_rt/alpha_pipeline.kds")
+                                          : Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/hard_rt/no_alpha_pipeline.kds");
+            begin.CmdList->SetRaytracingPipeline(pipeline);
+            begin.CmdList->SetRaytracingConstants(pipeline, &constants, sizeof(constants));
+            begin.CmdList->DispatchRays(pipeline, begin.Width, begin.Height, 1);
+        }
     }
 
     void Shadows::SoftRT(RenderPassBegin& begin)
@@ -476,12 +499,21 @@ namespace SP
             {}
         };
 
-        KGPU::IComputePipeline* pipeline = mAlphaTest
-                                      ? Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/soft_rt.kds")
-                                      : Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/soft_rt_no_alpha.kds");
-        begin.CmdList->SetComputePipeline(pipeline);
-        begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        if (!mUsePipeline) {
+            KGPU::IComputePipeline* pipeline = mAlphaTest
+                                          ? Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/soft_rt/alpha.kds")
+                                          : Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/soft_rt/no_alpha.kds");
+            begin.CmdList->SetComputePipeline(pipeline);
+            begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        } else {
+            KGPU::IRaytracingPipeline* pipeline = mAlphaTest
+                                          ? Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/soft_rt/alpha_pipeline.kds")
+                                          : Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/soft_rt/no_alpha_pipeline.kds");
+            begin.CmdList->SetRaytracingPipeline(pipeline);
+            begin.CmdList->SetRaytracingConstants(pipeline, &constants, sizeof(constants));
+            begin.CmdList->DispatchRays(pipeline, begin.Width, begin.Height, 1);
+        }
     }
 
     void Shadows::DenoiseGroundTruth(RenderPassBegin& begin)
@@ -519,7 +551,7 @@ namespace SP
                 0
             };
 
-            auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/ground_truth.kds");
+            auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/denoise/ground_truth.kds");
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
             begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
@@ -595,7 +627,7 @@ namespace SP
             {}
         };
 
-        auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/svgf_temporal.kds");
+        auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/denoise/svgf_temporal.kds");
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
@@ -608,7 +640,7 @@ namespace SP
 
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SVGFSpatial");
 
-        auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/svgf_spatial.kds");
+        auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/denoise/svgf_spatial.kds");
         begin.CmdList->SetComputePipeline(pipeline);
 
         const int atrousIterations = 3;
@@ -697,6 +729,14 @@ namespace SP
         ImGui::Checkbox("Alpha Test", &mAlphaTest);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
             ImGui::SetTooltip("Whether or not to use alpha testing for shadows. This can tank performance depending on the technique, so use at your own risk.");
+        }
+
+        if (Gfx::Manager::GetDevice()->SupportsRaytracing()) {
+            ImGui::Checkbox("RT Pipeline instead of RayQuery", &mUsePipeline);
+        } else {
+            ImGui::BeginDisabled();
+            ImGui::Checkbox("RT Pipeline instead of RayQuery", &mUsePipeline);
+            ImGui::EndDisabled();
         }
     
         switch (mMode) {

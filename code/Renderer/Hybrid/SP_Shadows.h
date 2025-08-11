@@ -76,6 +76,7 @@ namespace SP
     private:
         bool mAlphaTest = true;
         ShadowMode mMode = ShadowMode::kSoftRT;
+        bool mUsePipeline = false;
 
         // CSM
         KC::StaticArray<ShadowCascade, SHADOW_CASCADE_COUNT> mCascades;

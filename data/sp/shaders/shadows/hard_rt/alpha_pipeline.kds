@@ -1,0 +1,172 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-11 19:03:51
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "sp/shaders/common/shadow.kds"
+#include "sp/shaders/common/camera.kds"
+#include "sp/shaders/common/math.kds"
+#include "sp/shaders/common/compute.kds"
+#include "sp/shaders/common/lights.kds"
+
+#pragma raygen RayGeneration
+#pragma miss Miss
+#pragma closesthit ClosestHit
+#pragma anyhit AnyHit
+
+struct VertexInput
+{
+    float3 Position;
+    float3 Normal;
+    float4 Tangent;
+    float2 Texcoord;
+};
+
+struct SceneInstance
+{
+    uint VertexBuffer;
+    uint IndexBuffer;
+    uint MaterialIndex;
+    uint Pad;
+};
+
+struct SceneMaterial
+{
+    uint Albedo;
+    uint Normal;
+    uint PBR;
+    uint EmissiveTexture;
+};
+
+struct PushConstants
+{
+    uint SunArray;
+    uint Output;
+    uint SceneAS;
+    float NormalBias;
+
+    uint Width;
+    uint Height;
+    uint GBufferDepth;
+    uint GBufferNormal;
+
+    uint CameraIndex;
+    uint Sampler;
+    uint SceneInstances;
+    uint SceneMaterials;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+struct Payload
+{
+    bool Miss;
+};
+
+[shader("raygeneration")]
+void RayGeneration()
+{
+    uint3 dtid = DispatchRaysIndex();
+
+    // Load resources
+    RWTexture2D<float> output = ResourceDescriptorHeap[Push.Output];
+    Texture2D<float> depth = ResourceDescriptorHeap[Push.GBufferDepth];
+    Texture2D<float4> normal = ResourceDescriptorHeap[Push.GBufferNormal];
+    RaytracingAccelerationStructure sceneAS = LoadRaytracingWorld(Push.SceneAS);
+    StructuredBuffer<DirectionalLight> sun = ResourceDescriptorHeap[Push.SunArray];
+    ConstantBuffer<Camera> camera = ResourceDescriptorHeap[Push.CameraIndex];
+
+    // Load data
+    float viewDepth = depth.Load(dtid);
+    float2 uv = TexelToUV(dtid.xy, float2(Push.Width, Push.Height));
+    float3 cameraPosition = camera.Position.xyz;
+    float4 worldPosition = GetWorldFromDepth(uv, viewDepth, camera.InvViewProj);
+    float3 N = normalize(normal.Load(dtid).rgb);
+    float3 L = -sun[0].Direction;
+    float attenuation = clamp(dot(N, L), 0.0, 1.0);
+
+    // Logic
+    Payload payload;
+    payload.Miss = true;
+
+    if (attenuation > 0.0f && viewDepth != 1.0f) {
+        // trace
+        RayDesc ray;
+        ray.Origin = worldPosition.xyz + N * Push.NormalBias;
+        ray.Direction = L;
+        ray.TMin = 0.001f;
+        ray.TMax = 10000.0f;
+
+        TraceRay(sceneAS, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, 0, ray, payload);
+    }
+
+    output[dtid.xy] = float(payload.Miss);
+}
+
+[shader("miss")]
+void Miss(inout Payload payload)
+{
+    payload.Miss = true;
+}
+
+[shader("closesthit")]
+void ClosestHit(inout Payload payload, BuiltInTriangleIntersectionAttributes attrib)
+{
+    payload.Miss = false;
+}
+
+[shader("anyhit")]
+void AnyHit(inout Payload payload, BuiltInTriangleIntersectionAttributes attrib)
+{
+    float3 HitPos;
+    VertexInput InputVertex;
+    float4 AlbedoColor;
+
+    uint instanceIndex = InstanceIndex();
+    uint primIndex = PrimitiveIndex();
+    float2 bary = attrib.barycentrics;
+
+    StructuredBuffer<SceneInstance> instances = ResourceDescriptorHeap[Push.SceneInstances];
+    SceneInstance instance = instances[instanceIndex];
+    StructuredBuffer<VertexInput> vertices = ResourceDescriptorHeap[instance.VertexBuffer];
+    StructuredBuffer<uint> indices = ResourceDescriptorHeap[instance.IndexBuffer];
+    StructuredBuffer<SceneMaterial> materials = ResourceDescriptorHeap[Push.SceneMaterials];
+
+    SceneMaterial material = materials[instance.MaterialIndex];
+    Texture2D<float4> albedo = ResourceDescriptorHeap[material.Albedo];
+    SamplerState sampler = SamplerDescriptorHeap[Push.Sampler];
+
+    uint3 tri = uint3(
+        indices[primIndex * 3 + 0],
+        indices[primIndex * 3 + 1],
+        indices[primIndex * 3 + 2]
+    );
+
+    VertexInput v0 = vertices[tri.x];
+    VertexInput v1 = vertices[tri.y];
+    VertexInput v2 = vertices[tri.z];
+
+    float3 interpolate = float3(
+        1.0 - bary.x - bary.y,
+        bary.x,
+        bary.y
+    );
+
+    InputVertex.Position = HitPos;
+    InputVertex.Texcoord = v0.Texcoord * interpolate.x + v1.Texcoord * interpolate.y + v2.Texcoord * interpolate.z;
+    InputVertex.Normal = normalize(
+        (1.0 - interpolate.x - interpolate.y) * v0.Normal +
+        interpolate.x * v1.Normal +
+        interpolate.y * v2.Normal
+    );
+    InputVertex.Tangent = normalize(
+        (1.0 - interpolate.x - interpolate.y) * v0.Tangent +
+        interpolate.x * v1.Tangent +
+        interpolate.y * v2.Tangent
+    );
+
+    AlbedoColor = albedo.SampleLevel(sampler, InputVertex.Texcoord, 0);
+    if (AlbedoColor.a < 0.5) {
+        IgnoreHit();
+    }
+}

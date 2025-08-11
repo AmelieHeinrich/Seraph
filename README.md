@@ -55,3 +55,6 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - ReSTIR Local Shadows
 - Pathtracer
 
+# Known bugs
+
+- Raytraced effects crashes when using RT pipeline on Vulkan backend
