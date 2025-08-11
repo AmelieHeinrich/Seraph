@@ -1,8 +1,0 @@
-{
-    "StreamedTriangle": {
-        "goldenPath": "tests/golden/StreamedTriangleGolden.png",
-        "magmaPath": "tests/StreamedTriangleMagma.png",
-        "outputPath": "tests/StreamedTriangle.png",
-        "result": true
-    }
-}
