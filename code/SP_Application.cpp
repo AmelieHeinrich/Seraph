@@ -58,14 +58,14 @@ namespace SP
         CODE_BLOCK("Initialize systems") {
             KI::InputSystem::Initialize();
             KDS::Manager::Initialize();
-            ToolImGui::Manager::Initialize(mWindow, mDevice);
-            ToolImGui::Manager::BuildRenderer();
             Gfx::Manager::Initialize(mDevice, mCommandQueue);
             Gfx::ResourceManager::Initialize();
             Gfx::ShaderManager::Initialize();
             Gfx::SkyboxCooker::Initialize();
             Gfx::Mipmapper::Initialize();
             Gfx::Screenshotter::Initialize();
+            ToolImGui::Manager::Initialize(mWindow, mDevice);
+            ToolImGui::Manager::BuildRenderer();
 
             mRenderer = KC_NEW(WorldRenderer);
             mRenderer->Prepare();
