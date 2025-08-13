@@ -8,6 +8,7 @@
 
 static const uint INVALID_DESCRIPTOR = 0x00000000;
 
+// Push constants
 #ifdef D3D12
     #define PUSH_CONSTANTS(Type, Name) ConstantBuffer<Type> Name : register(b0)
 #elif VULKAN
@@ -15,6 +16,7 @@ static const uint INVALID_DESCRIPTOR = 0x00000000;
     [[vk::binding(2, 0)]] RaytracingAccelerationStructure gRaytracingASArray[];
 #endif
 
+// Bindless AS
 RaytracingAccelerationStructure LoadRaytracingWorld(uint index)
 {
 #ifdef D3D12
@@ -23,5 +25,22 @@ RaytracingAccelerationStructure LoadRaytracingWorld(uint index)
     return gRaytracingASArray[index];
 #endif
 }
+
+// Draw ID for indirect
+#ifdef D3D12
+    struct WhyTheFuckDoINeedThis { uint id; };
+
+    ConstantBuffer<WhyTheFuckDoINeedThis> gDrawID : register(b1);
+    uint GetDrawID()
+    {
+        return gDrawID.id;
+    }
+#elif VULKAN
+    [[vk::ext_builtin_input(4426)]] static const uint gDrawID;
+    uint GetDrawID()
+    {
+        return gDrawID;
+    }
+#endif
 
 #endif

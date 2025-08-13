@@ -1,0 +1,19 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-13 11:22:32
+//
+
+#ifndef COLOR_KDS
+#define COLOR_KDS
+
+float4 UnpackColor(uint u)
+{
+    float4 color;
+    color.r = (u & 0xFF) / 255.0;
+    color.g = ((u >> 8) & 0xFF) / 255.0;
+    color.b = ((u >> 16) & 0xFF) / 255.0;
+    color.a = ((u >> 24) & 0xFF) / 255.0;
+    return color;
+}
+
+#endif

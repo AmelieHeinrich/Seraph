@@ -5,10 +5,11 @@
 
 set_rundir(".")
 set_languages("c++20")
+add_runenvs("PATH", "dlls")
 
 includes("ext/kaleidoscope")
 includes("code")
 
-before_link(function (target)
-    os.cp("dlls/*", "$(builddir)/$(plat)/$(arch)/$(mode)/")
+before_run(function (target)
+    os.cp("dlls/*", "$(builddir)/$(plat)/$(arch)/$(mode)/dlls/")
 end)

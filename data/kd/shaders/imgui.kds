@@ -4,6 +4,7 @@
 //
 
 #include "common/bindless.kds"
+#include "common/color.kds"
 
 #pragma vertex VSMain
 #pragma pixel PSMain
@@ -39,11 +40,7 @@ PixelInput VSMain(uint vertexID : SV_VertexID)
     VertexInput input = vertices[vertexID + Push.VertexOffset];
 
     // Unpack color from uint to float4 (normalized)
-    float4 color;
-    color.r = (input.Color & 0xFF) / 255.0;
-    color.g = ((input.Color >> 8) & 0xFF) / 255.0;
-    color.b = ((input.Color >> 16) & 0xFF) / 255.0;
-    color.a = ((input.Color >> 24) & 0xFF) / 255.0;
+    float4 color = UnpackColor(input.Color);
 
     PixelInput output;
     output.Position = mul(Push.ProjectionMatrix, float4(input.Position, 0.f, 1.f));

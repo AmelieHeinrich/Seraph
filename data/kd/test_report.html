@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>RHI Test Report</title>
+    <style>
+        body {
+            font-family: "Inter", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            margin: 2em;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 1.5em;
+            letter-spacing: -0.5px;
+            color: #222;
+        }
+        details.test {
+            border: none;
+            border-radius: 12px;
+            background: white;
+            padding: 1.2em;
+            margin-bottom: 1.5em;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        details.test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+        details.test.pass {
+            border-left: 6px solid #4CAF50;
+        }
+        details.test.fail {
+            border-left: 6px solid #F44336;
+        }
+        summary {
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            position: relative;
+            padding-left: 1.5em;
+            list-style: none;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::marker { content: ""; }
+        summary::before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            transition: transform 0.2s ease;
+        }
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        .images {
+            display: flex;
+            gap: 1.5em;
+            margin-top: 1.2em;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .images img {
+            max-width: 280px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: zoom-in;
+        }
+        .images img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+        }
+        .images div {
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+        .images p {
+            font-size: 0.9em;
+            margin-bottom: 0.5em;
+            color: #555;
+        }
+
+        /* Lightbox overlay */
+        #lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            animation: fadeIn 0.2s ease;
+        }
+        #lightbox:target {
+            display: flex;
+        }
+        #lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 2rem;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Magnifier */
+        #magnifier {
+            position: fixed;
+            pointer-events: none;
+            z-index: 2000;
+            border: 2px solid #fff;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.8);
+            padding: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <h1>RHI Test Results</h1>
+    <div id="results"></div>
+
+    <div id="lightbox">
+        <a id="lightbox-close">&times;</a>
+        <img id="lightbox-img" src="" alt="Preview">
+    </div>
+
+    <div id="magnifier" style="display:none;">
+        <canvas id="magnifierCanvas" width="200" height="80"></canvas>
+    </div>
+
+    <script>
+        // Store the triplet of images currently selected
+        let currentTriplet = [];
+
+        // Lightbox open on click
+        document.addEventListener("click", function(e) {
+            if (e.target.tagName === "IMG" && e.target.closest(".images")) {
+                const lightbox = document.getElementById("lightbox");
+                const img = document.getElementById("lightbox-img");
+                img.src = e.target.src;
+
+                // Store Golden/Output/Magma siblings
+                currentTriplet = [...e.target.closest(".images").querySelectorAll("img")];
+
+                lightbox.style.display = "flex";
+            }
+        });
+
+        // Close lightbox
+        document.getElementById("lightbox-close").addEventListener("click", () => {
+            document.getElementById("lightbox").style.display = "none";
+            document.getElementById("magnifier").style.display = "none";
+        });
+        document.getElementById("lightbox").addEventListener("click", (e) => {
+            if (e.target.id === "lightbox") {
+                e.currentTarget.style.display = "none";
+                document.getElementById("magnifier").style.display = "none";
+            }
+        });
+
+        // Magnifier logic
+        function setupMagnifier() {
+            const magnifier = document.getElementById("magnifier");
+            const magCanvas = document.getElementById("magnifierCanvas");
+            const ctx = magCanvas.getContext("2d");
+            const lightboxImg = document.getElementById("lightbox-img");
+
+            lightboxImg.addEventListener("mousemove", e => {
+                if (!currentTriplet.length) return;
+
+                const rect = lightboxImg.getBoundingClientRect();
+                const scaleX = currentTriplet[0].naturalWidth / rect.width;
+                const scaleY = currentTriplet[0].naturalHeight / rect.height;
+
+                const x = Math.floor((e.clientX - rect.left) * scaleX);
+                const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+                ctx.clearRect(0, 0, magCanvas.width, magCanvas.height);
+
+                currentTriplet.forEach((img, i) => {
+                    const c = document.createElement("canvas");
+                    c.width = img.naturalWidth;
+                    c.height = img.naturalHeight;
+                    c.getContext("2d").drawImage(img, 0, 0);
+
+                    const patchSize = 5; // how many pixels around the hovered pixel
+                    const scale = 10;    // how big each pixel should look in the magnifier
+
+                    // Grab a patchSize × patchSize block centered at (x,y)
+                    const px = c.getContext("2d").getImageData(
+                        x - Math.floor(patchSize / 2),
+                        y - Math.floor(patchSize / 2),
+                        patchSize,
+                        patchSize
+                    );
+
+                    // Draw the patch into a temp canvas
+                    const temp = document.createElement("canvas");
+                    temp.width = patchSize;
+                    temp.height = patchSize;
+                    temp.getContext("2d").putImageData(px, 0, 0);
+
+                    // Scale it up when drawing to the magnifier
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(
+                        temp,
+                        0, 0, patchSize, patchSize,          // source
+                        i * (patchSize * scale + 10), 0,     // dest x = 0/next slot
+                        patchSize * scale, patchSize * scale // scaled size
+                    );
+
+                    // Label
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "10px Inter";
+                    ctx.fillText(["Golden","Output","Magma"][i], i * (patchSize * scale + 10) + 4, patchSize * scale + 12);
+                });
+
+                magnifier.style.left = (e.clientX + 20) + "px";
+                magnifier.style.top = (e.clientY + 20) + "px";
+                magnifier.style.display = "block";
+            });
+
+            lightboxImg.addEventListener("mouseleave", () => {
+                magnifier.style.display = "none";
+            });
+        }
+
+        window.addEventListener("load", setupMagnifier);
+
+        // Load test report JSON
+        fetch("test_report.json")
+            .then(response => {
+                if (!response.ok) throw new Error("Failed to load test_report.json");
+                return response.json();
+            })
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+
+                Object.entries(data).forEach(([testName, info]) => {
+                    const testDetails = document.createElement('details');
+                    testDetails.className = `test ${info.result ? 'pass' : 'fail'}`;
+                    testDetails.innerHTML = `
+                        <summary> ${testName} - ${info.result ? '✅ Pass' : '❌ Fail'}</summary>
+                        <div class="images">
+                            <div>
+                                <p>Golden</p>
+                                <img src="../${info.goldenPath}" alt="${testName} Golden" />
+                            </div>
+                            <div>
+                                <p>Output</p>
+                                <img src="../${info.outputPath}" alt="${testName} Vulkan" />
+                            </div>
+                            <div>
+                                <p>Magma</p>
+                                <img src="../${info.magmaPath}" alt="${testName} Magma Vulkan" />
+                            </div>
+                        </div>
+                    `;
+                    resultsDiv.appendChild(testDetails);
+                });
+            })
+            .catch(error => {
+                document.getElementById('results').innerHTML = `<p style="color:red;">Error loading test report: ${error}</p>`;
+            });
+    </script>
+</body>
+</html>

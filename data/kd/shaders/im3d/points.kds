@@ -1,0 +1,92 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-12 11:10:00
+//
+
+#include "common/bindless.kds"
+#include "common/color.kds"
+
+#define ANTI_ALIASING 2.0F
+
+#pragma vertex VSMain
+#pragma geometry GSMain
+#pragma pixel PSMain
+
+struct VertexOutput
+{
+    linear float4 Position : SV_Position;
+    linear float4 Color : COLOR;
+    linear float2 UV : TEXCOORD;
+    noperspective float Size : SIZE;
+    noperspective float EdgeDistance : EDGE_DISTANCE;
+};
+
+struct VertexInput
+{
+    float4 PositionSize : POSITION_SIZE;
+    uint Color : COLOR;
+};
+
+struct PushConstants
+{
+    uint VertexBuffer;
+    uint Width;
+    uint Height;
+    uint VertexOffset;
+
+    column_major float4x4 ViewProjMatrix;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+VertexOutput VSMain(uint id : SV_VertexID)
+{
+    StructuredBuffer<VertexInput> vertices = ResourceDescriptorHeap[Push.VertexBuffer];
+    VertexInput input = vertices[id + Push.VertexOffset];
+
+    float4 Color = UnpackColor(input.Color);
+
+    VertexOutput ret = (VertexOutput)0;
+    ret.Color = Color.abgr;
+    ret.Color.a *= smoothstep(0.0, 1.0, input.PositionSize.w / ANTI_ALIASING);
+    ret.Size = max(input.PositionSize.w, ANTI_ALIASING);
+    ret.Position = mul(Push.ViewProjMatrix, float4(input.PositionSize.xyz, 1.0f));
+    return ret;
+}
+
+[maxvertexcount(4)]
+void GSMain(point VertexOutput input[1], inout TriangleStream<VertexOutput> output)
+{
+    VertexOutput ret = (VertexOutput)0;
+
+    float2 scale = 1.0 / float2(Push.Width, Push.Height) * input[0].Size;
+    ret.Size = input[0].Size;
+    ret.Color = input[0].Color;
+    ret.EdgeDistance = input[0].EdgeDistance;
+
+    ret.Position = float4(input[0].Position.xy + float2(-1.0, -1.0) * scale * input[0].Position.w, input[0].Position.zw);
+    ret.UV = float2(0.0, 0.0);
+    output.Append(ret);
+
+    ret.Position = float4(input[0].Position.xy + float2(1.0, -1.0) * scale * input[0].Position.w, input[0].Position.zw);
+    ret.UV = float2(1.0, 0.0);
+    output.Append(ret);
+
+    ret.Position = float4(input[0].Position.xy + float2(-1.0, 1.0) * scale * input[0].Position.w, input[0].Position.zw);
+    ret.UV = float2(0.0, 1.0);
+    output.Append(ret);
+
+    ret.Position = float4(input[0].Position.xy + float2(1.0, 1.0) * scale * input[0].Position.w, input[0].Position.zw);
+    ret.UV = float2(1.0, 1.0);
+    output.Append(ret);
+}
+
+float4 PSMain(VertexOutput input) : SV_Target
+{
+    float4 ret = input.Color;
+
+    float d = length(input.UV - float2(0.5, 0.5));
+    d = smoothstep(0.5, 0.5 - (ANTI_ALIASING / input.Size), d);
+    ret.a *= d;
+
+    return ret;
+}
