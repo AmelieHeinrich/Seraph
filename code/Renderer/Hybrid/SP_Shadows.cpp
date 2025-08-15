@@ -11,6 +11,7 @@
 #include <Effects/FX_DebugRenderer.h>
 #include <Graphics/Gfx_ViewRecycler.h>
 #include <Graphics/Gfx_ShaderManager.h>
+#include <ToolDevConsole/TDC_Console.h>
 
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,6 +20,18 @@ namespace SP
 {
     Shadows::Shadows()
     {
+        TDC::Console::AddVariable("Graphics.Shadow.AlphaTest", mAlphaTest);
+        TDC::Console::AddVariable("Graphics.Shadow.UseRTPipeline", mUsePipeline);
+        TDC::Console::AddVariable("Graphics.Shadow.CSM.LambdaSplit", mSplitLambda);
+        TDC::Console::AddVariable("Graphics.Shadow.CSM.Update", mUpdateCascades);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.NormalBias", mNormalBias);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.LightRadius", mLightRadius);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.Accumulate", mAccumulate);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.ATrous", mDoAtrous);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.SigmaNormal", mSVGFSigmaNormal);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.SigmaDepth", mSVGFSigmaDepth);
+        TDC::Console::AddVariable("Graphics.Shadow.RT.SigmaVariance", mSVGFSigmaVariance);
+
         // Textures
         int width, height;
         Application::Get().GetWindow()->GetSize(width, height);

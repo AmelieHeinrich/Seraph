@@ -6,6 +6,7 @@
 #include "SP_Application.h"
 
 #include <ToolImGui/ToolImGui_Manager.h>
+#include <ToolDevConsole/TDC_Console.h>
 #include <KernelInput/KI_InputSystem.h>
 #include <KDAsset/KDA_TextureLoader.h>
 #include <KDAsset/KDA_MeshLoader.h>
@@ -36,6 +37,7 @@ namespace SP
     Application::Application()
     {
         sInstance = this;
+        TDC::Console::Initialize();
         mWindow = KOS::IWindow::Create(mWidth, mHeight, "Seraph | Kaleidoscope 0.0.1");
 
         CODE_BLOCK("Create RHI objects") {
@@ -148,6 +150,7 @@ namespace SP
                 mRenderer->Render(mBegin);
                 mBegin.CmdList->BeginRendering(KGPU::RenderBegin(mBegin.Width, mBegin.Height, { KGPU::RenderAttachment(mBegin.SwapView, false) }, {}));
                 ToolImGui::Manager::Begin();
+                TDC::Console::Draw(dt, mWidth, mHeight);
                 UI();
                 ToolImGui::Manager::Render(mBegin.CmdList, mBegin.FrameIndex);
                 mBegin.CmdList->EndRendering();
@@ -193,7 +196,9 @@ namespace SP
                 while (mWindow->PollEvents(&event)) {
                     ToolImGui::Manager::Update(event);
                 }
-                if (!mUIOpened) {
+
+                ImGuiIO& io = ImGui::GetIO();
+                if (!io.WantCaptureKeyboard && !io.WantCaptureMouse) {
                     mCamera.Update(dt, mWidth, mHeight);
                 }
 

@@ -10,6 +10,6 @@ add_runenvs("PATH", "dlls")
 includes("ext/kaleidoscope")
 includes("code")
 
-before_run(function (target)
+before_link(function (target)
     os.cp("dlls/*", "$(builddir)/$(plat)/$(arch)/$(mode)/dlls/")
 end)

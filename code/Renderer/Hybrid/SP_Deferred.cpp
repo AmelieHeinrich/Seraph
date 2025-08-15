@@ -11,6 +11,7 @@
 
 #include <Graphics/Gfx_ShaderManager.h>
 #include <Graphics/Gfx_ViewRecycler.h>
+#include <ToolDevConsole/TDC_Console.h>
 
 #include <imgui.h>
 
@@ -18,6 +19,8 @@ namespace SP
 {
     Deferred::Deferred()
     {
+        TDC::Console::AddVariable("Graphics.Deferred.ShowTileHeatmap", mShowTileHeatmap);
+
         // Textures
         int width, height;
         Application::Get().GetWindow()->GetSize(width, height);

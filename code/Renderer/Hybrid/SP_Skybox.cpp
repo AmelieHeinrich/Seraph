@@ -9,6 +9,7 @@
 
 #include <Graphics/Gfx_ShaderManager.h>
 #include <Graphics/Gfx_ViewRecycler.h>
+#include <ToolDevConsole/TDC_Console.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
@@ -17,6 +18,8 @@ namespace SP
 {
     Skybox::Skybox()
     {
+        TDC::Console::AddVariable("Graphics.Skybox.Enable", mEnable);
+
         KGPU::GraphicsPipelineDesc desc;
         desc.CullMode = KGPU::CullMode::kNone;
         desc.DepthEnabled = true;

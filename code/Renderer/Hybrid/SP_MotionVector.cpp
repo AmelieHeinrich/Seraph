@@ -9,12 +9,15 @@
 
 #include <Graphics/Gfx_ShaderManager.h>
 #include <Graphics/Gfx_ViewRecycler.h>
+#include <ToolDevConsole/TDC_Console.h>
 #include <imgui.h>
 
 namespace SP
 {
     MotionVector::MotionVector()
     {
+        TDC::Console::AddVariable("Graphics.MotionVector.Enable", mEnable);
+
         Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/motion_vectors.kds");
     }
 
