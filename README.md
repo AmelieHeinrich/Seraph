@@ -39,17 +39,6 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 ## Planned
 
 The Trello board for this project can be found [here](https://trello.com/b/s8naeZhw/kd-sp-rf).
-- Bloom
-- TAA
-- Chromatic Aberration
-- 6-pass Bokeh DOF
-- Raytraced reflections
-- Dynamic Diffuse Global Illumination
-- Cluster culling & LODing via mesh shaders
-- GPU particles
-- Eye adaptation
-- ReSTIR Local Shadows
-- Pathtracer
 
 # Known bugs
 
