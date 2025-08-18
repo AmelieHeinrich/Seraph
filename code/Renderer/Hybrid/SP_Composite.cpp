@@ -18,7 +18,7 @@ namespace SP
         KGPU::GraphicsPipelineDesc desc;
         desc.RenderTargetFormats.push_back(Gfx::Manager::GetDevice()->GetSurfaceFormat());
 
-        Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/render_texture.kds", desc);
+        Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/post_fx/render_texture.kds", desc);
     }
 
     void Composite::Render(RenderPassBegin& begin)
@@ -35,7 +35,7 @@ namespace SP
 
         Gfx::Resource& ldr = Gfx::ResourceManager::Import(TONEMAPPING_LDR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
-        KGPU::IGraphicsPipeline* pipeline = Gfx::ShaderManager::GetGraphics("data/sp/shaders/render_texture.kds");
+        KGPU::IGraphicsPipeline* pipeline = Gfx::ShaderManager::GetGraphics("data/sp/shaders/post_fx/render_texture.kds");
 
         struct Constants {
             KGPU::BindlessHandle in;

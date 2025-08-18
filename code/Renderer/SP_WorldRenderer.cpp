@@ -8,7 +8,10 @@
 #include "Hybrid/SP_GBuffer.h"
 #include "Hybrid/SP_Shadows.h"
 #include "Hybrid/SP_LightCull.h"
-#include "Hybrid/SP_Deferred.h"
+#include "Hybrid/SP_Radiance.h"
+#include "Hybrid/SP_IndirectSpecular.h"
+#include "Hybrid/SP_IndirectDiffuse.h"
+#include "Hybrid/SP_AmbientOcclusion.h"
 #include "Hybrid/SP_Skybox.h"
 #include "Hybrid/SP_Tonemap.h"
 #include "Hybrid/SP_Debug.h"
@@ -26,15 +29,25 @@ namespace SP
     WorldRenderer::WorldRenderer()
     {
         mPasses = {
+            // Setup
             KC_NEW(GBuffer),
-            KC_NEW(Shadows),
             KC_NEW(LightCulling),
-            KC_NEW(Deferred),
+
+            // Lighting
+            KC_NEW(Shadows),
+            KC_NEW(Radiance),
+            KC_NEW(IndirectSpecular),
+            KC_NEW(IndirectDiffuse),
+            KC_NEW(AmbientOcclusion),
+
+            // Misc
             KC_NEW(Skybox),
+
+            // PostFX
             KC_NEW(Tonemap),
             KC_NEW(Debug),
             KC_NEW(MotionVector),
-            KC_NEW(Composite)
+            KC_NEW(Composite),
         };
     }
 

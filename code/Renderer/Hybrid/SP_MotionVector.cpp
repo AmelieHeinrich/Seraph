@@ -18,7 +18,7 @@ namespace SP
     {
         TDC::Console::AddVariable("Graphics.MotionVector.Enable", mEnable);
 
-        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/motion_vectors.kds");
+        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/post_fx/motion_vectors.kds");
     }
 
     void MotionVector::Render(RenderPassBegin& begin)
@@ -43,7 +43,7 @@ namespace SP
             begin.Height
         };
 
-        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/motion_vectors.kds");
+        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/motion_vectors.kds");
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);

@@ -35,8 +35,8 @@ namespace SP
         ));
 
         // Create pipeline
-        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/generate_tiles.kds");
-        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/cull_tiles.kds");
+        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/light_cull/generate_tiles.kds");
+        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/light_cull/cull_tiles.kds");
     }
 
     LightCulling::~LightCulling()
@@ -78,7 +78,7 @@ namespace SP
             begin.Height
         };
 
-        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/generate_tiles.kds");
+        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/light_cull/generate_tiles.kds");
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch(mNumTilesX, mNumTilesY, 1);
@@ -133,7 +133,7 @@ namespace SP
             {}
         };
 
-        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/cull_tiles.kds");
+        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/light_cull/cull_tiles.kds");
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch(mNumTilesX, mNumTilesY, 1);

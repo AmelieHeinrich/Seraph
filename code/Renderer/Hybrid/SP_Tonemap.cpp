@@ -4,7 +4,7 @@
 //
 
 #include "SP_Tonemap.h"
-#include "SP_Deferred.h"
+#include "SP_Radiance.h"
 #include "SP_Application.h"
 
 #include <Graphics/Gfx_ShaderManager.h>
@@ -29,13 +29,13 @@ namespace SP
         Gfx::ResourceManager::CreateTexture(TONEMAPPING_SCREENSHOT_ID, hdrDesc);
 
         // Pipeline
-        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/tonemap.kds");
+        Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/post_fx/tonemap.kds");
     }
 
     void Tonemap::Render(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::Tonemap::Render");
-        Gfx::Resource& hdr = Gfx::ResourceManager::Import(DEFERRED_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& hdr = Gfx::ResourceManager::Import(RADIANCE_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& ldr = Gfx::ResourceManager::Import(TONEMAPPING_LDR_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
 
         struct Constants {
@@ -50,7 +50,7 @@ namespace SP
             begin.Height
         };
 
-        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/tonemap.kds");
+        KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/tonemap.kds");
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
