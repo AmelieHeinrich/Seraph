@@ -36,13 +36,9 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - Shadows: CSM, Hard RT, Soft RT with 2 denoisers : (Ground-Truth, SVGF -- experimental)
 - Tooling: Motion vector visualizer
 
-## WIP
-
-- Fix SVGF
-- SSAO/RTAO
-
 ## Planned
 
+The Trello board for this project can be found [here](https://trello.com/b/s8naeZhw/kd-sp-rf).
 - Bloom
 - TAA
 - Chromatic Aberration
