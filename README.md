@@ -31,10 +31,12 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 
 ## Notable Features
 
-- Techniques: Tiled light culling, deferred shading
-- Lighting: Microfacet BRDF
-- Shadows: CSM, Hard RT, Soft RT with 2 denoisers : (Ground-Truth, SVGF -- experimental)
-- Tooling: Motion vector visualizer
+- Tiled light culling
+- Deferred shading
+- Microfacet BRDF
+- Cascaded Shadow Maps
+- Raytraced hard and soft shadows
+- Motion vector visualizer
 
 ## Planned
 

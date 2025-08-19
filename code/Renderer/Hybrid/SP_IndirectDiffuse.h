@@ -14,6 +14,7 @@ namespace SP
     enum class IndirectDiffuseMode
     {
         kNone,
+        kConstantAmbient,
         kSSGI,
         kDDGI
     };
@@ -28,10 +29,12 @@ namespace SP
         void UI(RenderPassBegin& begin) override;
     private:
         void None(RenderPassBegin& begin);
+        void ConstantAmbient(RenderPassBegin& begin);
         void SSGI(RenderPassBegin& begin);
         void DDGI(RenderPassBegin& begin);
 
     private:
         IndirectDiffuseMode mMode = IndirectDiffuseMode::kNone;
+        glm::vec3 mConstantAmbient = glm::vec3(0.1f);
     };
 }
