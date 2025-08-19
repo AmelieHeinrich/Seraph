@@ -5,10 +5,13 @@
 
 #include "SP_IndirectDiffuse.h"
 #include "SP_Application.h"
+#include "SP_GBuffer.h"
 
 #include <Graphics/Gfx_ViewRecycler.h>
+#include <Graphics/Gfx_ShaderManager.h>
 #include <imgui.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <ToolDevConsole/TDC_Console.h>
 
 namespace SP
 {
@@ -25,6 +28,25 @@ namespace SP
         hdrDesc.Usage = KGPU::TextureUsage::kShaderResource | KGPU::TextureUsage::kStorage | KGPU::TextureUsage::kRenderTarget;
 
         Gfx::ResourceManager::CreateTexture(INDIRECT_DIFFUSE_MASK_ID, hdrDesc);
+
+        CODE_BLOCK("Baked") {
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/indirect_diffuse/baked/irradiance_bake.kds");
+            Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/indirect_diffuse/baked/populate_mask.kds");
+
+            KGPU::TextureDesc bakedCubemapDesc;
+            bakedCubemapDesc.Width = 32;
+            bakedCubemapDesc.Height = 32;
+            bakedCubemapDesc.Depth = 6;
+            bakedCubemapDesc.MipLevels = 1;
+            bakedCubemapDesc.Format = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
+            bakedCubemapDesc.Usage = KGPU::TextureUsage::kShaderResource | KGPU::TextureUsage::kStorage;
+
+            Gfx::ResourceManager::CreateTexture(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, bakedCubemapDesc);
+
+            TDC::Console::AddFunction("Graphics.GI.RebakeSkybox", [&](const KC::String&) {
+                mCurrentSkybox = nullptr;
+            });
+        }
     }
 
     IndirectDiffuse::~IndirectDiffuse()
@@ -47,7 +69,7 @@ namespace SP
     void IndirectDiffuse::UI(RenderPassBegin& begin)
     {
         if (ImGui::TreeNodeEx("Global Illumination (Indirect Diffuse)", ImGuiTreeNodeFlags_Framed)) {
-            const char* modes[] = { "None", "Constant Ambient", "Baked (UNIMPLEMENTED)", "SSGI (UNIMPLEMENTED)", "DDGI (UNIMPLEMENTED)" };
+            const char* modes[] = { "None", "Constant Ambient", "Baked", "SSGI (UNIMPLEMENTED)", "DDGI (UNIMPLEMENTED)" };
             if (ImGui::BeginCombo("Technique", modes[(int)mMode])) {
                 for (int i = 0; i < IM_ARRAYSIZE(modes); i++) {
                     bool disabled = false;
@@ -109,13 +131,81 @@ namespace SP
     void IndirectDiffuse::Baked(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectDiffuse::Baked");
-        Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        
+        CODE_BLOCK("Bake Irradiance Map") {
+            if (mCurrentSkybox != begin.Sky) {
+                KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(BakeSkybox)");
+                mCurrentSkybox = begin.Sky;
 
-        KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, mConstantAmbient);
-        KGPU::RenderBegin renderBegin(before.Texture->GetDesc().Width, before.Texture->GetDesc().Height, { attachment }, {});
+                Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
+                Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+            
+                KGPU::TextureViewDesc viewDesc(baked.Texture, KGPU::TextureViewType::kShaderWrite, KGPU::TextureFormat::kR16G16B16A16_FLOAT);
+                viewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
 
-        begin.CmdList->BeginRendering(renderBegin);
-        begin.CmdList->EndRendering();
+                struct PushConstants {
+                    KGPU::BindlessHandle EnvironmentMap;
+                    KGPU::BindlessHandle IrradianceMap;
+                    KGPU::BindlessHandle CubeSampler;
+                    uint _Pad0;
+                } constants = {
+                    begin.Sky->CubeView->GetBindlessHandle(),
+                    Gfx::ViewRecycler::GetTextureView(viewDesc)->GetBindlessHandle(),
+                    sampler.Sampler->GetBindlessHandle(),
+                    0
+                };
+                
+                auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_diffuse/baked/irradiance_bake.kds");
+                begin.CmdList->SetComputePipeline(pipeline);
+                begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+                begin.CmdList->Dispatch(1, 1, 6);
+            }
+        }
+
+        CODE_BLOCK("Populate Mask") {
+            KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(PopulateMask)");
+            Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
+            Gfx::Resource& gbufferColor = Gfx::ResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& gbufferNormal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& gbufferPBR = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& output = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+
+            KGPU::TextureViewDesc cubeViewDesc;
+            cubeViewDesc.Texture = baked.Texture;
+            cubeViewDesc.ArrayLayer = KGPU::VIEW_ALL_MIPS;
+            cubeViewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
+            cubeViewDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
+            cubeViewDesc.Type = KGPU::TextureViewType::kShaderRead;
+            cubeViewDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
+
+            struct PushConstants {
+                KGPU::BindlessHandle GBufferColor;
+                KGPU::BindlessHandle GBufferPBR;
+                KGPU::BindlessHandle GBufferNormal;
+                KGPU::BindlessHandle Cubemap;
+
+                KGPU::BindlessHandle Sampler;
+                KGPU::BindlessHandle Output;
+                int Width;
+                int Height;
+            } constants = {
+                Gfx::ViewRecycler::GetSRV(gbufferColor.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetSRV(gbufferPBR.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetSRV(gbufferNormal.Texture)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetTextureView(cubeViewDesc)->GetBindlessHandle(),
+
+                sampler.Sampler->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
+                begin.Width,
+                begin.Height
+            };
+
+            auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_diffuse/baked/populate_mask.kds");
+            begin.CmdList->SetComputePipeline(pipeline);
+            begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
+            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        }
     }
 
     void IndirectDiffuse::SSGI(RenderPassBegin& begin)

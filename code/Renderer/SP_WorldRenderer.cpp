@@ -37,8 +37,8 @@ namespace SP
             // Lighting
             KC_NEW(Shadows),
             KC_NEW(Radiance),
-            KC_NEW(IndirectSpecular),
             KC_NEW(IndirectDiffuse),
+            KC_NEW(IndirectSpecular),
             KC_NEW(AmbientOcclusion),
             KC_NEW(Lighting),
 

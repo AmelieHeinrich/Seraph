@@ -43,7 +43,6 @@ namespace SP
         IndirectSpecularMode mMode = IndirectSpecularMode::kBaked;
         
         //-- BAKED --//
-        KGPU::ITextureView* mCubemapView = nullptr;
         Gfx::Skybox* mCurrentSkybox = nullptr;
         bool mBakedBRDF = false;
         //----------//

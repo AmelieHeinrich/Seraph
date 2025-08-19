@@ -4,6 +4,7 @@
 //
 
 #include "SP_IndirectSpecular.h"
+#include "SP_IndirectDiffuse.h"
 #include "SP_Application.h"
 #include "SP_GBuffer.h"
 
@@ -46,7 +47,7 @@ namespace SP
             brdfDesc.Width = 512;
             brdfDesc.Height = 512;
             brdfDesc.Format = KGPU::TextureFormat::kR16G16_FLOAT;
-            brdfDesc.Usage =KGPU::TextureUsage::kShaderResource | KGPU::TextureUsage::kStorage;
+            brdfDesc.Usage = KGPU::TextureUsage::kShaderResource | KGPU::TextureUsage::kStorage;
 
             Gfx::ResourceManager::CreateTexture(INDIRECT_SPECULAR_BAKED_CUBEMAP_ID, bakedCubemapDesc);
             Gfx::ResourceManager::CreateTexture(INDIRECT_SPECULAR_BAKED_BRDF_ID, brdfDesc);
@@ -59,7 +60,6 @@ namespace SP
 
     IndirectSpecular::~IndirectSpecular()
     {
-        if (mCubemapView) KC_DELETE(mCubemapView);
     }
 
     void IndirectSpecular::Render(RenderPassBegin& begin)
@@ -77,7 +77,7 @@ namespace SP
     void IndirectSpecular::UI(RenderPassBegin& begin)
     {
         if (ImGui::TreeNodeEx("Reflections (Indirect Specular)", ImGuiTreeNodeFlags_Framed)) {
-            const char* modes[] = { "None", "Baked (UNIMPLEMENTED)", "SSR (UNIMPLEMENTED)", "Raytraced (UNIMPLEMENTED)", "Hybrid (UNIMPLEMENTED)" };
+            const char* modes[] = { "None", "Baked", "SSR (UNIMPLEMENTED)", "Raytraced (UNIMPLEMENTED)", "Hybrid (UNIMPLEMENTED)" };
             if (ImGui::BeginCombo("Technique", modes[(int)mMode])) {
                 for (int i = 0; i < IM_ARRAYSIZE(modes); i++) {
                     bool disabled = false;
@@ -126,6 +126,8 @@ namespace SP
 
         CODE_BLOCK("Bake BRDF") {
             if (!mBakedBRDF) {
+                KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(BakeBRDF)");
+
                 Gfx::Resource& brdf = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_BAKED_BRDF_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
                 uint size = brdf.Texture->GetDesc().Width;
 
@@ -146,21 +148,24 @@ namespace SP
 
         CODE_BLOCK("Bake skybox") {
             if (mCurrentSkybox != begin.Sky) {
+                KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(BakeCubemap)");
                 mCurrentSkybox = begin.Sky;
 
                 Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
                 Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_BAKED_CUBEMAP_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
                 uint size = baked.Texture->GetDesc().Width;
-                uint mips = mCurrentSkybox->EnvironmentMap->GetDesc().MipLevels;
+                uint mips = baked.Texture->GetDesc().MipLevels;
 
                 auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_specular/baked/skybox_bake.kds");
                 begin.CmdList->SetComputePipeline(pipeline);
 
-                const float deltaRoughness = 1.0f / std::max((float)mCurrentSkybox->EnvironmentMap->GetDesc().MipLevels - 1u, 1.0f);
+                const float deltaRoughness = 1.0f / std::max((float)baked.Texture->GetDesc().MipLevels - 1u, 1.0f);
                 for (int i = 0, x = size; i < mips; i++, x /= 2) {
                     const uint numGroups = std::max(1u, x / 32u);
 
-                    KGPU::TextureViewDesc viewDesc(baked.Texture, KGPU::TextureViewType::kShaderWrite, KGPU::TextureFormat::kR16G16B16A16_FLOAT);
+                    KGPU::TextureViewDesc viewDesc;
+                    viewDesc.Texture = baked.Texture;
+                    viewDesc.Type = KGPU::TextureViewType::kShaderWrite;
                     viewDesc.ViewMip = i;
                     viewDesc.ArrayLayer = 0;
                     viewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
@@ -180,22 +185,12 @@ namespace SP
                     begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
                     begin.CmdList->Dispatch(numGroups, numGroups, 6);
                 }
-
-                if (mCubemapView) KC_DELETE(mCubemapView);
-
-                KGPU::TextureViewDesc cubeViewDesc;
-                cubeViewDesc.Texture = baked.Texture;
-                cubeViewDesc.ArrayLayer = KGPU::VIEW_ALL_MIPS;
-                cubeViewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
-                cubeViewDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
-                cubeViewDesc.Type = KGPU::TextureViewType::kShaderRead;
-                cubeViewDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
-
-                mCubemapView = Gfx::Manager::GetDevice()->CreateTextureView(cubeViewDesc);
             }
         }
 
         CODE_BLOCK("Populate mask") {
+            KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(PopulateMask)");
+
             Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
             Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
             Gfx::Resource& gbufferDepth = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
@@ -204,7 +199,24 @@ namespace SP
             Gfx::Resource& gbufferPBR = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& brdf = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_BAKED_BRDF_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_BAKED_CUBEMAP_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& diffuse = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& output = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+
+            KGPU::TextureViewDesc cubeViewDesc;
+            cubeViewDesc.Texture = baked.Texture;
+            cubeViewDesc.ArrayLayer = KGPU::VIEW_ALL_MIPS;
+            cubeViewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
+            cubeViewDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
+            cubeViewDesc.Type = KGPU::TextureViewType::kShaderRead;
+            cubeViewDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
+
+            KGPU::TextureViewDesc diffuseIblDesc;
+            diffuseIblDesc.Texture = baked.Texture;
+            diffuseIblDesc.ArrayLayer = KGPU::VIEW_ALL_MIPS;
+            diffuseIblDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
+            diffuseIblDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
+            diffuseIblDesc.Type = KGPU::TextureViewType::kShaderRead;
+            diffuseIblDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
 
             struct PushConstants {
                 KGPU::BindlessHandle BakedCubemap;
@@ -220,9 +232,9 @@ namespace SP
                 KGPU::BindlessHandle Output;
                 KGPU::BindlessHandle CameraBuffer;
                 KGPU::BindlessHandle GBufferNormal;
-                uint Pad;
+                KGPU::BindlessHandle BakedDiffuse;
             } constants = {
-                mCubemapView->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetTextureView(cubeViewDesc)->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(brdf.Texture)->GetBindlessHandle(),
                 sampler.Sampler->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(gbufferColor.Texture)->GetBindlessHandle(),
@@ -235,7 +247,7 @@ namespace SP
                 Gfx::ViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
                 cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(gbufferNormal.Texture)->GetBindlessHandle(),
-                0
+                Gfx::ViewRecycler::GetTextureView(diffuseIblDesc)->GetBindlessHandle()
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_specular/baked/populate_mask.kds");

@@ -22,6 +22,9 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 ### Tiled Light Culling
 ![](.github/tiled.png)
 
+### Image based lighting
+![](.github/ibl.png)
+
 ### Shadows
 | CSM | Hard RT | Soft RT (Ground Truth Denoised) |
 |---------|---------|---------|
@@ -35,7 +38,7 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - Microfacet BRDF
 - Cascaded Shadow Maps
 - Raytraced hard and soft shadows
-- Baked image based reflections
+- Baked image based reflections and GI
 - Motion vector visualizer
 
 ## Planned

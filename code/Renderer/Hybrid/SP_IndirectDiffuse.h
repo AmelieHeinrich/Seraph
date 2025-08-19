@@ -10,6 +10,7 @@
 namespace SP
 {
     constexpr const char* INDIRECT_DIFFUSE_MASK_ID = "IndirectDiffuse/HDR";
+    constexpr const char* INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID = "IndirectDiffuse/BakedIrradiance";
 
     enum class IndirectDiffuseMode
     {
@@ -36,7 +37,12 @@ namespace SP
         void DDGI(RenderPassBegin& begin);
 
     private:
-        IndirectDiffuseMode mMode = IndirectDiffuseMode::kNone;
+        IndirectDiffuseMode mMode = IndirectDiffuseMode::kBaked;
+
+        //-- CONSTANT --//
         glm::vec3 mConstantAmbient = glm::vec3(0.1f);
+    
+        //-- BAKED --//
+        Gfx::Skybox* mCurrentSkybox = nullptr;
     };
 }

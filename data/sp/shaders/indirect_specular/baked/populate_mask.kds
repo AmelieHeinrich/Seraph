@@ -27,7 +27,7 @@ struct PushConstants
     uint Output;
     uint CameraBuffer;
     uint GBufferNormal;
-    uint Pad;
+    uint BakedDiffuse;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -38,43 +38,57 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
         return;
 
     //--- Load resources ---//
-    TextureCube<float4> BakedCubemap = ResourceDescriptorHeap[Push.BakedCubemap];
-    Texture2D<float2> BRDF           = ResourceDescriptorHeap[Push.BRDF];
-    SamplerState Sampler             = SamplerDescriptorHeap[Push.Sampler];
-    Texture2D<float4> GBufferColor   = ResourceDescriptorHeap[Push.GBufferColor];
-    Texture2D<float2> GBufferPBR     = ResourceDescriptorHeap[Push.GBufferPBR];
-    Texture2D<float> GBufferDepth    = ResourceDescriptorHeap[Push.GBufferDepth];
-    Texture2D<float4> GBufferNormal  = ResourceDescriptorHeap[Push.GBufferNormal];
-    ConstantBuffer<Camera> Cam       = ResourceDescriptorHeap[Push.CameraBuffer];
-    RWTexture2D<float4> Output       = ResourceDescriptorHeap[Push.Output];
+    TextureCube<float4> BakedCubemap  = ResourceDescriptorHeap[Push.BakedCubemap];
+    TextureCube<float4> IrradianceMap = ResourceDescriptorHeap[Push.BakedDiffuse];
+    Texture2D<float2>   BRDF          = ResourceDescriptorHeap[Push.BRDF];
+    SamplerState        Sampler       = SamplerDescriptorHeap[Push.Sampler];
+    Texture2D<float4>   GBufferColor  = ResourceDescriptorHeap[Push.GBufferColor];
+    Texture2D<float2>   GBufferPBR    = ResourceDescriptorHeap[Push.GBufferPBR];
+    Texture2D<float>    GBufferDepth  = ResourceDescriptorHeap[Push.GBufferDepth];
+    Texture2D<float4>   GBufferNormal = ResourceDescriptorHeap[Push.GBufferNormal];
+    ConstantBuffer<Camera> Cam        = ResourceDescriptorHeap[Push.CameraBuffer];
+    RWTexture2D<float4> Output        = ResourceDescriptorHeap[Push.Output];
 
     //--- Load variables ---//
     float viewDepth = GBufferDepth.Load(dtid);
-    float2 uv = TexelToUV(dtid.xy, float2(Push.Width, Push.Height));
+    float2 uv       = TexelToUV(dtid.xy, float2(Push.Width, Push.Height));
     float3 cameraPos = Cam.Position.xyz;
-    float4 worldPos = GetWorldFromDepth(uv, viewDepth, Cam.InvViewProj);
+    float4 worldPos  = GetWorldFromDepth(uv, viewDepth, Cam.InvViewProj);
 
     float3 baseColor = GBufferColor.Load(dtid).rgb;
+
     float2 mr = GBufferPBR.Load(dtid);
-    float m = mr.r;
-    float r = mr.g;
-    float3 N = GBufferNormal.Load(dtid).rgb;
+    float metallic = mr.r;
+    float roughness = mr.g;
+    roughness = saturate(max(roughness, 0.001));
+
+    float3 N = normalize(GBufferNormal.Load(dtid).rgb);
     float3 V = normalize(cameraPos - worldPos.xyz);
-    
-    float3 F0 = lerp(0.04.xxx, baseColor, m);
-    float NdotV = saturate(dot(N, V));
-    float3 R = reflect(-V, N);
 
-    //--- Math ---//
+    // Fresnel base reflectance
+    float3 F0 = lerp(0.04.xxx, baseColor, metallic);
+    float  NdotV = saturate(dot(N, V));
 
+    // Schlick Fresnel at view
+    float3 Fv = FresnelSchlick(NdotV, F0);
+
+    // Diffuse albedo (energy-conserving, includes baseColor)
+    float3 kd = lerp(1.0 - Fv, 0.0, metallic) * baseColor;
+
+    // ---- Diffuse IBL ----
+    float3 diffuseIrradiance = IrradianceMap.Sample(Sampler, N).rgb;
+    float3 Ei = IrradianceMap.Sample(Sampler, N).rgb;
+    float3 diffuseIBL = kd * Ei / PI;
+
+    // ---- Specular IBL ----
     const uint MaxReflectionLOD = 5;
-    float3 specularRadiance = BakedCubemap.SampleLevel(Sampler, R, r * MaxReflectionLOD).rgb;
-
-    // Sample precomputed BRDF LUT (NdotV, roughness)
-    float2 specularBRDF = BRDF.Sample(Sampler, float2(NdotV, r)).rg;
-
-    // Combine (split-sum approximation)
+    float3 R = normalize(reflect(-V, N));
+    float3 specularRadiance = BakedCubemap.SampleLevel(Sampler, R, roughness * MaxReflectionLOD).rgb;
+    float2 specularBRDF = BRDF.Sample(Sampler, float2(NdotV, roughness)).rg;
     float3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularRadiance;
-    specularIBL = pow(specularIBL, 1.0 / 2.2);
-    Output[dtid.xy] = (viewDepth != 1.0f) ? float4(specularIBL, 1.0) : float4(0, 0, 0, 1);
+
+    // ---- Final ----
+    float3 ibl = diffuseIBL + specularIBL;
+    Output[dtid.xy] = float4(ibl, 1.0);
 }
+
