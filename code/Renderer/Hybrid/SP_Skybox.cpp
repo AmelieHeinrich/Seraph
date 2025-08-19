@@ -5,7 +5,7 @@
 
 #include "SP_Skybox.h"
 #include "SP_GBuffer.h"
-#include "SP_Radiance.h"
+#include "SP_Lighting.h"
 
 #include <Graphics/Gfx_ShaderManager.h>
 #include <Graphics/Gfx_ViewRecycler.h>
@@ -39,7 +39,7 @@ namespace SP
         KGPU::ScopedMarker _(begin.CmdList, "SP::Skybox::Render");
 
         Gfx::Resource& depthTexture = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kDepthWrite);
-        Gfx::Resource& hdr = Gfx::ResourceManager::Import(RADIANCE_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        Gfx::Resource& hdr = Gfx::ResourceManager::Import(LIGHTING_OUTPUT_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
         Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID);
         
         KGPU::RenderBegin renderBegin(begin.Width, begin.Height, { KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(hdr.Texture), false) }, KGPU::RenderAttachment(Gfx::ViewRecycler::GetDSV(depthTexture.Texture), false));

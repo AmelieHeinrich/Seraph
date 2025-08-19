@@ -8,3 +8,7 @@ set_languages("c++20")
 
 includes("ext/kaleidoscope")
 includes("code")
+
+before_link(function (target)
+    os.cp("dlls/*", "$(builddir)/$(plat)/$(arch)/$(mode)/")
+end)

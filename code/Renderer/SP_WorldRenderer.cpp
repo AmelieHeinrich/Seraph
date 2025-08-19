@@ -12,6 +12,7 @@
 #include "Hybrid/SP_IndirectSpecular.h"
 #include "Hybrid/SP_IndirectDiffuse.h"
 #include "Hybrid/SP_AmbientOcclusion.h"
+#include "Hybrid/SP_Lighting.h"
 #include "Hybrid/SP_Skybox.h"
 #include "Hybrid/SP_Tonemap.h"
 #include "Hybrid/SP_Debug.h"
@@ -39,6 +40,7 @@ namespace SP
             KC_NEW(IndirectSpecular),
             KC_NEW(IndirectDiffuse),
             KC_NEW(AmbientOcclusion),
+            KC_NEW(Lighting),
 
             // Misc
             KC_NEW(Skybox),

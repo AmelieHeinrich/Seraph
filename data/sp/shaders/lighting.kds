@@ -1,0 +1,90 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-19 11:54:00
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "sp/shaders/common/camera.kds"
+#include "sp/shaders/common/lights.kds"
+#include "sp/shaders/common/math.kds"
+#include "sp/shaders/common/pbr.kds"
+#include "sp/shaders/common/compute.kds"
+
+#pragma compute CSMain
+
+struct PushConstants
+{
+    uint GBufferDepth;
+    uint GBufferColor;
+    uint GBufferNormal;
+    uint GBufferPBR;
+
+    uint DirectDiffuse;
+    uint DirectSpecular;
+    uint IndirectDiffuse;
+    uint IndirectSpecular;
+
+    uint AO;
+    uint CameraBuffer;
+    uint Output;
+    uint Pad;
+
+    uint Width;
+    uint Height;
+    uint2 Pad2;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 dtid : SV_DispatchThreadID)
+{
+    //--- Load resources ---//
+    ConstantBuffer<Camera> Cam          = ResourceDescriptorHeap[Push.CameraBuffer];
+    Texture2D<float> GDepth             = ResourceDescriptorHeap[Push.GBufferDepth];
+    Texture2D<float4> GColor            = ResourceDescriptorHeap[Push.GBufferColor];
+    Texture2D<float4> GNormal           = ResourceDescriptorHeap[Push.GBufferNormal];
+    Texture2D<float2> GPBR              = ResourceDescriptorHeap[Push.GBufferPBR];
+    Texture2D<float4> LDirectDiffuse    = ResourceDescriptorHeap[Push.DirectDiffuse];
+    Texture2D<float4> LDirectSpecular   = ResourceDescriptorHeap[Push.DirectSpecular];
+    Texture2D<float4> LIndirectDiffuse  = ResourceDescriptorHeap[Push.IndirectDiffuse];
+    Texture2D<float4> LIndirectSpecular = ResourceDescriptorHeap[Push.IndirectSpecular];
+    Texture2D<float> AOMask             = ResourceDescriptorHeap[Push.AO];
+    RWTexture2D<float4> Final           = ResourceDescriptorHeap[Push.Output];
+
+    //--- Load terms ---//
+    float viewDepth = GDepth.Load(dtid);
+    float2 uv = TexelToUV(dtid.xy, float2(Push.Width, Push.Height));
+    float3 cameraPos = Cam.Position.xyz;
+    float4 worldPos = GetWorldFromDepth(uv, viewDepth, Cam.InvViewProj);
+
+    float3 baseColor = GColor.Load(dtid).rgb;
+    float2 mr = GPBR.Load(dtid);
+    float m = mr.r;
+    float r = mr.g;
+    float3 N = GNormal.Load(dtid).rgb;
+    float3 V = normalize(cameraPos - worldPos.xyz);
+    float3 emissive = 0.0;
+
+    float3 Ei_dir = LDirectDiffuse.Load(dtid).rgb;
+    float3 Ls_dir = LDirectSpecular.Load(dtid).rgb;
+    float3 Ei_indir = LIndirectDiffuse.Load(dtid).rgb;
+    float3 Ls_indir = LIndirectSpecular.Load(dtid).rgb;
+    float AO = AOMask.Load(dtid);
+
+    //--- Mathematics ---/
+    float3 F0   = lerp(0.04, baseColor, m);
+    float  NdotV = saturate(dot(N, V));
+    float3 Fv   = F0 + (1 - F0) * pow(1 - NdotV, 5);
+    float3 kd   = (1 - Fv) * (1 - m);
+    float3 diffuseAlbedo = kd * baseColor;
+
+    float3 Ldiff_ind = diffuseAlbedo * (Ei_indir * AO) * (1.0/PI);
+    float  specAO    = lerp(AO, 1.0, r * r);
+    float3 Lspec_ind = Ls_indir * specAO;
+
+    float3 L = diffuseAlbedo * (Ei_dir * (1.0/PI))
+             + Ls_dir
+             + Ldiff_ind + Lspec_ind
+             + emissive;
+    Final[dtid.xy] = float4(L, 1.0f);
+}

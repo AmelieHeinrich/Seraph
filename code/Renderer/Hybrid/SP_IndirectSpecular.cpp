@@ -78,7 +78,7 @@ namespace SP
 
     void IndirectSpecular::None(RenderPassBegin& begin)
     {
-        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectDiffuse::None");
+        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::None");
         Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
         KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));
@@ -90,7 +90,7 @@ namespace SP
 
     void IndirectSpecular::ScreenSpace(RenderPassBegin& begin)
     {
-        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectDiffuse::ScreenSpace");
+        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::ScreenSpace");
         Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
         KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));
@@ -102,7 +102,7 @@ namespace SP
 
     void IndirectSpecular::Raytrace(RenderPassBegin& begin)
     {
-        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectDiffuse::Raytrace");
+        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Raytrace");
         Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
         KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));
@@ -114,7 +114,7 @@ namespace SP
 
     void IndirectSpecular::Hybrid(RenderPassBegin& begin)
     {
-        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectDiffuse::Hybrid");
+        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Hybrid");
         Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
         KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));

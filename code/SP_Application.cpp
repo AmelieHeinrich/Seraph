@@ -150,7 +150,7 @@ namespace SP
                 mRenderer->Render(mBegin);
                 mBegin.CmdList->BeginRendering(KGPU::RenderBegin(mBegin.Width, mBegin.Height, { KGPU::RenderAttachment(mBegin.SwapView, false) }, {}));
                 ToolImGui::Manager::Begin();
-                TDC::Console::Draw(dt, mWidth, mHeight);
+                // TDC::Console::Draw(dt, mWidth, mHeight);
                 UI();
                 ToolImGui::Manager::Render(mBegin.CmdList, mBegin.FrameIndex);
                 mBegin.CmdList->EndRendering();

@@ -1,4 +1,3 @@
-//
 // > Notice: Floating Trees Inc. @ 2025
 // > Create Time: 2025-07-28 21:55:39
 //
@@ -17,163 +16,145 @@ struct PushConstants
     uint Depth;
     uint Normal;
     uint Albedo;
-    uint PBR; //
-    
-    uint Output;
+    uint PBR;
+
+    uint OutputDiffuse;
+    uint OutputSpecular;
     uint Width;
     uint Height;
-    uint PointLightArray; //
-    
+
+    uint PointLightArray;
     uint PointLightCount;
     uint CameraDataSRV;
     uint TileWidth;
-    uint TileHeight; //
 
+    uint TileHeight;
     uint NumTilesX;
     uint BinsArray;
     uint TilesArray;
-    uint ShowTileHeatmap; //
 
+    uint ShowTileHeatmap;
     uint SpotLightArray;
     uint SpotLightCount;
     uint SunArray;
+
     uint ShadowMask;
+    uint3 Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
+// -----------------------------------------------------------------------------
+// Debug heatmap color (unchanged)
+// -----------------------------------------------------------------------------
 float3 GetTileColor(uint tileLightCount)
 {
     float t = MAX_LIGHTS_PER_TILE > 0 ? clamp(float(tileLightCount) / float(MAX_LIGHTS_PER_TILE), 0.0f, 1.0f) : 0.0f;
-
-    // Blue → Green → Yellow → Red
     if (t < 0.33f) {
-        // Blue to Green
-        float localT = t / 0.33f;
-        return lerp(float3(0, 0, 1), float3(0, 1, 0), localT);
+        float localT = t / 0.33f;                    return lerp(float3(0,0,1), float3(0,1,0), localT);
+    } else if (t < 0.66f) {
+        float localT = (t - 0.33f) / 0.33f;          return lerp(float3(0,1,0), float3(1,1,0), localT);
+    } else {
+        float localT = (t - 0.66f) / 0.34f;          return lerp(float3(1,1,0), float3(1,0,0), localT);
     }
-    else if (t < 0.66f) {
-        // Green to Yellow
-        float localT = (t - 0.33f) / 0.33f;
-        return lerp(float3(0, 1, 0), float3(1, 1, 0), localT);
-    }
-    else {
-        // Yellow to Red
-        float localT = (t - 0.66f) / 0.34f;
-        return lerp(float3(1, 1, 0), float3(1, 0, 0), localT);
-    }
-    return float3(0, 0, 1);
 }
 
-float3 EvaluatePointLight(PointLight light, float3 V, float4 worldPosition, float3 N, float3 materialColor, float metallic, float roughness)
+// -----------------------------------------------------------------------------
+// Split-light evaluation: returns pre-albedo diffuse *irradiance* (Ei)
+// and specular *radiance* (Ls). Diffuse has NO albedo/kD/π here.
+// -----------------------------------------------------------------------------
+struct LightSplit { float3 Ei; float3 Ls; };
+
+LightSplit EvalPointLightSplit(PointLight light, float3 V, float4 P, float3 N, float3 baseColor, float metallic, float roughness)
 {
-    float3 lightVector = light.Position - worldPosition.xyz;
-    float distance = length(lightVector);
-    float3 L = lightVector / distance;
+    float3 Lvec = light.Position - P.xyz;
+    float  dist = length(Lvec);
+    float3 L    = Lvec / max(dist, 1e-4);
 
-    float attenuation = 1.0 / (distance * distance + 1.0);  // safe inverse-square
-    attenuation *= saturate(1.0 - distance / light.Radius); // fade to 0 at max range
+    float  NdotL = max(dot(N, L), 0.0);
+    float  NdotV = max(dot(N, V), 1e-4);
+    float3 H     = normalize(V + L);
+    float  HdotV = max(dot(H, V), 1e-4);
 
-    // Cook-Torrance
-    float3 H = normalize(V + L);
-    float NdotL = max(dot(N, L), 0.0001);
-    float NdotV = max(dot(N, V), 0.0001);
-    float HdotV = max(dot(H, V), 0.0001);
+    // Distance/range attenuation
+    float attenuation = 1.0 / (dist * dist + 1.0);
+    attenuation *= saturate(1.0 - dist / light.Radius);
 
-    float D = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    float3 F0 = lerp(float3(0.04, 0.04, 0.04), materialColor, metallic);
-    float3 F = FresnelSchlick(HdotV, F0);
+    // Incoming radiance from light
+    float3 Li = attenuation * light.Color * light.Intensity;
 
-    float3 numerator = D * G * F;
-    float denominator = 4 * NdotL * NdotV + 0.0001;
-    float3 specular = numerator / denominator;
+    // Specular BRDF
+    float  D  = DistributionGGX(N, H, roughness);
+    float  G  = GeometrySmith(N, V, L, roughness);
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), baseColor, metallic);
+    float3 F  = FresnelSchlick(HdotV, F0);
+    float3 f_spec = (D * G * F) / max(4.0 * NdotL * NdotV + 1e-4, 1e-4);
 
-    // Lambertian
-    float3 kD = (1.0 - F) * (1.0 - metallic);
-    float3 diffuse = kD * materialColor / PI;
-
-    // Apply attenuation to final contribution
-    float3 distributedEnergy = ((diffuse + specular) * NdotL);
-    float3 incomingRadiance = attenuation * light.Color * light.Intensity;
-    return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowTileHeatmap));
+    LightSplit s;
+    s.Ei = Li * NdotL;            // diffuse irradiance (pre-albedo, no /π)
+    s.Ls = f_spec * Li * NdotL;   // specular radiance
+    return s;
 }
 
-float3 EvaluateSpotLight(SpotLight light, float3 V, float4 worldPosition, float3 N, float3 materialColor, float metallic, float roughness)
+LightSplit EvalSpotLightSplit(SpotLight light, float3 V, float4 P, float3 N, float3 baseColor, float metallic, float roughness)
 {
-    float3 lightVector = light.Position - worldPosition.xyz;
-    float distance = length(lightVector);
-    float3 L = lightVector / distance;
+    LightSplit s = (LightSplit)0;
+    float3 Lvec = light.Position - P.xyz;
+    float  dist = length(Lvec);
+    float3 L    = Lvec / max(dist, 1e-4);
 
-    // Angle attenuation (spotlight cone)
-    float3 toFragment = -L;
-    float spotFactor = dot(toFragment, normalize(light.Forward));
+    // Cone falloff
+    float  spotFactor = dot(-L, normalize(light.Forward));
+    float  cosA       = cos(light.Angle);
+    float  falloff    = saturate((spotFactor - cosA) / (1.0 - cosA));
+    if (falloff <= 1e-4) { return s; }
 
-    float cosAngle = cos(light.Angle);
-
-    // Smooth fade at edge of cone
-    float falloff = saturate((spotFactor - cosAngle) / (1.0 - cosAngle));
-
-    if (falloff <= 0.0001)
-        return float3(0, 0, 0); // Outside the cone
-
-    // Distance attenuation
-    float attenuation = 1.0 / (distance * distance + 1.0);
-    attenuation *= saturate(1.0 - distance / light.Size);
-
-    // Combine angle falloff and distance attenuation
+    // Distance/range attenuation
+    float attenuation = 1.0 / (dist * dist + 1.0);
+    attenuation *= saturate(1.0 - dist / light.Size);
     attenuation *= falloff;
 
-    // Cook-Torrance lighting (same as point light)
-    float3 H = normalize(V + L);
-    float NdotL = max(dot(N, L), 0.0001);
-    float NdotV = max(dot(N, V), 0.0001);
-    float HdotV = max(dot(H, V), 0.0001);
+    float  NdotL = max(dot(N, L), 0.0);
+    float  NdotV = max(dot(N, V), 1e-4);
+    float3 H     = normalize(V + L);
+    float  HdotV = max(dot(H, V), 1e-4);
 
-    float D = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    float3 F0 = lerp(float3(0.04, 0.04, 0.04), materialColor, metallic);
-    float3 F = FresnelSchlick(HdotV, F0);
+    float3 Li = attenuation * light.Color * light.Intensity;
 
-    float3 numerator = D * G * F;
-    float denominator = 4.0 * NdotL * NdotV + 0.0001;
-    float3 specular = numerator / denominator;
+    float  D  = DistributionGGX(N, H, roughness);
+    float  G  = GeometrySmith(N, V, L, roughness);
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), baseColor, metallic);
+    float3 F  = FresnelSchlick(HdotV, F0);
+    float3 f_spec = (D * G * F) / max(4.0 * NdotL * NdotV + 1e-4, 1e-4);
 
-    float3 kD = (1.0 - F) * (1.0 - metallic);
-    float3 diffuse = kD * materialColor / PI;
-
-    float3 distributedEnergy = (diffuse + specular) * NdotL;
-    float3 incomingRadiance = attenuation * light.Color * light.Intensity;
-    return (distributedEnergy * incomingRadiance * (1.0 - Push.ShowTileHeatmap));
+    s.Ei = Li * NdotL;
+    s.Ls = f_spec * Li * NdotL;
+    return s;
 }
 
-float3 EvaluateDirectionalLight(DirectionalLight light, float3 V, float4 worldPosition, float3 N, float3 materialColor, float metallic, float roughness)
+LightSplit EvalDirectionalLightSplit(DirectionalLight light, float3 V, float4 P, float3 N, float3 baseColor, float metallic, float roughness)
 {
     float3 L = -light.Direction;
 
-    // Cook-Torrance
-    float3 H = normalize(V + L);
-    float NdotL = max(dot(N, L), 0.0001);
-    float NdotV = max(dot(N, V), 0.0001);
-    float HdotV = max(dot(H, V), 0.0001);
+    float  NdotL = max(dot(N, L), 0.0);
+    float  NdotV = max(dot(N, V), 1e-4);
+    float3 H     = normalize(V + L);
+    float  HdotV = max(dot(H, V), 1e-4);
 
-    float D = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    float3 F0 = lerp(float3(0.04, 0.04, 0.04), materialColor, metallic);
-    float3 F = FresnelSchlick(HdotV, F0);
+    float3 Li = light.Color * light.Intensity; // no distance attenuation
 
-    float3 numerator = D * G * F;
-    float denominator = 4 * NdotL * NdotV + 0.0001;
-    float3 specular = numerator / denominator;
+    float  D  = DistributionGGX(N, H, roughness);
+    float  G  = GeometrySmith(N, V, L, roughness);
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), baseColor, metallic);
+    float3 F  = FresnelSchlick(HdotV, F0);
+    float3 f_spec = (D * G * F) / max(4.0 * NdotL * NdotV + 1e-4, 1e-4);
 
-    // Lambertian
-    float3 kD = (1.0 - F) * (1.0 - metallic);
-    float3 diffuse = kD * materialColor / PI;
-
-    // Apply attenuation to final contribution
-    float3 distributedEnergy = ((diffuse + specular) * NdotL);
-    float3 incomingRadiance = light.Color * light.Intensity;
-    return (distributedEnergy * incomingRadiance);
+    LightSplit s;
+    s.Ei = Li * NdotL;           // pre-albedo diffuse irradiance
+    s.Ls = f_spec * Li * NdotL;  // specular radiance
+    return s;
 }
+
+// -----------------------------------------------------------------------------
 
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID)
@@ -181,62 +162,74 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
     if (tid.x >= Push.Width || tid.y >= Push.Height) return;
 
     // Resources
-    Texture2D<float> depth = ResourceDescriptorHeap[Push.Depth];
-    Texture2D<float4> normal = ResourceDescriptorHeap[Push.Normal];
-    Texture2D<float4> albedo = ResourceDescriptorHeap[Push.Albedo];
-    Texture2D<float2> pbr = ResourceDescriptorHeap[Push.PBR];
-    Texture2D<float> shadowMask = ResourceDescriptorHeap[Push.ShadowMask];
-    RWTexture2D<float4> output = ResourceDescriptorHeap[Push.Output];
-    StructuredBuffer<PointLight> pointLights = ResourceDescriptorHeap[Push.PointLightArray];
-    StructuredBuffer<SpotLight> spotLights = ResourceDescriptorHeap[Push.SpotLightArray];
-    StructuredBuffer<DirectionalLight> sun = ResourceDescriptorHeap[Push.SunArray];
-    StructuredBuffer<TileData> tiles = ResourceDescriptorHeap[Push.TilesArray];
-    StructuredBuffer<uint> bins = ResourceDescriptorHeap[Push.BinsArray];
-    ConstantBuffer<Camera> camera = ResourceDescriptorHeap[Push.CameraDataSRV];
+    Texture2D<float>     depth        = ResourceDescriptorHeap[Push.Depth];
+    Texture2D<float4>    normal       = ResourceDescriptorHeap[Push.Normal];
+    Texture2D<float4>    albedo       = ResourceDescriptorHeap[Push.Albedo];
+    Texture2D<float2>    pbr          = ResourceDescriptorHeap[Push.PBR];
+    Texture2D<float>     shadowMask   = ResourceDescriptorHeap[Push.ShadowMask];
 
-    // Get current tile
+    RWTexture2D<float4>  outDiffuse   = ResourceDescriptorHeap[Push.OutputDiffuse];  // RGB = Ei_dir
+    RWTexture2D<float4>  outSpecular  = ResourceDescriptorHeap[Push.OutputSpecular]; // RGB = Ls_dir
+
+    StructuredBuffer<PointLight>       pointLights = ResourceDescriptorHeap[Push.PointLightArray];
+    StructuredBuffer<SpotLight>        spotLights  = ResourceDescriptorHeap[Push.SpotLightArray];
+    StructuredBuffer<DirectionalLight> sun         = ResourceDescriptorHeap[Push.SunArray];
+    StructuredBuffer<TileData>         tiles       = ResourceDescriptorHeap[Push.TilesArray];
+    StructuredBuffer<uint>             bins        = ResourceDescriptorHeap[Push.BinsArray];
+    ConstantBuffer<Camera>             camera      = ResourceDescriptorHeap[Push.CameraDataSRV];
+
+    // Tile
     uint tileX = tid.x / Push.TileWidth;
     uint tileY = tid.y / Push.TileHeight;
     uint tileIndex = tileY * Push.NumTilesX + tileX;
     TileData tile = tiles[tileIndex];
 
-    // Load Basic data
-    float viewDepth = depth.Load(tid);
-    float2 uv = TexelToUV(tid.xy, float2(Push.Width, Push.Height));
-    float3 cameraPosition = camera.Position.xyz;
-    float4 worldPosition = GetWorldFromDepth(uv, viewDepth, camera.InvViewProj);
-    float3 materialColor = albedo.Load(tid).rgb;
-    float3 N = normalize(normal.Load(tid).rgb);
-    float metallic = pbr.Load(tid).r;
-    float roughness = pbr.Load(tid).g;
+    // G-buffer fetch
+    float  viewDepth     = depth.Load(tid);
+    float2 uv            = TexelToUV(tid.xy, float2(Push.Width, Push.Height));
+    float3 cameraPos     = camera.Position.xyz;
+    float4 worldPos      = GetWorldFromDepth(uv, viewDepth, camera.InvViewProj);
+    float3 baseColor     = albedo.Load(tid).rgb;   // for F0 only (metals)
+    float3 N             = normalize(normal.Load(tid).rgb);
+    float  metallic      = pbr.Load(tid).r;
+    float  roughness     = pbr.Load(tid).g;
+    float3 V             = normalize(cameraPos - worldPos.xyz);
 
-    // Math!
-    float3 V = normalize(cameraPosition - worldPosition.xyz);
-    float3 finalColor = GetTileColor(tile.Count) * Push.ShowTileHeatmap;
+    // Accumulators
+    float3 Ei_direct = 0.0.xxx;  // pre-albedo diffuse irradiance
+    float3 Ls_direct = 0.0.xxx;  // specular radiance
 
-    // Evaluate direct diffuse/specular from local lights
+    // Local lights
+    [loop]
     for (int i = 0; i < tile.Count; i++) {
-        uint encoded = bins[tile.Offset + i];
-        bool isSpot = (encoded & (1u << 31)) != 0;
-        uint lightIndex = encoded & 0x7FFFFFFF;
+        uint encoded   = bins[tile.Offset + i];
+        bool isSpot    = (encoded & (1u << 31)) != 0;
+        uint idx       = encoded & 0x7FFFFFFF;
 
-        float3 contrib = float3(0, 0, 0);
-        if (isSpot) {
-            contrib = EvaluateSpotLight(spotLights[lightIndex], V, worldPosition, N, materialColor, metallic, roughness);
-        } else {
-            contrib = EvaluatePointLight(pointLights[lightIndex], V, worldPosition, N, materialColor, metallic, roughness);
-        }
-        finalColor += contrib;
+        LightSplit s;
+        if (isSpot) s = EvalSpotLightSplit(spotLights[idx],  V, worldPos, N, baseColor, metallic, roughness);
+        else s = EvalPointLightSplit(pointLights[idx], V, worldPos, N, baseColor, metallic, roughness);
+
+        Ei_direct += s.Ei;
+        Ls_direct += s.Ls;
     }
 
-    // Evaluate direct diffuse/specular from sun
-    finalColor += EvaluateDirectionalLight(sun[0], V, worldPosition, N, materialColor, metallic, roughness) * shadowMask.Load(tid);
+    // Sun (apply shadow to both components)
+    {
+        float sunShadow = shadowMask.Load(tid); // ∈ [0,1]
+        LightSplit s = EvalDirectionalLightSplit(sun[0], V, worldPos, N, baseColor, metallic, roughness);
+        Ei_direct += s.Ei * sunShadow;
+        Ls_direct += s.Ls * sunShadow;
+    }
 
-    // Evaluate indirect specular from mask
-    // TODO
+    // Debug tile heatmap (additive overlay to specular for visibility, or write elsewhere if you prefer)
+    if (Push.ShowTileHeatmap != 0) {
+        float3 heat = GetTileColor(tile.Count);
+        outDiffuse[tid.xy]  = float4(Ei_direct * heat, 1.0);
+        outSpecular[tid.xy] = float4(Ls_direct, 1.0);
+        return;
+    }
 
-    // Evaluate indirect diffuse from mask
-    // TODO
-
-    output[tid.xy] = float4(finalColor, 1.0);
+    outDiffuse[tid.xy]  = float4(Ei_direct, 1.0);   // DirectDiffuseIrradiance
+    outSpecular[tid.xy] = float4(Ls_direct, 1.0);   // DirectSpecularRadiance
 }

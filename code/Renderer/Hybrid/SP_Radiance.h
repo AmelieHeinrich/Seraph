@@ -9,7 +9,8 @@
 
 namespace SP
 {
-    constexpr const char* RADIANCE_HDR_TEXTURE_ID = "Radiance/HDR";
+    constexpr const char* RADIANCE_DIRECT_DIFFUSE_ID = "Radiance/DirectDiffuse";
+    constexpr const char* RADIANCE_DIRECT_SPECULAR_ID = "Radiance/DirectSpecular";
 
     enum class RadianceMode
     {

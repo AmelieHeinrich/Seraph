@@ -32,7 +32,8 @@ namespace SP
         hdrDesc.Format = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
         hdrDesc.Usage = KGPU::TextureUsage::kShaderResource | KGPU::TextureUsage::kStorage | KGPU::TextureUsage::kRenderTarget;
 
-        Gfx::ResourceManager::CreateTexture(RADIANCE_HDR_TEXTURE_ID, hdrDesc);
+        Gfx::ResourceManager::CreateTexture(RADIANCE_DIRECT_DIFFUSE_ID, hdrDesc);
+        Gfx::ResourceManager::CreateTexture(RADIANCE_DIRECT_SPECULAR_ID, hdrDesc);
 
         Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/radiance/raster.kds");
     }
@@ -62,7 +63,8 @@ namespace SP
         Gfx::Resource& normal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& albedo = Gfx::ResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& pbr = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
-        Gfx::Resource& output = Gfx::ResourceManager::Import(RADIANCE_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& outputDiff = Gfx::ResourceManager::Import(RADIANCE_DIRECT_DIFFUSE_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
+        Gfx::Resource& outputSpec = Gfx::ResourceManager::Import(RADIANCE_DIRECT_SPECULAR_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
         Gfx::Resource& shadowMask = Gfx::ResourceManager::Import(SHADOWS_SUN_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
 
         struct Constants {
@@ -71,46 +73,46 @@ namespace SP
             BindlessHandle albedoHandle;
             BindlessHandle pbrHandle;
 
-            BindlessHandle outputHandle;
+            BindlessHandle diffuseHandle;
+            BindlessHandle specularHandle;
             int width;
             int height;
-            BindlessHandle plArray;
 
+            BindlessHandle plArray;
             uint plCount;
             BindlessHandle camSRV;
             uint tileWidth;
-            uint tileHeight;
 
+            uint tileHeight;
             uint numTilesX;
             BindlessHandle binsArray;
             BindlessHandle tilesArray;
-            uint pad;
-
+            
+            uint ShowTiles;
             BindlessHandle slArray;
             uint slCount;
             BindlessHandle sunArray;
+            
             BindlessHandle shadowMask;
+            uint3 Pad;
         } constants = {
             Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(depth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(normal.Texture)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(albedo.Texture)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(pbr.Texture)->GetBindlessHandle(),
-
-            Gfx::ViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetUAV(outputDiff.Texture)->GetBindlessHandle(),
+            Gfx::ViewRecycler::GetUAV(outputSpec.Texture)->GetBindlessHandle(),
             begin.Width,
             begin.Height,
             begin.World->GetLightList()->GetPointLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
-
             static_cast<uint>(begin.World->GetLightList()->PointLights.size()),
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
             TILE_WIDTH,
             TILE_HEIGHT,
-
             (begin.Width + TILE_WIDTH - 1) / TILE_WIDTH,
             Gfx::ViewRecycler::GetSRV(tileIndicesBuffer.Buffer)->GetBindlessHandle(),
             Gfx::ViewRecycler::GetSRV(tileBuffer.Buffer)->GetBindlessHandle(),
             mShowTileHeatmap,
-
             begin.World->GetLightList()->GetSpotLightBufferView(begin.FrameIndex)->GetBindlessHandle(),
             static_cast<uint>(begin.World->GetLightList()->SpotLights.size()),
             begin.World->GetLightList()->GetSunBufferView(begin.FrameIndex)->GetBindlessHandle(),
@@ -126,10 +128,12 @@ namespace SP
     void Radiance::Raytrace(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::Radiance::Raytrace");
-        Gfx::Resource& before = Gfx::ResourceManager::Import(RADIANCE_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        Gfx::Resource& diff = Gfx::ResourceManager::Import(RADIANCE_DIRECT_DIFFUSE_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        Gfx::Resource& spec = Gfx::ResourceManager::Import(RADIANCE_DIRECT_SPECULAR_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
-        KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));
-        KGPU::RenderBegin renderBegin(before.Texture->GetDesc().Width, before.Texture->GetDesc().Height, { attachment }, {});
+        KGPU::RenderAttachment diffAttach(Gfx::ViewRecycler::GetRTV(diff.Texture), true, float3(0.0f));
+        KGPU::RenderAttachment specAttach(Gfx::ViewRecycler::GetRTV(spec.Texture), true, float3(0.0f));
+        KGPU::RenderBegin renderBegin(diff.Texture->GetDesc().Width, diff.Texture->GetDesc().Height, { diffAttach, specAttach}, {});
 
         begin.CmdList->BeginRendering(renderBegin);
         begin.CmdList->EndRendering();
@@ -138,10 +142,12 @@ namespace SP
     void Radiance::RaytraceReSTIR(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::Radiance::RaytraceReSTIR");
-        Gfx::Resource& before = Gfx::ResourceManager::Import(RADIANCE_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        Gfx::Resource& diff = Gfx::ResourceManager::Import(RADIANCE_DIRECT_DIFFUSE_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        Gfx::Resource& spec = Gfx::ResourceManager::Import(RADIANCE_DIRECT_SPECULAR_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
-        KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));
-        KGPU::RenderBegin renderBegin(before.Texture->GetDesc().Width, before.Texture->GetDesc().Height, { attachment }, {});
+        KGPU::RenderAttachment diffAttach(Gfx::ViewRecycler::GetRTV(diff.Texture), true, float3(0.0f));
+        KGPU::RenderAttachment specAttach(Gfx::ViewRecycler::GetRTV(spec.Texture), true, float3(0.0f));
+        KGPU::RenderBegin renderBegin(diff.Texture->GetDesc().Width, diff.Texture->GetDesc().Height, { diffAttach, specAttach}, {});
 
         begin.CmdList->BeginRendering(renderBegin);
         begin.CmdList->EndRendering();

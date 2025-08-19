@@ -4,7 +4,7 @@
 //
 
 #include "SP_Tonemap.h"
-#include "SP_Radiance.h"
+#include "SP_Lighting.h"
 #include "SP_Application.h"
 
 #include <Graphics/Gfx_ShaderManager.h>
@@ -35,7 +35,7 @@ namespace SP
     void Tonemap::Render(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::Tonemap::Render");
-        Gfx::Resource& hdr = Gfx::ResourceManager::Import(RADIANCE_HDR_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& hdr = Gfx::ResourceManager::Import(LIGHTING_OUTPUT_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& ldr = Gfx::ResourceManager::Import(TONEMAPPING_LDR_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
 
         struct Constants {
