@@ -3,15 +3,14 @@
 ## Requirements
 
 Minspec for D3D12: GCN/Pascal.
-Minspec for Vulkan: GCN/Turing. (Turing because of VK_EXT_mutable_descriptor)
-This sample makes heavy use of raytracing.
+Minspec for Vulkan: GCN/Turing.
 
 ## Building and running
 
 This sample is built upon the [Kaleidoscope](https://github.com/Floating-Trees-Inc/Kaleidoscope) engine, that uses xmake as it's build system.\
 Changing configs: `xmake f --mode={debug, release, releasedbg}`\
 Building: `xmake`\
-Running: `xmake run`\
+Running: `xmake run seraph`\
 
 ## Disclaimer
 
@@ -42,6 +41,6 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 
 The Trello board for this project can be found [here](https://trello.com/b/s8naeZhw/kd-sp-rf).
 
-# Known bugs
+## Known bugs
 
 - Raytraced effects crashes when using RT pipeline on Vulkan backend
