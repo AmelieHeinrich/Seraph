@@ -7,9 +7,13 @@
 
 #include "Renderer/SP_RenderPass.h"
 
+#include <Graphics/Gfx_Skybox.h>
+
 namespace SP
 {
     constexpr const char* INDIRECT_SPECULAR_MASK_ID = "IndirectSpecular/HDR";
+    constexpr const char* INDIRECT_SPECULAR_BAKED_CUBEMAP_ID = "IndirectSpecular/Baked";
+    constexpr const char* INDIRECT_SPECULAR_BAKED_BRDF_ID = "IndirectSpecular/BRDF";
 
     enum class IndirectSpecularMode
     {
@@ -36,6 +40,12 @@ namespace SP
         void Hybrid(RenderPassBegin& begin);
 
     private:
-        IndirectSpecularMode mMode = IndirectSpecularMode::kNone;
+        IndirectSpecularMode mMode = IndirectSpecularMode::kBaked;
+        
+        //-- BAKED --//
+        KGPU::ITextureView* mCubemapView = nullptr;
+        Gfx::Skybox* mCurrentSkybox = nullptr;
+        bool mBakedBRDF = false;
+        //----------//
     };
 }

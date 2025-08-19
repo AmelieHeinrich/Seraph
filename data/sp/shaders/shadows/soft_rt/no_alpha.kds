@@ -66,8 +66,9 @@ void CSMain(uint3 dtid: SV_DispatchThreadID)
 
         // Trace ray, generate random Wi
         float lightRadius = radians(Push.LightRadius);
-        float3 lightTangent = normalize(cross(L, float3(0.0f, 1.0f, 0.0f)));
-        float3 lightBitangent = normalize(cross(lightTangent, L));
+        float3 safeUp = abs(L.y) > 0.999f ? float3(1.0f, 0.0f, 0.0f) : float3(0.0f, 1.0f, 0.0f);
+        float3 lightTangent   = normalize(cross(safeUp, L));
+        float3 lightBitangent = normalize(cross(L, lightTangent));
 
         // Calculate disk point
         float2 randSample = rng.NextFloat2();

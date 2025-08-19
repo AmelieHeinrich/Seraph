@@ -35,6 +35,7 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - Microfacet BRDF
 - Cascaded Shadow Maps
 - Raytraced hard and soft shadows
+- Baked image based reflections
 - Motion vector visualizer
 
 ## Planned

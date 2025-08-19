@@ -1,0 +1,80 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-19 15:02:39
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "sp/shaders/common/camera.kds"
+#include "sp/shaders/common/lights.kds"
+#include "sp/shaders/common/math.kds"
+#include "sp/shaders/common/pbr.kds"
+#include "sp/shaders/common/compute.kds"
+
+#pragma compute CSMain
+
+struct PushConstants
+{
+    uint BakedCubemap;
+    uint BRDF;
+    uint Sampler;
+    uint GBufferColor;
+
+    uint GBufferPBR;
+    uint GBufferDepth;
+    uint Width;
+    uint Height;
+
+    uint Output;
+    uint CameraBuffer;
+    uint GBufferNormal;
+    uint Pad;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 dtid : SV_DispatchThreadID)
+{
+    if (dtid.x >= Push.Width || dtid.y >= Push.Height)
+        return;
+
+    //--- Load resources ---//
+    TextureCube<float4> BakedCubemap = ResourceDescriptorHeap[Push.BakedCubemap];
+    Texture2D<float2> BRDF           = ResourceDescriptorHeap[Push.BRDF];
+    SamplerState Sampler             = SamplerDescriptorHeap[Push.Sampler];
+    Texture2D<float4> GBufferColor   = ResourceDescriptorHeap[Push.GBufferColor];
+    Texture2D<float2> GBufferPBR     = ResourceDescriptorHeap[Push.GBufferPBR];
+    Texture2D<float> GBufferDepth    = ResourceDescriptorHeap[Push.GBufferDepth];
+    Texture2D<float4> GBufferNormal  = ResourceDescriptorHeap[Push.GBufferNormal];
+    ConstantBuffer<Camera> Cam       = ResourceDescriptorHeap[Push.CameraBuffer];
+    RWTexture2D<float4> Output       = ResourceDescriptorHeap[Push.Output];
+
+    //--- Load variables ---//
+    float viewDepth = GBufferDepth.Load(dtid);
+    float2 uv = TexelToUV(dtid.xy, float2(Push.Width, Push.Height));
+    float3 cameraPos = Cam.Position.xyz;
+    float4 worldPos = GetWorldFromDepth(uv, viewDepth, Cam.InvViewProj);
+
+    float3 baseColor = GBufferColor.Load(dtid).rgb;
+    float2 mr = GBufferPBR.Load(dtid);
+    float m = mr.r;
+    float r = mr.g;
+    float3 N = GBufferNormal.Load(dtid).rgb;
+    float3 V = normalize(cameraPos - worldPos.xyz);
+    
+    float3 F0 = lerp(0.04.xxx, baseColor, m);
+    float NdotV = saturate(dot(N, V));
+    float3 R = reflect(-V, N);
+
+    //--- Math ---//
+
+    const uint MaxReflectionLOD = 5;
+    float3 specularRadiance = BakedCubemap.SampleLevel(Sampler, R, r * MaxReflectionLOD).rgb;
+
+    // Sample precomputed BRDF LUT (NdotV, roughness)
+    float2 specularBRDF = BRDF.Sample(Sampler, float2(NdotV, r)).rg;
+
+    // Combine (split-sum approximation)
+    float3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularRadiance;
+    specularIBL = pow(specularIBL, 1.0 / 2.2);
+    Output[dtid.xy] = (viewDepth != 1.0f) ? float4(specularIBL, 1.0) : float4(0, 0, 0, 1);
+}

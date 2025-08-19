@@ -17,6 +17,6 @@ namespace SP
         void Render(RenderPassBegin& begin) override;
         void UI(RenderPassBegin& begin) override;
     private:
-        bool mEnable = false;
+        bool mEnable = true;
     };
 }

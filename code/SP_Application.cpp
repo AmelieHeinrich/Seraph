@@ -76,7 +76,7 @@ namespace SP
         CODE_BLOCK("Create world") {
             mWorld = KC_NEW(RenderWorld);
             mWorld->AddMesh("data/sp/models/Sponza/Sponza.gltf");
-            mWorld->GetLightList()->Sun.Direction = glm::vec3(0.5f, -1.0f, 0.1f);
+            mWorld->GetLightList()->Sun.Direction = glm::vec3(0.0f, -1.0f, 0.0f);
             mWorld->GetLightList()->Sun.Intensity = 10.0f;
             mWorld->GetLightList()->Sun.Color = glm::vec3(1.0f);
 

@@ -47,7 +47,7 @@ namespace SP
     void IndirectDiffuse::UI(RenderPassBegin& begin)
     {
         if (ImGui::TreeNodeEx("Global Illumination (Indirect Diffuse)", ImGuiTreeNodeFlags_Framed)) {
-            const char* modes[] = { "None", "Constant Ambient", "Baked (UNIMPLEMENTED)" "SSGI (UNIMPLEMENTED)", "DDGI (UNIMPLEMENTED)" };
+            const char* modes[] = { "None", "Constant Ambient", "Baked (UNIMPLEMENTED)", "SSGI (UNIMPLEMENTED)", "DDGI (UNIMPLEMENTED)" };
             if (ImGui::BeginCombo("Technique", modes[(int)mMode])) {
                 for (int i = 0; i < IM_ARRAYSIZE(modes); i++) {
                     bool disabled = false;

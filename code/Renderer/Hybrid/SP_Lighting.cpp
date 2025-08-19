@@ -94,7 +94,6 @@ namespace SP
         };
 
         auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/lighting.kds");
-
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
         begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
