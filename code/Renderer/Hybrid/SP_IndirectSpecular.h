@@ -14,6 +14,7 @@ namespace SP
     enum class IndirectSpecularMode
     {
         kNone,
+        kBaked,
         kScreenSpace,
         kRaytraced,
         kHybrid
@@ -29,6 +30,7 @@ namespace SP
         void UI(RenderPassBegin& begin) override;
     private:
         void None(RenderPassBegin& begin);
+        void Baked(RenderPassBegin& begin);
         void ScreenSpace(RenderPassBegin& begin);
         void Raytrace(RenderPassBegin& begin);
         void Hybrid(RenderPassBegin& begin);

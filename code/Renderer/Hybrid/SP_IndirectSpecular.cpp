@@ -36,6 +36,7 @@ namespace SP
         switch (mMode)
         {
             case IndirectSpecularMode::kNone: None(begin); break;
+            case IndirectSpecularMode::kBaked: Baked(begin); break;
             case IndirectSpecularMode::kScreenSpace: ScreenSpace(begin); break;
             case IndirectSpecularMode::kRaytraced: Raytrace(begin); break;
             case IndirectSpecularMode::kHybrid: Hybrid(begin); break;
@@ -45,7 +46,7 @@ namespace SP
     void IndirectSpecular::UI(RenderPassBegin& begin)
     {
         if (ImGui::TreeNodeEx("Reflections (Indirect Specular)", ImGuiTreeNodeFlags_Framed)) {
-            const char* modes[] = { "None", "SSR (UNIMPLEMENTED)", "Raytraced (UNIMPLEMENTED)", "Hybrid (UNIMPLEMENTED)" };
+            const char* modes[] = { "None", "Baked (UNIMPLEMENTED)", "SSR (UNIMPLEMENTED)", "Raytraced (UNIMPLEMENTED)", "Hybrid (UNIMPLEMENTED)" };
             if (ImGui::BeginCombo("Technique", modes[(int)mMode])) {
                 for (int i = 0; i < IM_ARRAYSIZE(modes); i++) {
                     bool disabled = false;
@@ -79,6 +80,18 @@ namespace SP
     void IndirectSpecular::None(RenderPassBegin& begin)
     {
         KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::None");
+        Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+
+        KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));
+        KGPU::RenderBegin renderBegin(before.Texture->GetDesc().Width, before.Texture->GetDesc().Height, { attachment }, {});
+
+        begin.CmdList->BeginRendering(renderBegin);
+        begin.CmdList->EndRendering();
+    }
+
+    void IndirectSpecular::Baked(RenderPassBegin& begin)
+    {
+        KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked");
         Gfx::Resource& before = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_MASK_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
 
         KGPU::RenderAttachment attachment(Gfx::ViewRecycler::GetRTV(before.Texture), true, float3(0.0f));

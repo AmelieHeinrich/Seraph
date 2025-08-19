@@ -15,6 +15,7 @@ namespace SP
     {
         kNone,
         kConstantAmbient,
+        kBaked,
         kSSGI,
         kDDGI
     };
@@ -30,6 +31,7 @@ namespace SP
     private:
         void None(RenderPassBegin& begin);
         void ConstantAmbient(RenderPassBegin& begin);
+        void Baked(RenderPassBegin& begin);
         void SSGI(RenderPassBegin& begin);
         void DDGI(RenderPassBegin& begin);
 
