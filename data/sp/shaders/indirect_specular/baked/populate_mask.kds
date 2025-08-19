@@ -60,7 +60,6 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float2 mr = GBufferPBR.Load(dtid);
     float metallic = mr.r;
     float roughness = mr.g;
-    roughness = saturate(max(roughness, 0.001));
 
     float3 N = normalize(GBufferNormal.Load(dtid).rgb);
     float3 V = normalize(cameraPos - worldPos.xyz);
@@ -81,10 +80,12 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float3 diffuseIBL = kd * Ei / PI;
 
     // ---- Specular IBL ----
+    float2 brdfUV = float2(NdotV, 1.0 - roughness);
+
     const uint MaxReflectionLOD = 5;
     float3 R = normalize(reflect(-V, N));
     float3 specularRadiance = BakedCubemap.SampleLevel(Sampler, R, roughness * MaxReflectionLOD).rgb;
-    float2 specularBRDF = BRDF.Sample(Sampler, float2(NdotV, roughness)).rg;
+    float2 specularBRDF = BRDF.Sample(Sampler, brdfUV).rg;
     float3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularRadiance;
 
     // ---- Final ----
