@@ -53,5 +53,7 @@ namespace SP
         RenderWorld* mWorld;
         WorldRenderer* mRenderer;
         RenderPassBegin mBegin;
+
+        bool mPendingShaderReload = false;
     };
 }

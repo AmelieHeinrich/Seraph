@@ -88,6 +88,10 @@ namespace SP
             Gfx::CommandListRecycler::FlushCommandLists();
             Gfx::TempResourceStorage::Clean();
         }
+
+        TDC::Console::AddFunction("Seraph.ReloadShaders", [&](const KC::String&){
+            mPendingShaderReload = true;
+        });
     
         KD_INFO("Seraph ready!");
     }
@@ -168,23 +172,9 @@ namespace SP
                 mFrameSync->EndSynchronize(mBegin.CmdList);
                 mFrameSync->PresentSurface();
 
-                // Clear temp data every second
-                if (mClearTimer.ToSeconds() == 1.0f) {
-                    Gfx::TempResourceStorage::Clean();
-                    mClearTimer.Restart();
-                }
-
-                // Update prev
-                mBegin.CamData.PrevProj = mBegin.CamData.Proj;
-                mBegin.CamData.PrevView = mBegin.CamData.View;
-                mBegin.CamData.PrevViewProj = mBegin.CamData.ViewProj;
-                mBegin.CamData.PrevInvProj = mBegin.CamData.InvProj;
-                mBegin.CamData.PrevInvView = mBegin.CamData.InvView;
-                mBegin.CamData.PrevInvViewProj = mBegin.CamData.InvViewProj;
-
-                // Do screenshot?
-                if (KI::InputSystem::IsKeyPressed(KI::Keycode::kF2)) {
-                    Gfx::Screenshotter::EnqueueScreenshot(TONEMAPPING_SCREENSHOT_ID);
+                if (mPendingShaderReload) {
+                    Gfx::ShaderManager::ReloadPipelines(true);
+                    mPendingShaderReload = false;
                 }
             }
 
@@ -224,6 +214,9 @@ namespace SP
                 if (ImGui::BeginMenu(ICON_FA_VIDEO_CAMERA " Renderer")) {
                     if (ImGui::MenuItem(ICON_FA_WRENCH " Settings")) {
                         mRendererSettingsOpened = !mRendererSettingsOpened;
+                    }
+                    if (ImGui::MenuItem(ICON_FA_FIRE " Hot Reload Shaders")) {
+                        mPendingShaderReload = true;
                     }
                     ImGui::EndMenu();
                 }
