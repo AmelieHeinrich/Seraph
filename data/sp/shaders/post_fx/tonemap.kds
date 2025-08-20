@@ -54,19 +54,6 @@ float3 AgX(float3 val)
     return val;
 }
 
-float3 AgXEOTF(float3 val)
-{
-    const float3x3 agx_mat_inv = float3x3(
-        1.19687900512017, -0.0528968517574562, -0.0529716355144438,
-        -0.0980208811401368, 1.15190312990417, -0.0980434501171241,
-        -0.0990297440797205, -0.0989611768448433, 1.1510736726411
-    );
-    
-    // Inverse input transform (outset)
-    val = (agx_mat_inv, val);
-    return val;
-}
-
 [numthreads(8, 8, 1)]
 void CSMain(uint3 tid: SV_DispatchThreadID)
 {
@@ -77,6 +64,5 @@ void CSMain(uint3 tid: SV_DispatchThreadID)
 
     float3 color = hdr.Load(tid).rgb;
     color = AgX(color);
-    color = AgXEOTF(color);
     ldr[tid.xy] = float4(color, 1.0);
 }

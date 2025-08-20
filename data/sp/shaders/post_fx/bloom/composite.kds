@@ -1,0 +1,36 @@
+//
+// > Notice: Floating Trees Inc. @ 2025
+// > Create Time: 2025-08-20 14:16:00
+//
+
+#include "kd/shaders/common/bindless.kds"
+#include "sp/shaders/common/compute.kds"
+
+#pragma compute CSMain
+
+struct PushConstants
+{
+    uint Input;
+    uint InputSampler;
+    uint Output;
+    float Strength;
+
+    uint Width;
+    uint Height;
+    uint2 Pad;
+};
+PUSH_CONSTANTS(PushConstants, Push);
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 ThreadID : SV_DispatchThreadID)
+{
+    Texture2D<float4> Input = ResourceDescriptorHeap[Push.Input];
+    SamplerState InputSampler = SamplerDescriptorHeap[Push.InputSampler];
+    RWTexture2D<float4> OutputHDR = ResourceDescriptorHeap[Push.Output];
+
+    float2 uv = TexelToUV(ThreadID.xy, 1.0 / float2(Push.Width, Push.Height));
+    float4 inputColor = Input.Sample(InputSampler, uv);
+
+    float4 color = OutputHDR[ThreadID.xy] + (inputColor * Push.Strength);
+    OutputHDR[ThreadID.xy] = color;
+}

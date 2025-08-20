@@ -13,6 +13,7 @@
 #include "Hybrid/SP_IndirectDiffuse.h"
 #include "Hybrid/SP_AmbientOcclusion.h"
 #include "Hybrid/SP_Lighting.h"
+#include "Hybrid/SP_Bloom.h"
 #include "Hybrid/SP_Skybox.h"
 #include "Hybrid/SP_Tonemap.h"
 #include "Hybrid/SP_Debug.h"
@@ -46,6 +47,7 @@ namespace SP
             KC_NEW(Skybox),
 
             // PostFX
+            KC_NEW(Bloom),
             KC_NEW(Tonemap),
             KC_NEW(Debug),
             KC_NEW(MotionVector),
