@@ -75,7 +75,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float3 diffuseIBL = kd / PI;
 
     // ---- Specular IBL ----
-    float2 brdfUV = float2(NdotV, 1.0 - roughness);
+    float2 brdfUV = float2(NdotV, roughness);
 
     uint w,h,numMips;
     BakedCubemap.GetDimensions(0, w, h, numMips);
