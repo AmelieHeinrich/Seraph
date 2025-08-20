@@ -45,6 +45,9 @@ namespace SP
 
     void LightCulling::Render(RenderPassBegin& begin)
     {
+        if (begin.World->GetLightList()->PointLights.size() == 0 && begin.World->GetLightList()->SpotLights.size() == 0)
+            return;
+
         KGPU::ScopedMarker _(begin.CmdList, "SP::LightCulling::Render");
         GenerateTiles(begin);
         CullTiles(begin);
