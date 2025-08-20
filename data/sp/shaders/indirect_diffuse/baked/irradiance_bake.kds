@@ -90,8 +90,6 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
         float2 u  = SampleHammersley(i);
         float3 L  = TangentToWorld(SampleHemisphere(u.x, u.y), N, S, T);
         float NdotL = max(0.0, dot(N, L));
-
-        // linear sample, no gamma
         irradiance += EnvironmentMap.SampleLevel(CubeSampler, L, 0).rgb * NdotL;
     }
     irradiance /= float(NumSamples);

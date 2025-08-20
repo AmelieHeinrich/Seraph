@@ -61,5 +61,5 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
     float4 color = HDR.SampleLevel(Sampler, float2(u, v_coord), 0.0);
 
     // Write to cubemap array layer
-    Cube[ThreadID] = pow(color, 2.2);
+    Cube[ThreadID] = color;
 }

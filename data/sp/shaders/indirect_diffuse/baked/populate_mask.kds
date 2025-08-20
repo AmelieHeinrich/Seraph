@@ -17,12 +17,16 @@ struct PushConstants
     uint GBufferColor;
     uint GBufferPBR;
     uint GBufferNormal;
-    uint Cubemap;
+    uint GBufferDepth;
 
+    uint Cubemap;
     uint Sampler;
     uint Output;
     uint Width;
+
     uint Height;
+    uint CameraBuffer;
+    uint2 Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -33,6 +37,8 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
         return;
 
     //-- Load resources --//
+    ConstantBuffer<Camera> Cam = ResourceDescriptorHeap[Push.CameraBuffer];
+    Texture2D<float> GBufferDepth = ResourceDescriptorHeap[Push.GBufferDepth];
     Texture2D<float4> GBufferColor = ResourceDescriptorHeap[Push.GBufferColor];
     Texture2D<float4> GBufferPBR = ResourceDescriptorHeap[Push.GBufferPBR];
     Texture2D<float4> GBufferNormal = ResourceDescriptorHeap[Push.GBufferNormal];
@@ -41,10 +47,22 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     RWTexture2D<float4> Output = ResourceDescriptorHeap[Push.Output];
 
     //-- do the maf innit --//
+    float viewDepth = GBufferDepth.Load(dtid);
+    float2 uv       = TexelToUV(dtid.xy, float2(Push.Width, Push.Height));
+    float3 cameraPos = Cam.Position.xyz;
+    float4 worldPos  = GetWorldFromDepth(uv, viewDepth, Cam.InvViewProj);
+
     float3 baseColor = GBufferColor.Load(dtid).rgb;
     float metallic = GBufferPBR.Load(dtid).r;
     float3 N = GBufferNormal.Load(dtid).rgb;
-    float3 diffuseIBL = baseColor * (1 - metallic) * Irradiance.Sample(Sampler, N).rgb / PI;
+    float3 V = normalize(cameraPos - worldPos.xyz);
+    float  NdotV = saturate(dot(N, V));
 
-    Output[dtid.xy] = float4(diffuseIBL, 1.0);
+    float3 F0 = lerp(0.04.xxx, baseColor, metallic);
+    float3 Fv = FresnelSchlick(NdotV, F0);
+    float3 kd   = (1 - Fv) * (1 - metallic) * baseColor;
+    float3 Ei = Irradiance.Sample(Sampler, N).rgb;
+    float3 diffuseIBL = kd / PI;
+
+    Output[dtid.xy] = float4(diffuseIBL * Ei, 1.0);
 }

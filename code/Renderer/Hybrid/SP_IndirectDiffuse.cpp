@@ -164,10 +164,13 @@ namespace SP
 
         CODE_BLOCK("Populate Mask") {
             KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(PopulateMask)");
+
             Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
+            Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
             Gfx::Resource& gbufferColor = Gfx::ResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& gbufferNormal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& gbufferPBR = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+            Gfx::Resource& gbufferDepth = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
             Gfx::Resource& output = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
 
@@ -177,28 +180,35 @@ namespace SP
             cubeViewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
             cubeViewDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
             cubeViewDesc.Type = KGPU::TextureViewType::kShaderRead;
-            cubeViewDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
 
             struct PushConstants {
+                KGPU::BindlessHandle GBufferDepth;
                 KGPU::BindlessHandle GBufferColor;
                 KGPU::BindlessHandle GBufferPBR;
                 KGPU::BindlessHandle GBufferNormal;
+                
                 KGPU::BindlessHandle Cubemap;
-
                 KGPU::BindlessHandle Sampler;
                 KGPU::BindlessHandle Output;
                 int Width;
+
                 int Height;
+                KGPU::BindlessHandle CameraBuffer;
+                uint2 Pad;
             } constants = {
                 Gfx::ViewRecycler::GetSRV(gbufferColor.Texture)->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(gbufferPBR.Texture)->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(gbufferNormal.Texture)->GetBindlessHandle(),
-                Gfx::ViewRecycler::GetTextureView(cubeViewDesc)->GetBindlessHandle(),
+                Gfx::ViewRecycler::GetTextureView(KGPU::TextureViewDesc(gbufferDepth.Texture, KGPU::TextureViewType::kShaderRead, KGPU::TextureFormat::kR32_FLOAT))->GetBindlessHandle(),
 
+                Gfx::ViewRecycler::GetTextureView(cubeViewDesc)->GetBindlessHandle(),
                 sampler.Sampler->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
                 begin.Width,
-                begin.Height
+
+                begin.Height,
+                cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
+                {}
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_diffuse/baked/populate_mask.kds");

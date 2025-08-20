@@ -211,12 +211,11 @@ namespace SP
             cubeViewDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
 
             KGPU::TextureViewDesc diffuseIblDesc;
-            diffuseIblDesc.Texture = baked.Texture;
+            diffuseIblDesc.Texture = diffuse.Texture;
             diffuseIblDesc.ArrayLayer = KGPU::VIEW_ALL_MIPS;
             diffuseIblDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
             diffuseIblDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
             diffuseIblDesc.Type = KGPU::TextureViewType::kShaderRead;
-            diffuseIblDesc.ViewMip = KGPU::VIEW_ALL_MIPS;
 
             struct PushConstants {
                 KGPU::BindlessHandle BakedCubemap;

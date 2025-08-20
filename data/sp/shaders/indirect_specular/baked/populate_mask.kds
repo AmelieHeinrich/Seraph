@@ -58,8 +58,8 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float3 baseColor = GBufferColor.Load(dtid).rgb;
 
     float2 mr = GBufferPBR.Load(dtid);
-    float metallic = mr.r;
-    float roughness = mr.g;
+    float metallic = saturate(max(mr.r, 0.001));
+    float roughness = saturate(mr.g);
 
     float3 N = normalize(GBufferNormal.Load(dtid).rgb);
     float3 V = normalize(cameraPos - worldPos.xyz);
@@ -70,26 +70,24 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
 
     // Schlick Fresnel at view
     float3 Fv = FresnelSchlick(NdotV, F0);
-
-    // Diffuse albedo (energy-conserving, includes baseColor)
-    float3 kd = lerp(1.0 - Fv, 0.0, metallic) * baseColor;
-
-    // ---- Diffuse IBL ----
-    float3 diffuseIrradiance = IrradianceMap.Sample(Sampler, N).rgb;
+    float3 kd   = (1 - Fv) * (1 - metallic) * baseColor;
     float3 Ei = IrradianceMap.Sample(Sampler, N).rgb;
-    float3 diffuseIBL = kd * Ei / PI;
+    float3 diffuseIBL = kd / PI;
 
     // ---- Specular IBL ----
     float2 brdfUV = float2(NdotV, 1.0 - roughness);
 
-    const uint MaxReflectionLOD = 5;
+    uint w,h,numMips;
+    BakedCubemap.GetDimensions(0, w, h, numMips);
+    float lod = roughness * (numMips - 1);
+
     float3 R = normalize(reflect(-V, N));
-    float3 specularRadiance = BakedCubemap.SampleLevel(Sampler, R, roughness * MaxReflectionLOD).rgb;
+    float3 specularRadiance = BakedCubemap.SampleLevel(Sampler, R, lod).rgb;
     float2 specularBRDF = BRDF.Sample(Sampler, brdfUV).rg;
     float3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularRadiance;
 
     // ---- Final ----
-    float3 ibl = diffuseIBL + specularIBL;
-    Output[dtid.xy] = float4(ibl, 1.0);
+    float3 ibl = (diffuseIBL + specularIBL) * Ei;
+    Output[dtid.xy] = viewDepth != 1.0f ? float4(ibl, 1.0) : 0;
 }
 

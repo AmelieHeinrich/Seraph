@@ -23,7 +23,7 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 ![](.github/tiled.png)
 
 ### Image based lighting
-![](.github/ibl.png)
+![](.github/pbr.png)
 
 ### Shadows
 | CSM | Hard RT | Soft RT (Ground Truth Denoised) |
