@@ -27,7 +27,7 @@ struct PushConstants
     uint AO;
     uint CameraBuffer;
     uint Output;
-    uint Pad;
+    uint GBufferEmissive;
 
     uint Width;
     uint Height;
@@ -44,6 +44,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     Texture2D<float4> GColor            = ResourceDescriptorHeap[Push.GBufferColor];
     Texture2D<float4> GNormal           = ResourceDescriptorHeap[Push.GBufferNormal];
     Texture2D<float2> GPBR              = ResourceDescriptorHeap[Push.GBufferPBR];
+    Texture2D<float4> GEmissive         = ResourceDescriptorHeap[Push.GBufferEmissive];
     Texture2D<float4> LDirectDiffuse    = ResourceDescriptorHeap[Push.DirectDiffuse];
     Texture2D<float4> LDirectSpecular   = ResourceDescriptorHeap[Push.DirectSpecular];
     Texture2D<float4> LIndirectDiffuse  = ResourceDescriptorHeap[Push.IndirectDiffuse];
@@ -63,7 +64,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float r = mr.g;
     float3 N = GNormal.Load(dtid).rgb;
     float3 V = normalize(cameraPos - worldPos.xyz);
-    float3 emissive = 0.0;
+    float3 emissive = GEmissive.Load(dtid).rgb;
 
     float3 Ei_dir = LDirectDiffuse.Load(dtid).rgb;
     float3 Ls_dir = LDirectSpecular.Load(dtid).rgb;

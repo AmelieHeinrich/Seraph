@@ -34,6 +34,7 @@ struct FragmentOutput
     float4 Albedo : SV_Target1;
     float2 PBR : SV_Target2;
     float2 MotionVector : SV_Target3;
+    float4 Emissive : SV_Target4;
 };
 
 struct PushConstants
@@ -49,7 +50,8 @@ struct PushConstants
     uint Height;
 
     uint MeshID;
-    uint3 Pad;
+    uint MyEmissive;
+    uint2 pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -107,6 +109,7 @@ VertexOutput VSMain(uint vid : SV_VertexID)
 FragmentOutput PSMain(VertexOutput input)
 {
     Texture2D<float4> texture = ResourceDescriptorHeap[Push.MyTexture];
+    Texture2D<float4> emissive = ResourceDescriptorHeap[Push.MyEmissive];
     SamplerState sampler = SamplerDescriptorHeap[Push.MySampler];
 
     float2 ndcCurr = input.CurrPosition.xy / input.CurrPosition.w;
@@ -126,5 +129,6 @@ FragmentOutput PSMain(VertexOutput input)
     output.Normal = float4(GetNormal(input), Push.MeshID);
     output.PBR = GetPBR(input);
     output.MotionVector = motion;
+    output.Emissive = emissive.Sample(sampler, input.UV);
     return output;
 }

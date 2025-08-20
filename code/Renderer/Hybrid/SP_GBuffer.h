@@ -17,6 +17,7 @@ namespace SP
     constexpr const char* GBUFFER_ALBEDO_ID = "GBuffer/Albedo";
     constexpr const char* GBUFFER_PBR_ID = "GBuffer/PBR";
     constexpr const char* GBUFFER_MOTION_VECTOR_ID = "GBuffer/MotionVector";
+    constexpr const char* GBUFFER_EMISSIVE_ID = "GBuffer/Emissive";
     constexpr const char* GBUFFER_CAMERA_CBV_ID = "GBuffer/CameraBuffer";
     constexpr const char* GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID = "GBuffer/DefaultMaterialSampler";
     constexpr const char* GBUFFER_DEFAULT_NEAREST_SAMPLER_ID = "GBuffer/DefaultNearestSampler";

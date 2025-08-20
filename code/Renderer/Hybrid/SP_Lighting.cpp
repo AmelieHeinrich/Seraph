@@ -47,6 +47,7 @@ namespace SP
         Gfx::Resource& gbufferColor = Gfx::ResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& gbufferNormal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& gbufferPBR = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
+        Gfx::Resource& gbufferEmissive = Gfx::ResourceManager::Import(GBUFFER_EMISSIVE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& directDiffuse = Gfx::ResourceManager::Import(RADIANCE_DIRECT_DIFFUSE_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& directSpecular = Gfx::ResourceManager::Import(RADIANCE_DIRECT_SPECULAR_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& indirectDiffuse = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_MASK_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
@@ -68,7 +69,7 @@ namespace SP
             KGPU::BindlessHandle AO;
             KGPU::BindlessHandle CameraBuffer;
             KGPU::BindlessHandle Output;
-            uint Pad;
+            KGPU::BindlessHandle GBufferEmissive;
 
             int Width;
             int Height;
@@ -87,7 +88,7 @@ namespace SP
             Gfx::ViewRecycler::GetSRV(ao.Texture)->GetBindlessHandle(),
             cameraBuffer.RingBufferViews[begin.FrameIndex]->GetBindlessHandle(),
             Gfx::ViewRecycler::GetUAV(output.Texture)->GetBindlessHandle(),
-            0,
+            Gfx::ViewRecycler::GetSRV(gbufferEmissive.Texture)->GetBindlessHandle(),
 
             begin.Width,
             begin.Height

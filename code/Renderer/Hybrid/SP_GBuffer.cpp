@@ -54,6 +54,7 @@ namespace SP
         Gfx::ResourceManager::CreateTexture(GBUFFER_ALBEDO_ID, albedoDesc);
         Gfx::ResourceManager::CreateTexture(GBUFFER_PBR_ID, pbrDesc);
         Gfx::ResourceManager::CreateTexture(GBUFFER_MOTION_VECTOR_ID, motionDesc);
+        Gfx::ResourceManager::CreateTexture(GBUFFER_EMISSIVE_ID, albedoDesc);
         Gfx::ResourceManager::CreateSampler(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID, KGPU::SamplerDesc(KGPU::SamplerAddress::kWrap, KGPU::SamplerFilter::kLinear, true));
         Gfx::ResourceManager::CreateSampler(GBUFFER_DEFAULT_NEAREST_SAMPLER_ID, KGPU::SamplerDesc(KGPU::SamplerAddress::kWrap, KGPU::SamplerFilter::kNearest, true));
 
@@ -66,7 +67,8 @@ namespace SP
             normalDesc.Format,
             albedoDesc.Format,
             pbrDesc.Format,
-            motionDesc.Format
+            motionDesc.Format,
+            albedoDesc.Format
         };
         Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/gbuffer.kds", desc);
 
@@ -122,15 +124,18 @@ namespace SP
         Gfx::Resource& albedoTexture = Gfx::ResourceManager::Import(GBUFFER_ALBEDO_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
         Gfx::Resource& pbrTexture = Gfx::ResourceManager::Import(GBUFFER_PBR_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
         Gfx::Resource& motionTexture = Gfx::ResourceManager::Import(GBUFFER_MOTION_VECTOR_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
+        Gfx::Resource& emissiveTexture = Gfx::ResourceManager::Import(GBUFFER_EMISSIVE_ID, begin.CmdList, Gfx::ImportType::kColorWrite);
         Gfx::Resource& materialSampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
         Gfx::Resource& defaultWhite = Gfx::ResourceManager::Get(mDefaultTextureID);
+        Gfx::Resource& defaultBlack = Gfx::ResourceManager::Get(Gfx::DEFAULT_BLACK_TEXTURE);
 
         // Begin render
         KC::Array<KGPU::RenderAttachment> attachments = {
             KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(normalTexture.Texture)),
             KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(albedoTexture.Texture)),
             KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(pbrTexture.Texture)),
-            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(motionTexture.Texture))
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(motionTexture.Texture)),
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(emissiveTexture.Texture))
         };
         KGPU::RenderBegin renderBegin(begin.Width, begin.Height, attachments, KGPU::RenderAttachment(Gfx::ViewRecycler::GetDSV(depthTexture.Texture)));
         
@@ -145,6 +150,7 @@ namespace SP
             KGPU::BindlessHandle albedoView = material->GetAlbedoView() ? material->GetAlbedoView()->GetBindlessHandle() : Gfx::ViewRecycler::GetSRV(defaultWhite.Texture)->GetBindlessHandle();
             KGPU::BindlessHandle normalView = material->GetNormalView() ? material->GetNormalView()->GetBindlessHandle() : KGPU::BINDLESS_INVALID_HANDLE;
             KGPU::BindlessHandle pbrView = material->GetMRView() ? material->GetMRView()->GetBindlessHandle() : KGPU::BINDLESS_INVALID_HANDLE;
+            KGPU::BindlessHandle emissiveView = material->GetEmissiveView() ? material->GetEmissiveView()->GetBindlessHandle() : Gfx::ViewRecycler::GetSRV(defaultBlack.Texture)->GetBindlessHandle();
 
             struct PushConstant {
                 KGPU::BindlessHandle VB;
@@ -158,7 +164,8 @@ namespace SP
                 int Height;
 
                 uint MeshIndex;
-                KGPU::uint3 Pad;
+                KGPU::BindlessHandle Emissive;
+                KGPU::float2 Pad;
             } constants = {
                 entity.Primitive->GetVertexBufferView()->GetBindlessHandle(),
                 albedoView,
@@ -171,6 +178,7 @@ namespace SP
                 begin.Height,
 
                 index++,
+                emissiveView,
                 {}
             };
 
