@@ -9,66 +9,49 @@
 
 #pragma compute CSMain
 
-#define KARIS_AVERAGE 0
-
 struct PushConstants
 {
-    uint Input;
+    uint MipN;
     uint Sampler;
-    uint Downsampled;
+    uint MipNPlusOne;
     uint Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
-float3 ComputePartialAverage(float3 v0, float3 v1, float3 v2, float3 v3)
+// Weighted downsample to prevent fireflies
+float4 DownsampleBloom(Texture2D<float4> tex, SamplerState sam, float2 uv, float2 texelSize)
 {
-#if KARIS_AVERAGE
-    float w0 = 1.0f / (1.0f + Luminance(v0));
-    float w1 = 1.0f / (1.0f + Luminance(v1));
-    float w2 = 1.0f / (1.0f + Luminance(v2));
-    float w3 = 1.0f / (1.0f + Luminance(v3));
-    return (v0 * w0 + v1 * w1 + v2 * w2 + v3 * w3) / (w0 + w1 + w2 + w3);
-#else
-    return 0.25f * (v0 + v1 + v2 + v3);
-#endif
+    // Take 4 samples around the center point
+    float4 samples[4];
+    samples[0] = tex.SampleLevel(sam, uv + float2(-0.5, -0.5) * texelSize, 0);
+    samples[1] = tex.SampleLevel(sam, uv + float2( 0.5, -0.5) * texelSize, 0);
+    samples[2] = tex.SampleLevel(sam, uv + float2(-0.5,  0.5) * texelSize, 0);
+    samples[3] = tex.SampleLevel(sam, uv + float2( 0.5,  0.5) * texelSize, 0);
+
+    // Take sqrt to better handle high intensities
+    float4 result = 0;
+    [unroll]
+    for (int i = 0; i < 4; i++) {
+        result += sqrt(samples[i]);
+    }
+    result *= 0.25;
+    
+    // Square to restore range
+    return result * result;
 }
 
 [numthreads(8, 8, 1)]
-void CSMain(uint3 tid : SV_DispatchThreadID)
+void CSMain(uint3 dtid : SV_DispatchThreadID)
 {
-    Texture2D<float4>    src = ResourceDescriptorHeap[Push.Input];       // mip i
-    SamplerState         samp = SamplerDescriptorHeap[Push.Sampler];
-    RWTexture2D<float4>  dst  = ResourceDescriptorHeap[Push.Downsampled]; // mip i+1
+    Texture2D<float4> mipN = ResourceDescriptorHeap[Push.MipN];
+    SamplerState sampler = ResourceDescriptorHeap[Push.Sampler];
+    RWTexture2D<float4> mipNPlusOne = ResourceDescriptorHeap[Push.MipNPlusOne];
 
-    uint dstW, dstH; dst.GetDimensions(dstW, dstH);
-    if (tid.x >= dstW || tid.y >= dstH) return;
-
-    uint srcW, srcH;
-    src.GetDimensions(srcW, srcH);   // size of SRV’s mip i
-
-    // Map each dst pixel to center of its 2x2 footprint in src (mip i)
-    float2 uv = (float2(tid.xy) * 2.0 + 1.0) / float2(srcW, srcH);
-
-    float3 M0 = src.SampleLevel(samp, uv, 0, int2(-1,  1)).rgb;
-    float3 M1 = src.SampleLevel(samp, uv, 0, int2( 1,  1)).rgb;
-    float3 M2 = src.SampleLevel(samp, uv, 0, int2(-1, -1)).rgb;
-    float3 M3 = src.SampleLevel(samp, uv, 0, int2( 1, -1)).rgb;
-    float3 TL = src.SampleLevel(samp, uv, 0, int2(-2,  2)).rgb;
-    float3  T = src.SampleLevel(samp, uv, 0, int2( 0,  2)).rgb;
-    float3 TR = src.SampleLevel(samp, uv, 0, int2( 2,  2)).rgb;
-    float3  L = src.SampleLevel(samp, uv, 0, int2(-2,  0)).rgb;
-    float3  C = src.SampleLevel(samp, uv, 0, int2( 0,  0)).rgb;
-    float3  R = src.SampleLevel(samp, uv, 0, int2( 2,  0)).rgb;
-    float3 BL = src.SampleLevel(samp, uv, 0, int2(-2, -2)).rgb;
-    float3  B = src.SampleLevel(samp, uv, 0, int2( 0, -2)).rgb;
-    float3 BR = src.SampleLevel(samp, uv, 0, int2( 2, -2)).rgb;
-
-    float3 outRGB = 0;
-    outRGB += (M0 + M1 + M2 + M3) * (0.5f / 4.0f);                // == 0.5 * avg
-    outRGB += (TL + T + C + L) * (0.125f / 4.0f);
-    outRGB += (TR + T + C + R) * (0.125f / 4.0f);
-    outRGB += (BL + B + C + L) * (0.125f / 4.0f);
-    outRGB += (BR + B + C + R) * (0.125f / 4.0f);
-
-    dst[tid.xy] = float4(outRGB, 1.0);
+    float2 texelSize;
+    float2 dims;
+    mipN.GetDimensions(0, dims.x, dims.y, texelSize.x);
+    texelSize = 1.0 / dims;
+    
+    float2 uv = (float2(dtid.xy) + 0.5) * texelSize * 2.0;
+    mipNPlusOne[dtid.xy] = DownsampleBloom(mipN, sampler, uv, texelSize);
 }

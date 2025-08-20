@@ -38,6 +38,7 @@ namespace SP
         TDC::Console::AddVariable("Graphics.Bloom.Knee", mKnee);
         TDC::Console::AddVariable("Graphics.Bloom.Strength", mStrength);
         TDC::Console::AddVariable("Graphics.Bloom.UpsampleGain", mUpsampleGain);
+        TDC::Console::AddVariable("Graphics.Bloom.OnlyEmissive", mOnlyEmissive);
 
         Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/post_fx/bloom/populate_mask.kds");
         Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/post_fx/bloom/downsample.kds");
@@ -73,7 +74,7 @@ namespace SP
                 int Width;
                 int Height;
                 float ThresholdKnee;
-                float Pad;
+                uint OnlyEmissive;
             } constants = {
                 Gfx::ViewRecycler::GetSRV(emissiveInput.Texture)->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(lightingInput.Texture)->GetBindlessHandle(),
@@ -83,7 +84,7 @@ namespace SP
                 begin.Width,
                 begin.Height,
                 mKnee,
-                0
+                mOnlyEmissive
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/populate_mask.kds");
@@ -215,6 +216,7 @@ namespace SP
     {
         if (ImGui::TreeNodeEx("Bloom", ImGuiTreeNodeFlags_Framed)) {
             ImGui::Checkbox("Enable", &mEnable);
+            ImGui::Checkbox("Only Use Emissive", &mOnlyEmissive);
             ImGui::SliderFloat("Luminance Threshold", &mThreshold, 0.1f, 20.0f);
             ImGui::SliderFloat("Threshold Knee", &mKnee, 0.1f, 20.0f);
             ImGui::SliderFloat("Strength", &mStrength, 0.1f, 5.0f);

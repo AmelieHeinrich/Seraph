@@ -55,5 +55,6 @@ namespace SP
         RenderPassBegin mBegin;
 
         bool mPendingShaderReload = false;
+        float mFontScale = 1.0f;
     };
 }

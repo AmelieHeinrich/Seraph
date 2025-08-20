@@ -19,7 +19,7 @@ struct PushConstants
     uint Width;
     uint Height;
     float ThresholdKnee;
-    float Pad;
+    uint OnlyEmissive;
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
@@ -54,8 +54,9 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float4 emissiveColor = emissive.Load(dtid);
     
     // Apply threshold only to lighting, add emissive directly
-    float3 filteredLight = ThresholdFilter(lightColor.rgb);
-    float3 result = filteredLight + emissiveColor.rgb;
-    
+    float3 result = emissiveColor.rgb;
+    if (Push.OnlyEmissive == 0)
+        result += ThresholdFilter(lightColor.rgb);
+
     outMask[dtid.xy] = float4(result, 1.0);
 }

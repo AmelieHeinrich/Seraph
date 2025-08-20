@@ -29,6 +29,7 @@ namespace SP
         float mThreshold = 20.0f;
         float mKnee = 10.0;
         float mStrength = 5.0f;
+        bool mOnlyEmissive = false;
 
         static constexpr uint BLOOM_MIP_CHAIN = 8;
     };

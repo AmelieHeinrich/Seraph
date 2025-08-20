@@ -202,6 +202,9 @@ namespace SP
 
     void Application::UI()
     {
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.FontScaleMain = mFontScale;
+
         if (KI::InputSystem::IsKeyPressed(KI::Keycode::kF1)) {
             mUIOpened = !mUIOpened;
         }
@@ -211,6 +214,11 @@ namespace SP
 
         if (mUIOpened) {
             if (ImGui::BeginMainMenuBar()) {
+                if (ImGui::BeginMenu(ICON_FA_WINDOWS " Window")) {
+                    ImGui::SliderFloat("Font Scale", &mFontScale, 0.5f, 2.0f);
+
+                    ImGui::EndMenu();
+                }
                 if (ImGui::BeginMenu(ICON_FA_VIDEO_CAMERA " Renderer")) {
                     if (ImGui::MenuItem(ICON_FA_WRENCH " Settings")) {
                         mRendererSettingsOpened = !mRendererSettingsOpened;
