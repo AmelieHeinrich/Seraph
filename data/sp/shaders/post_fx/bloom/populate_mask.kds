@@ -5,6 +5,7 @@
 
 #include "kd/shaders/common/bindless.kds"
 #include "sp/shaders/common/compute.kds"
+#include "sp/shaders/common/colors.kds"
 
 #pragma compute CSMain
 
@@ -13,13 +14,31 @@ struct PushConstants
     uint EmissiveInput;
     uint LightingInput;
     uint MaskOutput;
-    uint Pad;
+    float Threshold;
 
     uint Width;
     uint Height;
-    uint Pad2;
+    float ThresholdKnee;
+    float Pad;
 };
 PUSH_CONSTANTS(PushConstants, Push);
+
+// Soft threshold function with knee
+float3 ThresholdFilter(float3 color)
+{
+    float brightness = Luminance(color);
+    
+    // Soft knee calculation
+    float soft = brightness - Push.Threshold;
+    soft = clamp(soft, 0, Push.ThresholdKnee);
+    soft = soft * soft / (Push.ThresholdKnee * 2.0);
+    
+    // Combine hard and soft thresholds
+    float contribution = max(soft, brightness - Push.Threshold);
+    contribution /= max(brightness, 0.00001); // Prevent divide by zero
+    
+    return color * saturate(contribution);
+}
 
 [numthreads(8, 8, 1)]
 void CSMain(uint3 dtid : SV_DispatchThreadID)
@@ -27,10 +46,16 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     if (dtid.x >= Push.Width || dtid.y >= Push.Height)
         return;
 
+    Texture2D<float4> lighting = ResourceDescriptorHeap[Push.LightingInput];
     Texture2D<float4> emissive = ResourceDescriptorHeap[Push.EmissiveInput];
     RWTexture2D<float4> outMask = ResourceDescriptorHeap[Push.MaskOutput];
 
-    // @TODO(Amélie): Add pixels > luminance filter
-
-    outMask[dtid.xy] = emissive.Load(dtid);
+    float4 lightColor = lighting.Load(dtid);
+    float4 emissiveColor = emissive.Load(dtid);
+    
+    // Apply threshold only to lighting, add emissive directly
+    float3 filteredLight = ThresholdFilter(lightColor.rgb);
+    float3 result = filteredLight + emissiveColor.rgb;
+    
+    outMask[dtid.xy] = float4(result, 1.0);
 }

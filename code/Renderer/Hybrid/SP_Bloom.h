@@ -25,10 +25,10 @@ namespace SP
 
     private:
         bool mEnable = true;
-        float mUpsampleGain = 1.0f;
-        float mThreshold = 1.0f;
-        float mKnee = 0.5f;
-        float mStrength = 1.0f;
+        float mUpsampleGain = 0.4f;
+        float mThreshold = 20.0f;
+        float mKnee = 10.0;
+        float mStrength = 5.0f;
 
         static constexpr uint BLOOM_MIP_CHAIN = 8;
     };

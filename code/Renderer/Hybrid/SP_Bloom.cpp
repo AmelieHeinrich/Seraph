@@ -68,20 +68,22 @@ namespace SP
                 KGPU::BindlessHandle EmissiveInput;
                 KGPU::BindlessHandle LightingInput;
                 KGPU::BindlessHandle BloomOut;
-                uint Pad;
+                float Threshold;
 
                 int Width;
                 int Height;
-                KGPU::uint2 Pad2;
+                float ThresholdKnee;
+                float Pad;
             } constants = {
                 Gfx::ViewRecycler::GetSRV(emissiveInput.Texture)->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetSRV(lightingInput.Texture)->GetBindlessHandle(),
                 Gfx::ViewRecycler::GetUAV(bloomOut.Texture)->GetBindlessHandle(),
-                0,
+                mThreshold,
 
                 begin.Width,
                 begin.Height,
-                {}
+                mKnee,
+                0
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/populate_mask.kds");
@@ -279,10 +281,10 @@ namespace SP
     {
         if (ImGui::TreeNodeEx("Bloom", ImGuiTreeNodeFlags_Framed)) {
             ImGui::Checkbox("Enable", &mEnable);
-            ImGui::SliderFloat("Luminance Threshold", &mThreshold, 1.0f, 2.0f);
-            ImGui::SliderFloat("Threshold Knee", &mKnee, 0.5f, 1.0f);
-            ImGui::SliderFloat("Strength", &mStrength, 0.1f, 3.0f);
-            ImGui::SliderFloat("Upsample Gain", &mUpsampleGain, 0.5f, 2.0f);
+            ImGui::SliderFloat("Luminance Threshold", &mThreshold, 0.1f, 20.0f);
+            ImGui::SliderFloat("Threshold Knee", &mKnee, 0.1f, 20.0f);
+            ImGui::SliderFloat("Strength", &mStrength, 0.1f, 5.0f);
+            ImGui::SliderFloat("Upsample Gain", &mUpsampleGain, 0.1f, 2.0f);
             ImGui::TreePop();
         }
     }
