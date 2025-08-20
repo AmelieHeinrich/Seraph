@@ -34,7 +34,7 @@ namespace SP
 
         albedoDesc.Width = width;
         albedoDesc.Height = height;
-        albedoDesc.Format = KGPU::TextureFormat::kR8G8B8A8_UNORM;
+        albedoDesc.Format = KGPU::TextureFormat::kR8G8B8A8_sRGB;
         albedoDesc.Usage = KGPU::TextureUsage::kRenderTarget | KGPU::TextureUsage::kShaderResource;
 
         pbrDesc.Width = width;

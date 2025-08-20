@@ -124,11 +124,11 @@ FragmentOutput PSMain(VertexOutput input)
     motion *= float2(-1.0f, 1.0f);
 
     FragmentOutput output = (FragmentOutput)0;
-    output.Albedo = texture.Sample(sampler, input.UV);
+    output.Albedo = pow(texture.Sample(sampler, input.UV), 2.2);
     if (output.Albedo.a < 0.25) discard;
     output.Normal = float4(GetNormal(input), Push.MeshID);
     output.PBR = GetPBR(input);
     output.MotionVector = motion;
-    output.Emissive = emissive.Sample(sampler, input.UV);
+    output.Emissive = pow(emissive.Sample(sampler, input.UV), 2.2);
     return output;
 }
