@@ -90,7 +90,7 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
         float2 u  = SampleHammersley(i);
         float3 L  = TangentToWorld(SampleHemisphere(u.x, u.y), N, S, T);
         float NdotL = max(0.0, dot(N, L));
-        irradiance += EnvironmentMap.SampleLevel(CubeSampler, L, 0).rgb * NdotL;
+        irradiance += EnvironmentMap.SampleLevel(CubeSampler, L, 0).rgb * NdotL * 5;
     }
     irradiance /= float(NumSamples);
 

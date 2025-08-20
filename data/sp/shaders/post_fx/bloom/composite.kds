@@ -28,9 +28,6 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
     SamplerState InputSampler = SamplerDescriptorHeap[Push.InputSampler];
     RWTexture2D<float4> OutputHDR = ResourceDescriptorHeap[Push.Output];
 
-    float2 uv = TexelToUV(ThreadID.xy, 1.0 / float2(Push.Width, Push.Height));
-    float4 inputColor = Input.Sample(InputSampler, uv);
-
-    float4 color = OutputHDR[ThreadID.xy] + (inputColor * Push.Strength);
-    OutputHDR[ThreadID.xy] = color;
+    float4 inputColor = Input.Load(ThreadID);
+    OutputHDR[ThreadID.xy] += (inputColor * Push.Strength);
 }

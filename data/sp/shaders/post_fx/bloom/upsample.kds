@@ -9,62 +9,41 @@
 
 #pragma compute CSMain
 
-struct PushConstants
-{
-    float FilterRadius;
-    uint LinearSampler;
-    uint MipN;
-    uint MipNMinusOne;
-
-    uint MipNWidth;
-    uint MipNHeight;
-    uint2 Pad;
+struct PushConstants {
+    float Gain;     // use as gain here (or split gain separately)
+    uint  LinearSampler;
+    uint  MipN;             // SRV: mip i (smaller)
+    uint  MipNMinusOne;     // UAV: mip i-1 (larger)
 };
 PUSH_CONSTANTS(PushConstants, Push);
 
-float4 Upsample(Texture2D<float4> MipN, SamplerState LinearSampler, RWTexture2D<float4> MipNMinusOne, uint3 ThreadID)
-{
-    int width, height;
-    MipNMinusOne.GetDimensions(width, height);
-
-    float2 uv = TexelToUV(ThreadID.xy, 1.0 / float2(width, height));
-    float3 currentColor = MipN.Sample(LinearSampler, uv).xyz;
-
-    //
-    // a - b - c
-    // d - e - f
-    // g - h - i
-    //
-    float3 a = MipN.Sample(LinearSampler, uv, int2( -1.0f,  1.0f)).xyz;
-    float3 b = MipN.Sample(LinearSampler, uv, int2(  0.0f,  1.0f)).xyz;
-    float3 c = MipN.Sample(LinearSampler, uv, int2(  1.0f,  1.0f)).xyz;
-    
-    float3 d = MipN.Sample(LinearSampler, uv, int2( -1.0f,  0.0f)).xyz;
-    float3 e = MipN.Sample(LinearSampler, uv, int2(  0.0f,  0.0f)).xyz;
-    float3 f = MipN.Sample(LinearSampler, uv, int2(  1.0f,  0.0f)).xyz;
-    
-    float3 g = MipN.Sample(LinearSampler, uv, int2( -1.0f, -1.0f)).xyz;
-    float3 h = MipN.Sample(LinearSampler, uv, int2(  0.0f, -1.0f)).xyz;
-    float3 i = MipN.Sample(LinearSampler, uv, int2(  1.0f, -1.0f)).xyz;
-    
-    // Apply weighted distribution, by using a 3x3 tent filter:
-    //  1   | 1 2 1 |
-    // -- * | 2 4 2 |
-    // 16   | 1 2 1 |
-    float3 outColor = e * 4.0;
-    outColor += (b + d + f + h) * 2.0;
-    outColor += (a + c + g + i);
-    outColor *= 1.0 / 16.0;
-
-    return float4(lerp(currentColor, outColor, 1.0), 1.0);
-}
-
 [numthreads(8, 8, 1)]
-void CSMain(uint3 ThreadID : SV_DispatchThreadID)
+void CSMain(uint3 tid : SV_DispatchThreadID)
 {
-    Texture2D<float4> MipN = ResourceDescriptorHeap[Push.MipN];
-    SamplerState LinearSampler = SamplerDescriptorHeap[Push.LinearSampler];
-    RWTexture2D<float4> MipNMinusOne = ResourceDescriptorHeap[Push.MipNMinusOne];
+    Texture2D<float4>   src = ResourceDescriptorHeap[Push.MipN];          // mip i (half res)
+    SamplerState        samp = SamplerDescriptorHeap[Push.LinearSampler];
+    RWTexture2D<float4> dst  = ResourceDescriptorHeap[Push.MipNMinusOne]; // mip i-1 (fuller res)
 
-    MipNMinusOne[ThreadID.xy] = Upsample(MipN, LinearSampler, MipNMinusOne, ThreadID);
+    uint dstW, dstH; dst.GetDimensions(dstW, dstH);
+    if (tid.x >= dstW || tid.y >= dstH) return;
+
+    // IMPORTANT: no 0.5 scale here. UVs are normalized per mip.
+    float2 uv = (float2(tid.xy) + 0.5) / float2(dstW, dstH);
+
+    // force LOD 0 of the bound SRV mip (i), tent filter in texel offsets of mip i
+    float3 a = src.SampleLevel(samp, uv, 0, int2(-1,  1)).rgb;
+    float3 b = src.SampleLevel(samp, uv, 0, int2( 0,  1)).rgb;
+    float3 c = src.SampleLevel(samp, uv, 0, int2( 1,  1)).rgb;
+    float3 d = src.SampleLevel(samp, uv, 0, int2(-1,  0)).rgb;
+    float3 e = src.SampleLevel(samp, uv, 0, int2( 0,  0)).rgb;
+    float3 f = src.SampleLevel(samp, uv, 0, int2( 1,  0)).rgb;
+    float3 g = src.SampleLevel(samp, uv, 0, int2(-1, -1)).rgb;
+    float3 h = src.SampleLevel(samp, uv, 0, int2( 0, -1)).rgb;
+    float3 i = src.SampleLevel(samp, uv, 0, int2( 1, -1)).rgb;
+
+    float3 up = (e * 4.0 + (b + d + f + h) * 2.0 + (a + c + g + i)) * (1.0 / 16.0);
+
+    float  gain = max(Push.Gain, 0.0);
+    float3 base = dst[tid.xy].rgb;                     // accumulate
+    dst[tid.xy] = float4(base + up * gain, 1.0);
 }

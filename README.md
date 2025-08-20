@@ -23,7 +23,12 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 ![](.github/tiled.png)
 
 ### Image based lighting
-![](.github/pbr.png)
+![](.github/no_bloom.png)
+
+### Bloom
+| Without | With |
+|---------|---------|
+| ![](.github/no_bloom.png) | ![](.github/bloom.png) |
 
 ### Shadows
 | CSM | Hard RT | Soft RT (Ground Truth Denoised) |
@@ -39,6 +44,7 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - Cascaded Shadow Maps
 - Raytraced hard and soft shadows
 - Baked image based reflections and GI
+- Compute Bloom
 - Motion vector visualizer
 
 ## Planned

@@ -25,7 +25,7 @@ namespace SP
 
     private:
         bool mEnable = true;
-        float mFilterRadius = 0.005f;
+        float mUpsampleGain = 1.0f;
         float mThreshold = 1.0f;
         float mKnee = 0.5f;
         float mStrength = 1.0f;
