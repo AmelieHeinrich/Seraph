@@ -27,6 +27,7 @@
 #include <Graphics/Gfx_Screenshotter.h>
 
 #include <imgui.h>
+#include <fontawesome.h>
 
 #include "Renderer/Hybrid/SP_Tonemap.h"
 
@@ -150,8 +151,8 @@ namespace SP
                 mRenderer->Render(mBegin);
                 mBegin.CmdList->BeginRendering(KGPU::RenderBegin(mBegin.Width, mBegin.Height, { KGPU::RenderAttachment(mBegin.SwapView, false) }, {}));
                 ToolImGui::Manager::Begin();
-                TDC::Console::Draw(dt, mWidth, mHeight);
                 UI();
+                TDC::Console::Draw(dt, mWidth, mHeight);
                 ToolImGui::Manager::Render(mBegin.CmdList, mBegin.FrameIndex);
                 mBegin.CmdList->EndRendering();
                 mBegin.CmdList->Barrier(KGPU::TextureBarrier(
@@ -220,11 +221,8 @@ namespace SP
 
         if (mUIOpened) {
             if (ImGui::BeginMainMenuBar()) {
-                if (ImGui::BeginMenu("World")) {
-                    ImGui::EndMenu();
-                }
-                if (ImGui::BeginMenu("Renderer")) {
-                    if (ImGui::MenuItem("Settings")) {
+                if (ImGui::BeginMenu(ICON_FA_VIDEO_CAMERA " Renderer")) {
+                    if (ImGui::MenuItem(ICON_FA_WRENCH " Settings")) {
                         mRendererSettingsOpened = !mRendererSettingsOpened;
                     }
                     ImGui::EndMenu();
@@ -252,12 +250,12 @@ namespace SP
                 ImGui::SetNextWindowBgAlpha(0.70f);
                 ImGui::Begin("Example: Simple overlay", &p_open, window_flags);
                 ImGui::Text("Seraph - A modern graphics renderer by Amelie Heinrich");
-                ImGui::Text("Backend : %s", mStringBackend.c_str());
-                ImGui::Text("Has RT: %d - Has MS: %d", Gfx::Manager::GetDevice()->SupportsRaytracing(), Gfx::Manager::GetDevice()->SupportsMeshShaders());
+                ImGui::Text(ICON_FA_LAPTOP " Backend : %s", mStringBackend.c_str());
+                ImGui::Text(ICON_FA_WRENCH " Has RT: %d - Has MS: %d", Gfx::Manager::GetDevice()->SupportsRaytracing(), Gfx::Manager::GetDevice()->SupportsMeshShaders());
                 ImGui::Separator();
-                ImGui::Text("Debug Menu: F1");
-                ImGui::Text("Screenshot: F2");
-                ImGui::Text("Hide Overlay: F3");
+                ImGui::Text(ICON_FA_CODEPEN " Debug Menu: F1");
+                ImGui::Text(ICON_FA_CAMERA " Screenshot: F2");
+                ImGui::Text(ICON_FA_WINDOW_CLOSE " Hide Overlay: F3");
                 ImGui::End();
             }
 
