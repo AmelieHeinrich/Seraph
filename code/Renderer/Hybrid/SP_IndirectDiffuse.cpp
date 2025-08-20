@@ -142,6 +142,7 @@ namespace SP
             
                 KGPU::TextureViewDesc viewDesc(baked.Texture, KGPU::TextureViewType::kShaderWrite, KGPU::TextureFormat::kR16G16B16A16_FLOAT);
                 viewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
+                viewDesc.ArrayLayer = KGPU::VIEW_ALL_MIPS;
 
                 struct PushConstants {
                     KGPU::BindlessHandle EnvironmentMap;

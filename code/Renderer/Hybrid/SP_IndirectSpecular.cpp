@@ -167,8 +167,9 @@ namespace SP
                     viewDesc.Texture = baked.Texture;
                     viewDesc.Type = KGPU::TextureViewType::kShaderWrite;
                     viewDesc.ViewMip = i;
-                    viewDesc.ArrayLayer = 0;
+                    viewDesc.ArrayLayer = VIEW_ALL_MIPS;
                     viewDesc.Dimension = KGPU::TextureViewDimension::kTextureCube;
+                    viewDesc.ViewFormat = KGPU::TextureFormat::kR16G16B16A16_FLOAT;
 
                     struct PushConstant {
                         KGPU::BindlessHandle EnvMap;

@@ -90,56 +90,20 @@ namespace SP
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
             begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
-
-            KGPU::TextureBarrier stamp(bloomOut.Texture);
-            stamp.BaseMipLevel = 0;
-            stamp.LevelCount = 1;
-            stamp.SourceAccess = KGPU::ResourceAccess::kShaderWrite;
-            stamp.SourceStage = KGPU::PipelineStage::kComputeShader;
-            stamp.SourceLayout = KGPU::ResourceLayout::kGeneral;
-            stamp.DestAccess = KGPU::ResourceAccess::kShaderWrite;
-            stamp.DestStage = KGPU::PipelineStage::kComputeShader;
-            stamp.NewLayout = KGPU::ResourceLayout::kGeneral;
-            begin.CmdList->Barrier(stamp);
-
-            // Track last access/stage for the *resource*
-            bloomOut.LastAccess = KGPU::ResourceAccess::kShaderWrite;
-            bloomOut.LastStage = KGPU::PipelineStage::kComputeShader;
-            bloomOut.Texture->SetLayout(KGPU::ResourceLayout::kGeneral, 0);
         }
 
         CODE_BLOCK("Downsample") {
             KGPU::ScopedMarker _(begin.CmdList, "SP::Bloom::Render(Downsample)");
 
-            Gfx::Resource& bloomMask = Gfx::ResourceManager::Get(BLOOM_TEXTURE_ID);
             Gfx::Resource& linearClamp = Gfx::ResourceManager::Get(BLOOM_LINEAR_CLAMP_SAMPLER_ID);
             for (int i = 0; i < BLOOM_MIP_CHAIN - 1; i++) {
-                // Input: mip i to SRV
-                KGPU::TextureBarrier mipNBarrier(bloomMask.Texture);
-                mipNBarrier.BaseMipLevel = i;
-                mipNBarrier.LevelCount   = 1;
-                mipNBarrier.SourceAccess = KGPU::ResourceAccess::kShaderWrite;
-                mipNBarrier.SourceStage  = KGPU::PipelineStage::kComputeShader;
-                mipNBarrier.DestAccess   = KGPU::ResourceAccess::kShaderRead;
-                mipNBarrier.DestStage    = KGPU::PipelineStage::kComputeShader;
-                mipNBarrier.SourceLayout = KGPU::ResourceLayout::kGeneral;
-                mipNBarrier.NewLayout    = KGPU::ResourceLayout::kReadOnly;
+                Gfx::Resource& bloomMaskMipN = Gfx::ResourceManager::Import(BLOOM_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderRead, i);
+                Gfx::Resource& bloomMaskMipNPlusOne = Gfx::ResourceManager::Import(BLOOM_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderWrite, i + 1);
 
-                // Output: mip i+1 first use → UNDEFINED/NO_ACCESS → UAV
-                KGPU::TextureBarrier mipNPlusOneBarrier(bloomMask.Texture);
-                mipNPlusOneBarrier.BaseMipLevel = i + 1;
-                mipNPlusOneBarrier.LevelCount   = 1;
-                mipNPlusOneBarrier.SourceAccess = KGPU::ResourceAccess::kNone;
-                mipNPlusOneBarrier.SourceStage  = KGPU::PipelineStage::kPixelShader;
-                mipNPlusOneBarrier.SourceLayout = KGPU::ResourceLayout::kUndefined;
-                mipNPlusOneBarrier.DestAccess   = KGPU::ResourceAccess::kShaderWrite;
-                mipNPlusOneBarrier.DestStage    = KGPU::PipelineStage::kComputeShader;
-                mipNPlusOneBarrier.NewLayout    = KGPU::ResourceLayout::kGeneral;
-
-                KGPU::TextureViewDesc mipNDesc(bloomMask.Texture, KGPU::TextureViewType::kShaderRead);
+                KGPU::TextureViewDesc mipNDesc(bloomMaskMipN.Texture, KGPU::TextureViewType::kShaderRead);
                 mipNDesc.ViewMip = i;
                 
-                KGPU::TextureViewDesc mipNPlusOneDesc(bloomMask.Texture, KGPU::TextureViewType::kShaderWrite);
+                KGPU::TextureViewDesc mipNPlusOneDesc(bloomMaskMipN.Texture, KGPU::TextureViewType::kShaderWrite);
                 mipNPlusOneDesc.ViewMip = i + 1;
 
                 struct PushConstants {
@@ -154,8 +118,8 @@ namespace SP
                     0,
                 };
 
-                const int srcW = std::max(1, int(bloomMask.Texture->GetDesc().Width  >> i));
-                const int srcH = std::max(1, int(bloomMask.Texture->GetDesc().Height >> i));
+                const int srcW = std::max(1, int(bloomMaskMipN.Texture->GetDesc().Width  >> i));
+                const int srcH = std::max(1, int(bloomMaskMipN.Texture->GetDesc().Height >> i));
                 const int dstW = std::max(1, srcW >> 1);
                 const int dstH = std::max(1, srcH >> 1);
 
@@ -163,7 +127,6 @@ namespace SP
                 const uint gy = (dstH + 7) / 8;
             
                 auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/downsample.kds");
-                begin.CmdList->Barrier({ KC::Array<TextureBarrier>{ mipNBarrier, mipNPlusOneBarrier }, {}, {} });
                 begin.CmdList->SetComputePipeline(pipeline);
                 begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
                 begin.CmdList->Dispatch(std::max(gx, 1u), std::max(gy, 1u), 1);
@@ -176,33 +139,15 @@ namespace SP
             Gfx::Resource& bloomMask = Gfx::ResourceManager::Get(BLOOM_TEXTURE_ID);
             Gfx::Resource& linearClamp = Gfx::ResourceManager::Get(BLOOM_LINEAR_CLAMP_SAMPLER_ID);
             for (int i = BLOOM_MIP_CHAIN - 1; i > 0; --i) {
+                Gfx::Resource& bloomMaskMipN = Gfx::ResourceManager::Import(BLOOM_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderRead, i);
+                Gfx::Resource& bloomMaskMipNPlusOne = Gfx::ResourceManager::Import(BLOOM_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderWrite, i - 1);
+
                 const int dstW = std::max(1, int(bloomMask.Texture->GetDesc().Width  >> (i - 1)));
                 const int dstH = std::max(1, int(bloomMask.Texture->GetDesc().Height >> (i - 1)));
 
-                // Read smaller mip i as SRV
-                KGPU::TextureBarrier mipNRead(bloomMask.Texture);
-                mipNRead.BaseMipLevel = i;
-                mipNRead.LevelCount   = 1;
-                mipNRead.SourceAccess = KGPU::ResourceAccess::kShaderWrite;      // produced by downsample
-                mipNRead.SourceStage  = KGPU::PipelineStage::kComputeShader;
-                mipNRead.SourceLayout = KGPU::ResourceLayout::kGeneral;
-                mipNRead.DestAccess   = KGPU::ResourceAccess::kShaderRead;
-                mipNRead.DestStage    = KGPU::PipelineStage::kComputeShader;
-                mipNRead.NewLayout    = KGPU::ResourceLayout::kReadOnly;
-
-                // Accumulate into mip i-1 as UAV (need READ|WRITE)
-                KGPU::TextureBarrier mipNm1RW(bloomMask.Texture);
-                mipNm1RW.BaseMipLevel = i - 1;
-                mipNm1RW.LevelCount   = 1;
-                mipNm1RW.SourceAccess = KGPU::ResourceAccess::kShaderRead;
-                mipNm1RW.SourceStage  = KGPU::PipelineStage::kComputeShader;
-                mipNm1RW.SourceLayout = KGPU::ResourceLayout::kReadOnly;
-                mipNm1RW.DestAccess   = KGPU::ResourceAccess::kShaderRead | KGPU::ResourceAccess::kShaderWrite;
-                mipNm1RW.DestStage    = KGPU::PipelineStage::kComputeShader;
-                mipNm1RW.NewLayout    = KGPU::ResourceLayout::kGeneral;
-
                 KGPU::TextureViewDesc mipNDesc(bloomMask.Texture, KGPU::TextureViewType::kShaderRead);
                 mipNDesc.ViewMip = i;
+
                 KGPU::TextureViewDesc mipNMinusOneDesc(bloomMask.Texture, KGPU::TextureViewType::kShaderWrite);
                 mipNMinusOneDesc.ViewMip = i - 1;
 
@@ -222,30 +167,19 @@ namespace SP
                 const uint gy = (dstH + 7) / 8;
             
                 auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/upsample.kds");
-                begin.CmdList->Barrier({ KC::Array<TextureBarrier>{ mipNRead, mipNm1RW }, {}, {} });
                 begin.CmdList->SetComputePipeline(pipeline);
                 begin.CmdList->SetComputeConstants(pipeline, &pc, sizeof(pc));
                 begin.CmdList->Dispatch(std::max(gx, 1u), std::max(gy, 1u), 1);
             }
-
-            KGPU::TextureBarrier finishBarrier(bloomMask.Texture);
-            finishBarrier.BaseMipLevel = 0;
-            finishBarrier.LevelCount = 1;
-            finishBarrier.SourceAccess = KGPU::ResourceAccess::kShaderWrite;
-            finishBarrier.SourceStage = KGPU::PipelineStage::kComputeShader;
-            finishBarrier.DestAccess = KGPU::ResourceAccess::kShaderRead;
-            finishBarrier.DestStage = KGPU::PipelineStage::kAllGraphics;
-            finishBarrier.NewLayout = KGPU::ResourceLayout::kReadOnly;
-            begin.CmdList->Barrier(finishBarrier);
-
-            bloomMask.LastAccess = KGPU::ResourceAccess::kShaderRead;
-            bloomMask.LastStage = KGPU::PipelineStage::kAllGraphics;
         }
 
         CODE_BLOCK("Composite") {
             KGPU::ScopedMarker _(begin.CmdList, "SP::Bloom::Render(Composite)");
 
-            // Already put in read only :3
+            // First transition from write to read
+            Gfx::ResourceManager::Import(BLOOM_TEXTURE_ID, begin.CmdList, Gfx::ImportType::kShaderRead, 0);
+            
+            // Then use it as read-only
             Gfx::Resource& bloomMask = Gfx::ResourceManager::Get(BLOOM_TEXTURE_ID);
             Gfx::Resource& output = Gfx::ResourceManager::Import(LIGHTING_OUTPUT_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);
             Gfx::Resource& linearClamp = Gfx::ResourceManager::Get(BLOOM_LINEAR_CLAMP_SAMPLER_ID);
