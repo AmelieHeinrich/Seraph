@@ -43,6 +43,6 @@ namespace SP
         glm::vec3 mConstantAmbient = glm::vec3(0.1f);
     
         //-- BAKED --//
-        Gfx::Skybox* mCurrentSkybox = nullptr;
+        KC::String mSkyboxPath = "";
     };
 }

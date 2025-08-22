@@ -88,8 +88,8 @@ void CSMain(uint2 ThreadID : SV_DispatchThreadID)
 
         if(cosLi > 0.0) {
             float G  = gaSchlickGGX_IBL(cosLi, cosLo, roughness);
-            float Gv = G * cosLoLh / max(cosLh * cosLo, 1e-4);
-            float Fc = pow(1.0 - cosLoLh, 5);
+            float Gv = G * cosLoLh / max(cosLh * cosLo, 0.001); // Increased epsilon for better numerical stability
+            float Fc = pow(max(0.0, 1.0 - cosLoLh), 5);
 
             DFG1 += (1 - Fc) * Gv;
             DFG2 += Fc * Gv;

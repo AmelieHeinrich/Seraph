@@ -43,7 +43,7 @@ namespace SP
         IndirectSpecularMode mMode = IndirectSpecularMode::kBaked;
         
         //-- BAKED --//
-        Gfx::Skybox* mCurrentSkybox = nullptr;
+        KC::String mSkyboxPath = "";
         bool mBakedBRDF = false;
         //----------//
     };

@@ -81,7 +81,15 @@ namespace SP
             mWorld->GetLightList()->Sun.Intensity = 10.0f;
             mWorld->GetLightList()->Sun.Color = glm::vec3(1.0f);
 
-            Gfx::SkyboxCooker::GenerateSkybox(mSky, "data/sp/sky/day.hdr");
+            Gfx::SkyboxCooker::GenerateSkybox(mSky, "data/sp/sky/snow.hdr");
+            TDC::Console::AddFunction("Seraph.LoadSkybox", [&](const KC::String& args){
+                if (KC::FileSystem::Exists(args)) {
+                    mSkyboxReloadPath = args;
+                    mPendingSkyboxReload = true;
+                } else {
+                    KD_ERROR("Cannot load skybox %s - it doesn't exist.", args.c_str());
+                }
+            });
         }
 
         CODE_BLOCK("Finish start and go!") {
@@ -175,6 +183,14 @@ namespace SP
                 if (mPendingShaderReload) {
                     Gfx::ShaderManager::ReloadPipelines(true);
                     mPendingShaderReload = false;
+                }
+                if (mPendingSkyboxReload) {
+                    mSky.Clean();
+                    mPendingSkyboxReload = false;
+                
+                    Gfx::SkyboxCooker::GenerateSkybox(mSky, mSkyboxReloadPath);
+                    Gfx::CommandListRecycler::FlushCommandLists();
+                    Gfx::TempResourceStorage::Clean();
                 }
             }
 

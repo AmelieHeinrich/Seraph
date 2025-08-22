@@ -12,7 +12,7 @@
 
 #pragma compute CSMain
 
-static const uint NumSamples = 1024;
+static const uint NumSamples = 512;
 static const float InvNumSamples = 1.0 / float(NumSamples);
 
 struct PushConstants
@@ -152,7 +152,14 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
             const uint numMipLevels = 5;
             mipLevel = clamp(mipLevel, 0.0, numMipLevels - 1.0);
 
-            color  += EnvironmentMap.SampleLevel(CubeSampler, Li, mipLevel).rgb * cosLi;
+            float3 sampleColor = EnvironmentMap.SampleLevel(CubeSampler, Li, mipLevel).rgb;
+            
+            // Apply energy conservation to help prevent fireflies
+            float luminance = dot(sampleColor, float3(0.2126, 0.7152, 0.0722));
+            float energyAdjust = 1.0 / (1.0 + luminance);
+            sampleColor *= energyAdjust;
+            
+            color  += sampleColor * cosLi;
             weight += cosLi;
         }
     }

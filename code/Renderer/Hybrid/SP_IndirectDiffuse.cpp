@@ -44,7 +44,7 @@ namespace SP
             Gfx::ResourceManager::CreateTexture(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, bakedCubemapDesc);
 
             TDC::Console::AddFunction("Graphics.GI.RebakeSkybox", [&](const KC::String&) {
-                mCurrentSkybox = nullptr;
+                mSkyboxPath = "";
             });
         }
     }
@@ -133,9 +133,9 @@ namespace SP
         KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectDiffuse::Baked");
         
         CODE_BLOCK("Bake Irradiance Map") {
-            if (mCurrentSkybox != begin.Sky) {
+            if (mSkyboxPath != begin.Sky->Path) {
                 KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(BakeSkybox)");
-                mCurrentSkybox = begin.Sky;
+                mSkyboxPath = begin.Sky->Path;
 
                 Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
                 Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_DIFFUSE_BAKED_IRRADIANCE_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);

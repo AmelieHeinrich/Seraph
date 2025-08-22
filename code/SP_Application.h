@@ -55,6 +55,8 @@ namespace SP
         RenderPassBegin mBegin;
 
         bool mPendingShaderReload = false;
+        bool mPendingSkyboxReload = false;
+        KC::String mSkyboxReloadPath = "";
         float mFontScale = 1.0f;
     };
 }

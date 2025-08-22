@@ -53,7 +53,7 @@ namespace SP
             Gfx::ResourceManager::CreateTexture(INDIRECT_SPECULAR_BAKED_BRDF_ID, brdfDesc);
 
             TDC::Console::AddFunction("Graphics.Reflections.RebakeSkybox", [&](const KC::String&) {
-                mCurrentSkybox = nullptr;
+                mSkyboxPath = "";
             });
         }
     }
@@ -147,9 +147,9 @@ namespace SP
         }
 
         CODE_BLOCK("Bake skybox") {
-            if (mCurrentSkybox != begin.Sky) {
+            if (mSkyboxPath != begin.Sky->Path) {
                 KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(BakeCubemap)");
-                mCurrentSkybox = begin.Sky;
+                mSkyboxPath = begin.Sky->Path;
 
                 Gfx::Resource& sampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
                 Gfx::Resource& baked = Gfx::ResourceManager::Import(INDIRECT_SPECULAR_BAKED_CUBEMAP_ID, begin.CmdList, Gfx::ImportType::kShaderWrite);

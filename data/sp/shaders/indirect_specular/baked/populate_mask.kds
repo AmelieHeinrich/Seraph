@@ -58,14 +58,14 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float3 baseColor = GBufferColor.Load(dtid).rgb;
 
     float2 mr = GBufferPBR.Load(dtid);
-    float metallic = saturate(max(mr.r, 0.001));
-    float roughness = saturate(mr.g);
+    float metallic = mr.r;
+    float roughness = mr.g;
 
     float3 N = normalize(GBufferNormal.Load(dtid).rgb);
     float3 V = normalize(cameraPos - worldPos.xyz);
 
     // Fresnel base reflectance
-    float3 F0 = lerp(0.04.xxx, baseColor, metallic);
+    float3 F0 = lerp(0.04, baseColor, metallic);
     float  NdotV = saturate(dot(N, V));
 
     // Schlick Fresnel at view
@@ -88,6 +88,6 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
 
     // ---- Final ----
     float3 ibl = (diffuseIBL + specularIBL) * Ei;
-    Output[dtid.xy] = viewDepth != 1.0f ? float4(ibl, 1.0) : 0;
+    Output[dtid.xy] = viewDepth != 1.0f ? float4(ibl, 0) : 0;
 }
 
