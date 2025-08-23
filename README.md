@@ -1,5 +1,7 @@
 # Seraph : A showcase renderer for all my graphics programming skills, powered by the Kaleidoscope engine
 
+![](.github/preview.png)
+
 ## Requirements
 
 Minspec for D3D12: GCN/Pascal.
