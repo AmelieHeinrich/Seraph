@@ -80,7 +80,7 @@ float3 GetNormal(VertexOutput input)
 float2 GetPBR(VertexOutput input)
 {
     if (Push.MyPBRTexture == INVALID_DESCRIPTOR)
-        return float2(0.0f, 0.0f);
+        return float2(0.0f, 1.0f);
 
     Texture2D<float4> texture = ResourceDescriptorHeap[Push.MyPBRTexture];
     SamplerState sampler = SamplerDescriptorHeap[Push.MySampler];

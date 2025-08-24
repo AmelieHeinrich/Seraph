@@ -131,11 +131,11 @@ namespace SP
 
         // Begin render
         KC::Array<KGPU::RenderAttachment> attachments = {
-            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(normalTexture.Texture)),
-            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(albedoTexture.Texture)),
-            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(pbrTexture.Texture)),
-            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(motionTexture.Texture)),
-            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(emissiveTexture.Texture))
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(normalTexture.Texture), true,  KGPU::float3(0.0f, 0.0f, 0.0f)),
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(albedoTexture.Texture), true,  KGPU::float3(0.0f, 0.0f, 0.0f)),
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(pbrTexture.Texture), true,  KGPU::float3(0.0f, 0.0f, 0.0f)),
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(motionTexture.Texture), true,  KGPU::float3(0.0f, 0.0f, 0.0f)),
+            KGPU::RenderAttachment(Gfx::ViewRecycler::GetRTV(emissiveTexture.Texture), true,  KGPU::float3(0.0f, 0.0f, 0.0f))
         };
         KGPU::RenderBegin renderBegin(begin.Width, begin.Height, attachments, KGPU::RenderAttachment(Gfx::ViewRecycler::GetDSV(depthTexture.Texture)));
         
