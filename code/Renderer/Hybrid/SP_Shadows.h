@@ -20,6 +20,7 @@ namespace SP
     constexpr const char* SHADOWS_CASCADE_1 = "Shadows/Cascade1";
     constexpr const char* SHADOWS_CASCADE_2 = "Shadows/Cascade2";
     constexpr const char* SHADOWS_CASCADE_3 = "Shadows/Cascade3";
+    constexpr const char* SHADOW_SAMPLER = "Shadows/Sampler";
 
     constexpr int SHADOW_CASCADE_COUNT = 4;
     constexpr int SHADOW_CASCADE_QUALITY = 2048;

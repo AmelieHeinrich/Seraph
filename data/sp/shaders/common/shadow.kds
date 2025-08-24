@@ -8,10 +8,10 @@ static const int SHADOW_MAP_SIZE = 2048;
 
 float PCFCascade(
     Texture2D<float> ShadowMap,
-    SamplerState regularSampler,
+    SamplerComparisonState comparisonSampler,
     float4 WorldSpacePosition,
-    column_major float4x4 LightView,
-    column_major float4x4 LightProj,
+    float4x4 LightView,
+    float4x4 LightProj,
     float bias,
     int kernelSize)
 {
@@ -29,25 +29,27 @@ float PCFCascade(
         return 1.0;
 
     // Compute texel size for PCF kernel sampling
-    float2 texelSize = 1.0 / float2(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+    uint shadowWidth, shadowHeight;
+    ShadowMap.GetDimensions(shadowWidth, shadowHeight);
+    float2 texelSize = 1.0 / float2(shadowWidth, shadowHeight);
 
+    // Perform PCF with the comparison sampler
     float shadow = 0.0;
-    int samples = 0;
+    int sampleCount = 0;
 
-    // Simple square kernel PCF
-    for (int y = -kernelSize; y <= kernelSize; ++y)
-    {
-        for (int x = -kernelSize; x <= kernelSize; ++x)
-        {
-            float2 offset = float2(x, y) * texelSize;
-            float sampledDepth = ShadowMap.SampleLevel(regularSampler, shadowUV + offset, 0.0);
+    for (int x = -kernelSize; x <= kernelSize; x++) {
+        for (int y = -kernelSize; y <= kernelSize; y++) {
+            // Offset UV coordinates for sampling
+            float2 offsetUV = shadowUV + float2(x, y) * texelSize;
 
-            shadow += (ndcPosition.z - bias > sampledDepth) ? 0.0 : 1.0;
-            samples++;
+            // Use the comparison sampler to perform the depth test
+            shadow += ShadowMap.SampleCmpLevelZero(comparisonSampler, offsetUV, ndcPosition.z - bias);
+            sampleCount++;
         }
     }
-
-    return shadow / samples; // average result
+    shadow /= sampleCount;
+    
+    return shadow;
 }
 
 float4 GetCascadeColor(int layer)

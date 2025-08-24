@@ -93,6 +93,8 @@ namespace SP
             Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/shadows/csm/alpha.kds", pipelineDesc);
             Gfx::ShaderManager::SubscribeGraphics("data/sp/shaders/shadows/csm/no_alpha.kds", pipelineDesc);
             Gfx::ShaderManager::SubscribeCompute("data/sp/shaders/shadows/csm/populate.kds");
+
+            Gfx::ResourceManager::CreateSampler(SHADOW_SAMPLER, KGPU::SamplerDesc(KGPU::SamplerAddress::kClamp, KGPU::SamplerFilter::kLinear, false, true));
         }
         CODE_BLOCK("Create Hard RT resources") {
             RaytracingPipelineDesc hardRTDesc;
@@ -333,7 +335,7 @@ namespace SP
         Gfx::Resource& gbufferDepth = Gfx::ResourceManager::Import(GBUFFER_DEPTH_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& gbufferNormal = Gfx::ResourceManager::Import(GBUFFER_NORMAL_ID, begin.CmdList, Gfx::ImportType::kShaderRead);
         Gfx::Resource& cameraBuffer = Gfx::ResourceManager::Get(GBUFFER_CAMERA_CBV_ID);
-        Gfx::Resource& materialSampler = Gfx::ResourceManager::Get(GBUFFER_DEFAULT_MATERIAL_SAMPLER_ID);
+        Gfx::Resource& materialSampler = Gfx::ResourceManager::Get(SHADOW_SAMPLER);
 
         struct PushConstants {
             BindlessHandle CascadeIndex;

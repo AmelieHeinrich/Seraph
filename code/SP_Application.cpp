@@ -42,7 +42,7 @@ namespace SP
         mWindow = KOS::IWindow::Create(mWidth, mHeight, "Seraph | Kaleidoscope 0.0.1");
 
         CODE_BLOCK("Create RHI objects") {
-            mDevice = KGPU::IDevice::Create(true, KGPU::Backend::kD3D12);
+            mDevice = KGPU::IDevice::Create(true, KGPU::Backend::kAuto);
             mCommandQueue = mDevice->CreateCommandQueue(KGPU::CommandQueueType::kGraphics);
             mSurface = mDevice->CreateSurface(mWindow, mCommandQueue);
             for (int i = 0; i < KGPU::FRAMES_IN_FLIGHT; i++) {
@@ -76,7 +76,7 @@ namespace SP
 
         CODE_BLOCK("Create world") {
             mWorld = KC_NEW(RenderWorld);
-            mWorld->AddMesh("data/sp/models/DamagedHelmet/DamagedHelmet.gltf");
+            mWorld->AddMesh("data/sp/models/Sponza/Sponza.gltf");
             mWorld->GetLightList()->Sun.Direction = glm::vec3(0.0f, -1.0f, 0.0f);
             mWorld->GetLightList()->Sun.Intensity = 10.0f;
             mWorld->GetLightList()->Sun.Color = glm::vec3(1.0f);
@@ -211,6 +211,13 @@ namespace SP
 
                 Gfx::Screenshotter::ProcessScreenshot();
                 Gfx::ShaderManager::ReloadPipelines();
+
+                mBegin.CamData.PrevProj = mBegin.CamData.Proj;
+                mBegin.CamData.PrevView = mBegin.CamData.View;
+                mBegin.CamData.PrevViewProj = mBegin.CamData.ViewProj;
+                mBegin.CamData.PrevInvProj = mBegin.CamData.InvProj;
+                mBegin.CamData.PrevInvView = mBegin.CamData.InvView;
+                mBegin.CamData.PrevInvViewProj = mBegin.CamData.InvViewProj;
             }
         }
         mCommandQueue->Wait();
