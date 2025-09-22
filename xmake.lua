@@ -10,5 +10,5 @@ includes("ext/kaleidoscope")
 includes("code")
 
 before_link(function (target)
-    os.cp("dlls/*", "$(builddir)/$(plat)/$(arch)/$(mode)/")
+    os.cp("dlls/windows/*", "$(builddir)/$(plat)/$(arch)/$(mode)/")
 end)
