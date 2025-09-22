@@ -29,7 +29,7 @@ namespace SP
         ~LightCulling();
 
         void Render(RenderPassBegin& begin) override;
-        void UI(RenderPassBegin& begin) {}
+        void UI(RenderPassBegin& begin) override {}
     private:
         void GenerateTiles(RenderPassBegin& begin);
         void CullTiles(RenderPassBegin& begin);
