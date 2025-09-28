@@ -74,7 +74,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
 
     const float MAX_REFLECTION_LOD = 5.0f;
     float3 prefilteredColor = BakedCubemap.SampleLevel(Sampler, R, roughness * MAX_REFLECTION_LOD).rgb;
-    float2 brdf = BRDF.Sample(Sampler, float2(NdotV, roughness)).rg;
+    float2 brdf = BRDF.SampleLevel(Sampler, float2(NdotV, roughness), 0.0f).rg;
     float3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     // ---- Final ----

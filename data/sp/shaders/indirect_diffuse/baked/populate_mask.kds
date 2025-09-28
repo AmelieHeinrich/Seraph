@@ -61,7 +61,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     float3 F0 = lerp(0.04.xxx, baseColor, metallic);
     float3 Fv = FresnelSchlick(NdotV, F0);
     float3 kd   = (1 - Fv) * (1 - metallic) * baseColor;
-    float3 Ei = Irradiance.Sample(Sampler, N).rgb;
+    float3 Ei = Irradiance.SampleLevel(Sampler, N, 0).rgb;
     float3 diffuseIBL = kd / PI;
 
     Output[dtid.xy] = float4(diffuseIBL * Ei, 1.0);

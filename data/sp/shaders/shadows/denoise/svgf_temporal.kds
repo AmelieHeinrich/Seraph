@@ -50,8 +50,8 @@ bool DoPlaneCheck(uint2 tid, float2 currUV, float2 historyUV)
     SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
     // reconstruct positions
-    float currZ = depth.Sample(bilinearSampler, currUV);
-    float prevZ = prevDepth.Sample(bilinearSampler, historyUV);
+    float currZ = depth.SampleLevel(bilinearSampler, currUV, 0.0);
+    float prevZ = prevDepth.SampleLevel(bilinearSampler, historyUV, 0.0);
     float3 currNormal = normal.Load(uint3(tid,0)).rgb;
 
     float3 currPos = GetWorldFromDepth(currUV, currZ, camera.InvViewProj).xyz;
@@ -68,8 +68,8 @@ bool DoNormalCheck(uint2 tid, float2 currUV, float2 historyUV)
     Texture2D<float4> prevNormalTex = ResourceDescriptorHeap[Push.PrevNormalID];
     SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
-    float3 currNormal = normalize(normal.Sample(bilinearSampler, currUV).rgb);
-    float3 prevNormal = normalize(prevNormalTex.Sample(bilinearSampler, historyUV).rgb);
+    float3 currNormal = normalize(normal.SampleLevel(bilinearSampler, currUV, 0.0).rgb);
+    float3 prevNormal = normalize(prevNormalTex.SampleLevel(bilinearSampler, historyUV, 0.0).rgb);
     return dot(currNormal, prevNormal) > 0.9f;
 }
 
@@ -79,8 +79,8 @@ bool DoMeshIDCheck(uint2 tid, float2 currUV, float2 historyUV)
     Texture2D<float4> prevNormalTex = ResourceDescriptorHeap[Push.PrevNormalID];
     SamplerState bilinearSampler = SamplerDescriptorHeap[Push.SamplerID];
 
-    float curr = normal.Sample(bilinearSampler, currUV).a;
-    float prev = prevNormalTex.Sample(bilinearSampler, historyUV).a;
+    float curr = normal.SampleLevel(bilinearSampler, currUV, 0.0).a;
+    float prev = prevNormalTex.SampleLevel(bilinearSampler, historyUV, 0.0).a;
     return curr == prev;
 }
 
@@ -110,14 +110,14 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     uint2 pixel = dtid.xy;
     float2 currUV = TexelToUV(pixel, float2(Push.Width, Push.Height));
 
-    float prevSample = prev.Sample(bilinearSampler, currUV);
+    float prevSample = prev.SampleLevel(bilinearSampler, currUV, 0.0);
     float currSample = curr[pixel];
     uint historyLength = history[pixel];
     float2 motionVector = motionVec.Load(dtid);
     float2 historyUV = currUV + motionVector;
 
     float2 newMoments = 0.0f;
-    float2 moments = prevMoments.Sample(bilinearSampler, historyUV);
+    float2 moments = prevMoments.SampleLevel(bilinearSampler, historyUV, 0.0);
 
     if (IsSampleValid(pixel, currUV, historyUV)) {
         historyLength = min(historyLength + 1, 32);

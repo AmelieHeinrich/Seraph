@@ -39,10 +39,10 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     uint2 pixel = dtid.xy;
     float2 currUV = TexelToUV(pixel, float2(Push.Width, Push.Height));
 
-    float prevSample = prev.Sample(bilinearSampler, currUV);
+    float prevSample = prev.SampleLevel(bilinearSampler, currUV, 0.0);
     float currSample = curr[pixel];
     uint historyLength = history[pixel];
-    float2 motionVector = motionVec.Sample(bilinearSampler, currUV);
+    float2 motionVector = motionVec.SampleLevel(bilinearSampler, currUV, 0.0);
 
     if (abs(motionVector.x) == 0.0f && abs(motionVector.y) == 0.0f) {
         historyLength++;

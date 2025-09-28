@@ -33,8 +33,8 @@ namespace SP
 
         KC::Timer mClearTimer;
         KOS::IWindow* mWindow;
-        uint mWidth = 1920;
-        uint mHeight = 1009;
+        uint mWidth = 1280;
+        uint mHeight = 720;
         double mLast;
 
         KGPU::IDevice* mDevice;

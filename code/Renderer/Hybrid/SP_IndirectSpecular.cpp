@@ -187,7 +187,7 @@ namespace SP
                     };
 
                     begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-                    begin.CmdList->Dispatch(KGPU::uint3(numGroups, numGroups, 6), KGPU::uint3(32, 32, 6));
+                    begin.CmdList->Dispatch(KGPU::uint3(numGroups, numGroups, 6), KGPU::uint3(32, 32, 1));
                 }
                 begin.CmdList->EndCompute();
             }
