@@ -82,9 +82,11 @@ namespace SP
         };
 
         KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/light_cull/generate_tiles.kds");
+        begin.CmdList->BeginCompute();
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch(mNumTilesX, mNumTilesY, 1);
+        begin.CmdList->Dispatch(KGPU::uint3(mNumTilesX, mNumTilesY, 1), KGPU::uint3(16, 16, 1));
+        begin.CmdList->EndCompute();
 
         // Insert manual UAV barrier
         KGPU::MemoryBarrier barrier(KGPU::ResourceAccess::kShaderWrite, KGPU::ResourceAccess::kShaderWrite, KGPU::PipelineStage::kComputeShader, KGPU::PipelineStage::kComputeShader);
@@ -137,8 +139,10 @@ namespace SP
         };
 
         KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/light_cull/cull_tiles.kds");
+        begin.CmdList->BeginCompute();
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch(mNumTilesX, mNumTilesY, 1);
+        begin.CmdList->Dispatch(KGPU::uint3(mNumTilesX, mNumTilesY, 1), KGPU::uint3(128, 1, 1));
+        begin.CmdList->EndCompute();
     }
 }

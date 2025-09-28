@@ -135,89 +135,91 @@ namespace SP
     void Application::Run()
     {
         while (mWindow->IsOpen()) {
-            double now = KC::GlobalTimer.ToSeconds();
-            double dt = now - mLast;
-            mLast = now;
-
-            CODE_BLOCK("Render") {
-                mWorld->Update();
-
-                mWindow->GetSize(mBegin.Width, mBegin.Height);
-                mBegin.FrameIndex = mFrameSync->BeginSynchronize();
-                mBegin.CmdList = mLists[mBegin.FrameIndex];
-                mBegin.SwapTexture = mSurface->GetTexture(mBegin.FrameIndex);
-                mBegin.SwapView = mSurface->GetTextureView(mBegin.FrameIndex);
-                mBegin.World = mWorld;
-                mBegin.Sky = &mSky;
-                mBegin.CamData.Proj = mCamera.Projection();
-                mBegin.CamData.View = mCamera.View();
-                mBegin.CamData.ViewProj = mBegin.CamData.Proj * mBegin.CamData.View;
-                mBegin.CamData.InvProj = glm::inverse(mBegin.CamData.Proj);
-                mBegin.CamData.InvView = glm::inverse(mBegin.CamData.View);
-                mBegin.CamData.InvViewProj = glm::inverse(mBegin.CamData.Proj * mBegin.CamData.View);
-                mBegin.CamData.Position = float4(mCamera.Position(), 1.0f);
-                mBegin.FrameCount++;
-
-                mBegin.CmdList->Reset();
-                mBegin.CmdList->Begin();
-                mRenderer->Render(mBegin);
-                mBegin.CmdList->BeginRendering(KGPU::RenderBegin(mBegin.Width, mBegin.Height, { KGPU::RenderAttachment(mBegin.SwapView, false) }, {}));
-                ToolImGui::Manager::Begin();
-                UI();
-                TDC::Console::Draw(dt, mWidth, mHeight);
-                ToolImGui::Manager::Render(mBegin.CmdList, mBegin.FrameIndex);
-                mBegin.CmdList->EndRendering();
-                mBegin.CmdList->Barrier(KGPU::TextureBarrier(
-                    mBegin.SwapTexture,
-                    KGPU::ResourceAccess::kColorAttachmentWrite,
-                    KGPU::ResourceAccess::kMemoryRead,
-                    KGPU::PipelineStage::kColorAttachmentOutput,
-                    KGPU::PipelineStage::kAllCommands,
-                    KGPU::ResourceLayout::kPresent
-                ));
-                mBegin.CmdList->End();
-
-                mFrameSync->EndSynchronize(mBegin.CmdList);
-                mFrameSync->PresentSurface();
-
-                if (mPendingShaderReload) {
-                    Gfx::ShaderManager::ReloadPipelines(true);
-                    mPendingShaderReload = false;
-                }
-                if (mPendingSkyboxReload) {
-                    mSky.Clean();
-                    mPendingSkyboxReload = false;
+            FRAME_LOOP {
+                double now = KC::GlobalTimer.ToSeconds();
+                double dt = now - mLast;
+                mLast = now;
                 
-                    Gfx::SkyboxCooker::GenerateSkybox(mSky, mSkyboxReloadPath);
-                    Gfx::CommandListRecycler::FlushCommandLists();
-                    Gfx::TempResourceStorage::Clean();
+                CODE_BLOCK("Render") {
+                    mWorld->Update();
+                
+                    mWindow->GetSize(mBegin.Width, mBegin.Height);
+                    mBegin.FrameIndex = mFrameSync->BeginSynchronize();
+                    mBegin.CmdList = mLists[mBegin.FrameIndex];
+                    mBegin.SwapTexture = mSurface->GetTexture(mBegin.FrameIndex);
+                    mBegin.SwapView = mSurface->GetTextureView(mBegin.FrameIndex);
+                    mBegin.World = mWorld;
+                    mBegin.Sky = &mSky;
+                    mBegin.CamData.Proj = mCamera.Projection();
+                    mBegin.CamData.View = mCamera.View();
+                    mBegin.CamData.ViewProj = mBegin.CamData.Proj * mBegin.CamData.View;
+                    mBegin.CamData.InvProj = glm::inverse(mBegin.CamData.Proj);
+                    mBegin.CamData.InvView = glm::inverse(mBegin.CamData.View);
+                    mBegin.CamData.InvViewProj = glm::inverse(mBegin.CamData.Proj * mBegin.CamData.View);
+                    mBegin.CamData.Position = float4(mCamera.Position(), 1.0f);
+                    mBegin.FrameCount++;
+                
+                    mBegin.CmdList->Reset();
+                    mBegin.CmdList->Begin();
+                    mRenderer->Render(mBegin);
+                    mBegin.CmdList->BeginRendering(KGPU::RenderBegin(mBegin.Width, mBegin.Height, { KGPU::RenderAttachment(mBegin.SwapView, false) }, {}));
+                    ToolImGui::Manager::Begin();
+                    UI();
+                    TDC::Console::Draw(dt, mWidth, mHeight);
+                    ToolImGui::Manager::Render(mBegin.CmdList, mBegin.FrameIndex);
+                    mBegin.CmdList->EndRendering();
+                    mBegin.CmdList->Barrier(KGPU::TextureBarrier(
+                        mBegin.SwapTexture,
+                        KGPU::ResourceAccess::kColorAttachmentWrite,
+                        KGPU::ResourceAccess::kMemoryRead,
+                        KGPU::PipelineStage::kColorAttachmentOutput,
+                        KGPU::PipelineStage::kAllCommands,
+                        KGPU::ResourceLayout::kPresent
+                    ));
+                    mBegin.CmdList->End();
+                
+                    mFrameSync->EndSynchronize(mBegin.CmdList);
+                    mFrameSync->PresentSurface();
+                
+                    if (mPendingShaderReload) {
+                        Gfx::ShaderManager::ReloadPipelines(true);
+                        mPendingShaderReload = false;
+                    }
+                    if (mPendingSkyboxReload) {
+                        mSky.Clean();
+                        mPendingSkyboxReload = false;
+                    
+                        Gfx::SkyboxCooker::GenerateSkybox(mSky, mSkyboxReloadPath);
+                        Gfx::CommandListRecycler::FlushCommandLists();
+                        Gfx::TempResourceStorage::Clean();
+                    }
                 }
-            }
-
-            CODE_BLOCK("Reset") {
-                KI::InputSystem::Reset();
-            }
-
-            CODE_BLOCK("Update") {
-                void* event;
-                while (mWindow->PollEvents(&event)) {
-                    ToolImGui::Manager::Update(event);
+            
+                CODE_BLOCK("Reset") {
+                    KI::InputSystem::Reset();
                 }
-
-                ImGuiIO& io = ImGui::GetIO();
-                if (!io.WantCaptureKeyboard && !io.WantCaptureMouse) {
-                    mCamera.Update(dt, mWidth, mHeight);
-                }
-
-                Gfx::Screenshotter::ProcessScreenshot();
-                Gfx::ShaderManager::ReloadPipelines();
-
-                mBegin.CamData.PrevProj = mBegin.CamData.Proj;
-                mBegin.CamData.PrevView = mBegin.CamData.View;
-                mBegin.CamData.PrevViewProj = mBegin.CamData.ViewProj;
-                mBegin.CamData.PrevInvProj = mBegin.CamData.InvProj;
-                mBegin.CamData.PrevInvView = mBegin.CamData.InvView;
-                mBegin.CamData.PrevInvViewProj = mBegin.CamData.InvViewProj;
+            
+                CODE_BLOCK("Update") {
+                    void* event;
+                    while (mWindow->PollEvents(&event)) {
+                        ToolImGui::Manager::Update(event);
+                    }
+                
+                    ImGuiIO& io = ImGui::GetIO();
+                    if (!io.WantCaptureKeyboard && !io.WantCaptureMouse) {
+                        mCamera.Update(dt, mWidth, mHeight);
+                    }
+                
+                    Gfx::Screenshotter::ProcessScreenshot();
+                    Gfx::ShaderManager::ReloadPipelines();
+                
+                    mBegin.CamData.PrevProj = mBegin.CamData.Proj;
+                    mBegin.CamData.PrevView = mBegin.CamData.View;
+                    mBegin.CamData.PrevViewProj = mBegin.CamData.ViewProj;
+                    mBegin.CamData.PrevInvProj = mBegin.CamData.InvProj;
+                    mBegin.CamData.PrevInvView = mBegin.CamData.InvView;
+                    mBegin.CamData.PrevInvViewProj = mBegin.CamData.InvViewProj;
+                }   
             }
         }
         mCommandQueue->Wait();

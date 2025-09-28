@@ -95,9 +95,11 @@ namespace SP
         };
 
         auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/lighting.kds");
+        begin.CmdList->BeginCompute();
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+        begin.CmdList->EndCompute();
     }
 
     void Lighting::UI(RenderPassBegin& begin)

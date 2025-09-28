@@ -368,9 +368,11 @@ namespace SP
         };
 
         KGPU::IComputePipeline* pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/csm/populate.kds");
+        begin.CmdList->BeginCompute();
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+        begin.CmdList->EndCompute();
     }
 
     void Shadows::HardRT(RenderPassBegin& begin)
@@ -419,16 +421,20 @@ namespace SP
             KGPU::IComputePipeline* pipeline = mAlphaTest
                                           ? Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/hard_rt/alpha.kds")
                                           : Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/hard_rt/no_alpha.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+            begin.CmdList->EndCompute();
         } else {
             KGPU::IRaytracingPipeline* pipeline = mAlphaTest
                                           ? Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/hard_rt/alpha_pipeline.kds")
                                           : Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/hard_rt/no_alpha_pipeline.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetRaytracingPipeline(pipeline);
             begin.CmdList->SetRaytracingConstants(pipeline, &constants, sizeof(constants));
             begin.CmdList->DispatchRays(pipeline, begin.Width, begin.Height, 1);
+            begin.CmdList->EndCompute();
         }
     }
 
@@ -518,16 +524,20 @@ namespace SP
             KGPU::IComputePipeline* pipeline = mAlphaTest
                                           ? Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/soft_rt/alpha.kds")
                                           : Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/soft_rt/no_alpha.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+            begin.CmdList->EndCompute();
         } else {
             KGPU::IRaytracingPipeline* pipeline = mAlphaTest
                                           ? Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/soft_rt/alpha_pipeline.kds")
                                           : Gfx::ShaderManager::GetRaytracing("data/sp/shaders/shadows/soft_rt/no_alpha_pipeline.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetRaytracingPipeline(pipeline);
             begin.CmdList->SetRaytracingConstants(pipeline, &constants, sizeof(constants));
             begin.CmdList->DispatchRays(pipeline, begin.Width, begin.Height, 1);
+            begin.CmdList->EndCompute();
         }
     }
 
@@ -567,9 +577,11 @@ namespace SP
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/denoise/ground_truth.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+            begin.CmdList->EndCompute();
         }
 
         CODE_BLOCK("Copy to History") {
@@ -643,9 +655,11 @@ namespace SP
         };
 
         auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/denoise/svgf_temporal.kds");
+        begin.CmdList->BeginCompute();
         begin.CmdList->SetComputePipeline(pipeline);
         begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-        begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+        begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+        begin.CmdList->EndCompute();
     }
 
     void Shadows::SVGFSpatial(RenderPassBegin& begin)
@@ -656,6 +670,7 @@ namespace SP
         KGPU::ScopedMarker _(begin.CmdList, "SP::Shadows::SVGFSpatial");
 
         auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/shadows/denoise/svgf_spatial.kds");
+        begin.CmdList->BeginCompute();
         begin.CmdList->SetComputePipeline(pipeline);
 
         const int atrousIterations = 3;
@@ -705,8 +720,9 @@ namespace SP
             };
 
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
         }
+        begin.CmdList->EndCompute();
     }
 
     void Shadows::UI(RenderPassBegin& begin)

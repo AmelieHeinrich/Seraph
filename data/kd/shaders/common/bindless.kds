@@ -14,17 +14,22 @@ static const uint INVALID_DESCRIPTOR = 0x00000000;
 #elif VULKAN
     #define PUSH_CONSTANTS(Type, Name) [[vk::push_constant]] ConstantBuffer<Type> Name : register(b0)
     [[vk::binding(2, 0)]] RaytracingAccelerationStructure gRaytracingASArray[];
+#elif METAL
+    #define PUSH_CONSTANTS(Type, Name) ConstantBuffer<Type> Name : register(b999)
 #endif
 
 // Bindless AS
+#ifdef VULKAN
 RaytracingAccelerationStructure LoadRaytracingWorld(uint index)
 {
-#ifdef D3D12
-    return ResourceDescriptorHeap[index];
-#elif VULKAN
     return gRaytracingASArray[index];
-#endif
 }
+#elif D3D12 || METAL
+RaytracingAccelerationStructure LoadRaytracingWorld(uint index)
+{
+    return ResourceDescriptorHeap[index];
+}
+#endif
 
 // Draw ID for indirect
 #ifdef D3D12
@@ -40,6 +45,12 @@ RaytracingAccelerationStructure LoadRaytracingWorld(uint index)
     uint GetDrawID()
     {
         return gDrawID;
+    }
+#elif METAL
+    // TODO
+    uint GetDrawID()
+    {
+        return 0;
     }
 #endif
 

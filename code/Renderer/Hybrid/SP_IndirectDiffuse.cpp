@@ -157,9 +157,11 @@ namespace SP
                 };
                 
                 auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_diffuse/baked/irradiance_bake.kds");
+                begin.CmdList->BeginCompute();
                 begin.CmdList->SetComputePipeline(pipeline);
                 begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-                begin.CmdList->Dispatch(1, 1, 6);
+                begin.CmdList->Dispatch(KGPU::uint3(1, 1, 6), KGPU::uint3(32, 32, 1));
+                begin.CmdList->EndCompute();
             }
         }
 
@@ -213,9 +215,11 @@ namespace SP
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/indirect_diffuse/baked/populate_mask.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+            begin.CmdList->EndCompute();
         }
     }
 

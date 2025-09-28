@@ -88,9 +88,11 @@ namespace SP
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/populate_mask.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+            begin.CmdList->EndCompute();
         }
 
         CODE_BLOCK("Downsample") {
@@ -128,9 +130,11 @@ namespace SP
                 const uint gy = (dstH + 7) / 8;
             
                 auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/downsample.kds");
+                begin.CmdList->BeginCompute();
                 begin.CmdList->SetComputePipeline(pipeline);
                 begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-                begin.CmdList->Dispatch(std::max(gx, 1u), std::max(gy, 1u), 1);
+                begin.CmdList->Dispatch(KGPU::uint3(std::max(gx, 1u), std::max(gy, 1u), 1), KGPU::uint3(8, 8, 1));
+                begin.CmdList->EndCompute();
             }
         }
 
@@ -168,9 +172,11 @@ namespace SP
                 const uint gy = (dstH + 7) / 8;
             
                 auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/upsample.kds");
+                begin.CmdList->BeginCompute();
                 begin.CmdList->SetComputePipeline(pipeline);
                 begin.CmdList->SetComputeConstants(pipeline, &pc, sizeof(pc));
-                begin.CmdList->Dispatch(std::max(gx, 1u), std::max(gy, 1u), 1);
+                begin.CmdList->Dispatch(KGPU::uint3(std::max(gx, 1u), std::max(gy, 1u), 1), KGPU::uint3(8, 8, 1));
+                begin.CmdList->EndCompute();
             }
         }
 
@@ -206,9 +212,11 @@ namespace SP
             };
 
             auto pipeline = Gfx::ShaderManager::GetCompute("data/sp/shaders/post_fx/bloom/composite.kds");
+            begin.CmdList->BeginCompute();
             begin.CmdList->SetComputePipeline(pipeline);
             begin.CmdList->SetComputeConstants(pipeline, &constants, sizeof(constants));
-            begin.CmdList->Dispatch((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1);
+            begin.CmdList->Dispatch(KGPU::uint3((begin.Width + 7) / 8, (begin.Height + 7) / 8, 1), KGPU::uint3(8, 8, 1));
+            begin.CmdList->EndCompute();
         }
     }
 
