@@ -53,7 +53,8 @@ namespace SP
             switch (mDevice->GetBackend()) {
                 case KGPU::Backend::kD3D12: mStringBackend = "D3D12"; break;
                 case KGPU::Backend::kVulkan: mStringBackend = "Vulkan"; break;
-                case KGPU::Backend::kMetal: mStringBackend = "Metal"; break;
+                case KGPU::Backend::kMetal3: mStringBackend = "Metal 3"; break;
+                case KGPU::Backend::kMetal4: mStringBackend = "Metal 4"; break;
                 default: mStringBackend = "Sign an NDA first..."; break;
             }
         }
