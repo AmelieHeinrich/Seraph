@@ -4,8 +4,9 @@
 
 ## Requirements
 
-Minspec for D3D12: GCN/Pascal.
-Minspec for Vulkan: GCN/Turing.
+Minspec for D3D12: GCN/Pascal.\
+Minspec for Vulkan: GCN/Turing.\
+Minspec for Metal3: Apple Silicon chip.
 
 ## Building and running
 
@@ -56,3 +57,4 @@ The Trello board for this project can be found [here](https://trello.com/b/s8nae
 ## Known bugs
 
 - Raytraced effects crashes when using RT pipeline on Vulkan backend
+
