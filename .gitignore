@@ -12,3 +12,6 @@ kaleidoscope.txt
 blend
 screenshots
 data/kd/tests/*.png
+
+# Mac
+.DS_Store
