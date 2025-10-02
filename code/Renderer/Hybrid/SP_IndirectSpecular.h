@@ -45,6 +45,7 @@ namespace SP
         //-- BAKED --//
         KC::String mSkyboxPath = "";
         bool mBakedBRDF = false;
+        bool mBakeEveryFrame = false;
         //----------//
     };
 }

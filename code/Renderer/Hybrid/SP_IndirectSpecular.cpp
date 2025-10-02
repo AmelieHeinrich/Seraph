@@ -104,6 +104,10 @@ namespace SP
                 ImGui::EndCombo();
             }
 
+            if (mMode == IndirectSpecularMode::kBaked) {
+                ImGui::Checkbox("Bake Every Frame", &mBakeEveryFrame);
+            }
+
             ImGui::TreePop();
         }
     }
@@ -149,7 +153,7 @@ namespace SP
         }
 
         CODE_BLOCK("Bake skybox") {
-            if (mSkyboxPath != begin.Sky->Path) {
+            if (mSkyboxPath != begin.Sky->Path || mBakeEveryFrame) {
                 KGPU::ScopedMarker _(begin.CmdList, "SP::IndirectSpecular::Baked(BakeCubemap)");
                 mSkyboxPath = begin.Sky->Path;
 
