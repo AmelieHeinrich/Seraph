@@ -50,11 +50,4 @@ It is currently **untested** on AMD and Intel cards since I do not have the hard
 - Compute Bloom
 - Motion vector visualizer
 
-## Planned
-
-The Trello board for this project can be found [here](https://trello.com/b/s8naeZhw/kd-sp-rf).
-
-## Known bugs
-
-- Raytraced effects crashes when using RT pipeline on Vulkan backend
 
