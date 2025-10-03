@@ -44,7 +44,7 @@ float4 DownsampleBloom(Texture2D<float4> tex, SamplerState sam, float2 uv, float
 void CSMain(uint3 dtid : SV_DispatchThreadID)
 {
     Texture2D<float4> mipN = ResourceDescriptorHeap[Push.MipN];
-    SamplerState sampler = ResourceDescriptorHeap[Push.Sampler];
+    SamplerState sampler = SamplerDescriptorHeap[Push.Sampler];
     RWTexture2D<float4> mipNPlusOne = ResourceDescriptorHeap[Push.MipNPlusOne];
 
     float2 texelSize;

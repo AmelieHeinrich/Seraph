@@ -99,7 +99,7 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
 {
     TextureCube<float4> EnvironmentMap = ResourceDescriptorHeap[Push.EnvironmentMap];
     RWTexture2DArray<half4> PrefilterMap = ResourceDescriptorHeap[Push.PrefilterMap];
-    SamplerState CubeSampler = ResourceDescriptorHeap[Push.CubeSampler];
+    SamplerState CubeSampler = SamplerDescriptorHeap[Push.CubeSampler];
     
     uint outputWidth, outputHeight, outputDepth;
     PrefilterMap.GetDimensions(outputWidth, outputHeight, outputDepth);
