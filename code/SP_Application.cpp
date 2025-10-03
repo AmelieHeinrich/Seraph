@@ -240,7 +240,13 @@ namespace SP
 
         if (mUIOpened) {
             if (ImGui::BeginMainMenuBar()) {
+#ifdef KD_WINDOWS
                 if (ImGui::BeginMenu(ICON_FA_WINDOWS " Window")) {
+#elif KD_LINUX
+                if (ImGui::BeginMenu(ICON_FA_LINUX " Window"))
+#elif KD_MAC
+                if (ImGui::BeginMenu(ICON_FA_APPLE " Window"))
+#endif
                     ImGui::SliderFloat("Font Scale", &mFontScale, 0.5f, 2.0f);
 
                     ImGui::EndMenu();
